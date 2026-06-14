@@ -6,7 +6,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF3B2A22),
+      backgroundColor: const Color(0xFF3A271D),
       body: SafeArea(
         child: Column(
           children: [

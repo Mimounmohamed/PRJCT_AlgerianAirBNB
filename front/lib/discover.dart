@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'authentically.dart';
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
@@ -16,22 +16,7 @@ class OnboardingScreen extends StatelessWidget {
             ),
           ),
           // Gradient overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF23130A).withOpacity(0.20),
-                    const Color(0xFF23130A).withOpacity(0.50),
-                    const Color(0xFF23130A).withOpacity(0.95),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                ),
-              ),
-            ),
-          ),
+          
           // Content
           SafeArea(
             child: Column(
@@ -45,20 +30,20 @@ class OnboardingScreen extends StatelessWidget {
                         text: 'AKRIL',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 22,
+                          fontSize: 48,
                           fontFamily: 'CormorantGaramond',
-                          letterSpacing: 4,
-                          fontWeight: FontWeight.w500,
+                          letterSpacing: -1.2,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       TextSpan(
                         text: 'I',
                         style: TextStyle(
                           color: Color(0xFF2E8B8B),
-                          fontSize: 22,
+                          fontSize: 48,
                           fontFamily: 'CormorantGaramond',
-                          letterSpacing: 4,
-                          fontWeight: FontWeight.w500,
+                          letterSpacing: -1.2,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -128,39 +113,59 @@ class OnboardingScreen extends StatelessWidget {
                           ),
                           // Next button
                           ElevatedButton(
-                            onPressed: () {
-                              // Navigate to next page
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2E8B8B),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(milliseconds: 350),
+                                pageBuilder: (context, animation, secondaryAnimation) =>
+                                    const AuthenticallyAlgerianScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  final offsetAnimation = Tween<Offset>(
+                                    begin: const Offset(1, 0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  ));
+
+                                  return SlideTransition(
+                                    position: offsetAnimation,
+                                    child: child,
+                                  );
+                                },
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 14,
-                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2E8B8B),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(30),
                             ),
-                            child: const Row(
-                              children: [
-                                Text(
-                                  'NEXT',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: Color(0xFFFFFFFF),
-                                    fontFamily: 'HankenGrotesk',
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.2,
-                                    letterSpacing: 1.54,
-                                  ),
-                                ),
-                                SizedBox(width: 6),
-                                Icon(Icons.arrow_forward, size: 16),
-                              ],
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 14,
                             ),
                           ),
+                          child: const Row(
+                            children: [
+                              Text(
+                                'NEXT',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFFFFFFF),
+                                  fontFamily: 'HankenGrotesk',
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.2,
+                                  letterSpacing: 1.54,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+                            ],
+                          ),
+                        ),
                         ],
                       ),
                       const SizedBox(height: 20),

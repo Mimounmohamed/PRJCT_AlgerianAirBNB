@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'hospitality.dart';
 
-class AuthenticallyAlgerianScreen extends StatelessWidget {
-  const AuthenticallyAlgerianScreen({super.key});
+class HostHospitalityScreen extends StatelessWidget {
+  const HostHospitalityScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
+          // Background image
           Positioned.fill(
             child: Image.asset(
-              'assets/images/authentically.png',
+              'assets/images/hospitality.png',
               fit: BoxFit.cover,
             ),
           ),
@@ -72,7 +72,7 @@ class AuthenticallyAlgerianScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        'Authentically\nAlgerian',
+                        'Host with\nHospitality',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 34,
@@ -83,7 +83,7 @@ class AuthenticallyAlgerianScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 12),
                       const Text(
-                        'Experience the true essence of local life with curated guides and verified stays across the country.',
+                        'Share your space and the warmth of Algerian culture. Earn while hosting travelers from around the world.',
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 14,
@@ -108,19 +108,19 @@ class AuthenticallyAlgerianScreen extends StatelessWidget {
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                width: 24,
+                                width: 6,
                                 height: 4,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2E8B8B),
+                                  color: Colors.white38,
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                width: 6,
+                                width: 24,
                                 height: 4,
                                 decoration: BoxDecoration(
-                                  color: Colors.white38,
+                                  color: const Color(0xFF2E8B8B),
                                   borderRadius: BorderRadius.circular(2),
                                 ),
                               ),
@@ -129,27 +129,7 @@ class AuthenticallyAlgerianScreen extends StatelessWidget {
                           // Next button
                           ElevatedButton(
                             onPressed: () {
-                              Navigator.of(context).push(
-                                PageRouteBuilder(
-                                  transitionDuration: const Duration(milliseconds: 350),
-                                  pageBuilder: (context, animation, secondaryAnimation) =>
-                                      const HostHospitalityScreen(),
-                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                    final offsetAnimation = Tween<Offset>(
-                                      begin: const Offset(1, 0),
-                                      end: Offset.zero,
-                                    ).animate(CurvedAnimation(
-                                      parent: animation,
-                                      curve: Curves.easeOutCubic,
-                                    ));
-
-                                    return SlideTransition(
-                                      position: offsetAnimation,
-                                      child: child,
-                                    );
-                                  },
-                                ),
-                              );
+                              // Navigate to next page
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E8B8B),
