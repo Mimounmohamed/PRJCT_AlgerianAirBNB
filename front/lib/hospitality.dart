@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'courtyard.dart';
 
 class HostHospitalityScreen extends StatelessWidget {
   const HostHospitalityScreen({super.key});
@@ -129,7 +130,27 @@ class HostHospitalityScreen extends StatelessWidget {
                           // Next button
                           ElevatedButton(
                             onPressed: () {
-                              // Navigate to next page
+                              Navigator.of(context).push(
+                                PageRouteBuilder(
+                                  transitionDuration: const Duration(milliseconds: 350),
+                                  pageBuilder: (context, animation, secondaryAnimation) =>
+                                      const AuthScreen(),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    final offsetAnimation = Tween<Offset>(
+                                      begin: const Offset(1, 0),
+                                      end: Offset.zero,
+                                    ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    ));
+
+                                    return SlideTransition(
+                                      position: offsetAnimation,
+                                      child: child,
+                                    );
+                                  },
+                                ),
+                              );
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2E8B8B),
