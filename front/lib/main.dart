@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'discover.dart';
+import 'authentication-front/onboarding_screens/discover.dart';
 
 void main() {
   runApp(const MyApp());
