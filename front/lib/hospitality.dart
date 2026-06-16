@@ -189,7 +189,19 @@ class HostHospitalityScreen extends StatelessWidget {
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            // Navigate to discover/home screen
+                            Navigator.of(context).pushReplacement(
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(milliseconds: 350),
+                                pageBuilder: (context, animation, secondaryAnimation) =>
+                                    const AuthScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
                           },
                           child: const Text(
                             'SKIP TO DISCOVER',

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'authentically.dart';
+import 'courtyard.dart';
+
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
 
@@ -16,7 +18,22 @@ class OnboardingScreen extends StatelessWidget {
             ),
           ),
           // Gradient overlay
-          
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter,
+                  end: Alignment.topCenter,
+                  colors: [
+                    const Color(0xFF2A1B12).withOpacity(0.95),
+                    const Color(0xFF2A1B12).withOpacity(0.40),
+                    const Color(0xFF2A1B12).withOpacity(0.00),
+                  ],
+                  stops: const [0.0, 0.6, 1.0],
+                ),
+              ),
+            ),
+          ),
           // Content
           SafeArea(
             child: Column(
@@ -113,59 +130,58 @@ class OnboardingScreen extends StatelessWidget {
                           ),
                           // Next button
                           ElevatedButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                transitionDuration: const Duration(milliseconds: 350),
-                                pageBuilder: (context, animation, secondaryAnimation) =>
-                                    const AuthenticallyAlgerianScreen(),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  final offsetAnimation = Tween<Offset>(
-                                    begin: const Offset(1, 0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  ));
-
-                                  return SlideTransition(
-                                    position: offsetAnimation,
-                                    child: child,
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF2E8B8B),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 14,
-                            ),
-                          ),
-                          child: const Row(
-                            children: [
-                              Text(
-                                'NEXT',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Color(0xFFFFFFFF),
-                                  fontFamily: 'HankenGrotesk',
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.2,
-                                  letterSpacing: 1.54,
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                PageRouteBuilder(
+                                  transitionDuration: const Duration(milliseconds: 350),
+                                  pageBuilder: (context, animation, secondaryAnimation) =>
+                                      const AuthenticallyAlgerianScreen(),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    final offsetAnimation = Tween<Offset>(
+                                      begin: const Offset(1, 0),
+                                      end: Offset.zero,
+                                    ).animate(CurvedAnimation(
+                                      parent: animation,
+                                      curve: Curves.easeOutCubic,
+                                    ));
+                                    return SlideTransition(
+                                      position: offsetAnimation,
+                                      child: child,
+                                    );
+                                  },
                                 ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2E8B8B),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                              SizedBox(width: 6),
-                              Icon(Icons.arrow_forward, size: 16, color: Colors.white),
-                            ],
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 14,
+                              ),
+                            ),
+                            child: const Row(
+                              children: [
+                                Text(
+                                  'NEXT',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: Color(0xFFFFFFFF),
+                                    fontFamily: 'HankenGrotesk',
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.2,
+                                    letterSpacing: 1.54,
+                                  ),
+                                ),
+                                SizedBox(width: 6),
+                                Icon(Icons.arrow_forward, size: 16, color: Colors.white),
+                              ],
+                            ),
                           ),
-                        ),
                         ],
                       ),
                       const SizedBox(height: 20),
@@ -173,7 +189,19 @@ class OnboardingScreen extends StatelessWidget {
                       Center(
                         child: TextButton(
                           onPressed: () {
-                            // Navigate to discover/home screen
+                            Navigator.of(context).pushReplacement(
+                              PageRouteBuilder(
+                                transitionDuration: const Duration(milliseconds: 350),
+                                pageBuilder: (context, animation, secondaryAnimation) =>
+                                    const AuthScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
                           },
                           child: const Text(
                             'SKIP TO DISCOVER',
