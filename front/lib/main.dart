@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'authentication-front/onboarding_screens/discover.dart';
-
+import 'authentication-front/splash_screen/splash_screen.dart';
 void main() {
   runApp(const MyApp());
 }
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const OnboardingScreen(),
+      home: const SplashScreen(),
     );
   }
 }

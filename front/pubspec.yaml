@@ -27,6 +27,10 @@ flutter:
     - assets/images/discover.png
     - assets/images/authentically.png
     - assets/images/hospitality.png
+    - assets/images/logo for main.png
+    - assets/images/courtyard.png
+    - assets/images/google.png
+    - assets/images/phonenumber.png
 
   fonts:
     - family: CormorantGaramond
