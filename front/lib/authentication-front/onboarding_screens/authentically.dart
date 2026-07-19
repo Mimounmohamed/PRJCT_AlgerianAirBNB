@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'hospitality.dart';
-import 'courtyard.dart';
+import '../../courtyard.dart';
 
 class AuthenticallyAlgerianScreen extends StatelessWidget {
   const AuthenticallyAlgerianScreen({super.key});
