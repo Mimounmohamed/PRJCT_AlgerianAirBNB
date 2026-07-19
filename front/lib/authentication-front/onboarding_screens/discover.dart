@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'authentically.dart';
-import '../../courtyard.dart';
+import '../Login_screens/courtyard.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});

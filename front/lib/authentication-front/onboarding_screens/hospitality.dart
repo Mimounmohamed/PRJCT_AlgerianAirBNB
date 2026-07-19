@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../courtyard.dart';
+import '../Login_screens/courtyard.dart';
 
 class HostHospitalityScreen extends StatelessWidget {
   const HostHospitalityScreen({super.key});
