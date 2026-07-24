@@ -106,7 +106,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
       appBar: AkriliAppBar(
-        title: 'Andalus',
+        title: 'AKRILI',
         onBack: _goBackToCourtyard,
       ),
       body: SafeArea(

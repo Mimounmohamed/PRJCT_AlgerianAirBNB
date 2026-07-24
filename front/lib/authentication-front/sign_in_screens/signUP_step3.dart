@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
+import 'Mar7aban.dart';
 
 class SignUpStep3 extends StatefulWidget {
   const SignUpStep3({super.key});
@@ -30,21 +31,27 @@ class _SignUpStep3State extends State<SignUpStep3> {
   }
 
   void _onCompleteProfile() {
-    // TODO: submit the accumulated sign-up payload (step 1 + step 2 + photo)
-    // to the backend, then navigate into the app (e.g. courtyard/home).
-  }
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+    ),
+  );
+}
 
   void _onSkip() {
-    // TODO: submit the sign-up payload without a photo, then navigate into
-    // the app (e.g. courtyard/home).
-  }
+  Navigator.of(context).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
       appBar: AkriliAppBar(
-        title: 'Andalus',
+        title: 'AKRILI',
         onBack: _onBack,
       ),
       body: SafeArea(

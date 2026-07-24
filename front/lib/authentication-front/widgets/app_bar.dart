@@ -40,15 +40,15 @@ class AkriliAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : null,
       title: Text(
-        title,
-        style: const TextStyle(
-          fontFamily: 'CormorantGaramond',
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 1.2,
-          color: Color(0xFF1A1A1A),
+          title,
+          style: TextStyle(
+            fontFamily: 'CormorantGaramond',
+            fontSize: 20,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 2,
+            color: Color(0xFF1A1A1A),
+          ),
         ),
-      ),
     );
   }
 }
