@@ -3,6 +3,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../widgets/birthday_field.dart';
 import '../widgets/wilaya_baladiya_selector.dart';
+import 'signUP_step3.dart';
 
 enum Gender { male, female, other }
 
@@ -31,8 +32,10 @@ class _SignUpStep2State extends State<SignUpStep2> {
   }
 
   void _onContinue() {
-    // TODO: wire up once signUP_step3.dart's screen widget/class is confirmed.
-  }
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (context) => const SignUpStep3()),
+  );
+}
 
   Widget _genderOption(String label, Gender value) {
     final isSelected = _selectedGender == value;
@@ -191,7 +194,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
                 child: Column(
                   children: [
                     Container(
-                      width: 40,
+                      width: 70,
                       height: 1,
                       color: const Color(0xFF9FBFBD),
                     ),
@@ -201,8 +204,8 @@ class _SignUpStep2State extends State<SignUpStep2> {
                       style: TextStyle(
                         fontFamily: 'CormorantGaramond',
                         fontStyle: FontStyle.italic,
-                        fontSize: 16,
-                        color: Color(0xFF9FBFBD),
+                        fontSize: 24,
+                        color: Color.fromARGB(255, 83, 163, 158),
                       ),
                     ),
                   ],

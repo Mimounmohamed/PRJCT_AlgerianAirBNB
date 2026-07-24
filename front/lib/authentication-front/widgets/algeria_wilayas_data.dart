@@ -1,7 +1,7 @@
 /// Auto-generated from the official Algerian Ministry of Interior division:
 /// 58 wilayas (provinces) and their 1541 baladiyas (communes).
 /// Source: https://github.com/othmanus/algeria-cities (ASCII/French names).
-library algeria_wilayas_data;
+library;
 
 /// Ordered map: wilaya code (e.g. '01') -> wilaya data.
 const Map<String, WilayaData> algeriaWilayas = {

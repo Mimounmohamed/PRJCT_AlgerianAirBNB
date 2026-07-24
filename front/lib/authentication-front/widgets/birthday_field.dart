@@ -50,8 +50,7 @@ class BirthdayField extends StatelessWidget {
               style: TextButton.styleFrom(
                 foregroundColor: const Color(0xFF0F4C4C), // OK / Cancel
               ),
-            ),
-            dialogBackgroundColor: const Color(0xFFFBF3E7),
+            ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFFFBF3E7)),
           ),
           child: child!,
         );
