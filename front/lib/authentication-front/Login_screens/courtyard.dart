@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'signin_google.dart';
+import 'package:flutter/gestures.dart';
+import '../sign_in_screens/signUP_step1.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -49,7 +51,6 @@ class AuthScreen extends StatelessWidget {
                   ),
                 ),
 
-
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -67,7 +68,6 @@ class AuthScreen extends StatelessWidget {
                         ),
                       ),
 
-
                       const SizedBox(height: 12),
                       const Text(
                         'Discover the warmth of local \n hospitality in stays that tell a story.',
@@ -81,7 +81,6 @@ class AuthScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      
                       // Continue with phone
                       SizedBox(
                         width: double.infinity,
@@ -107,7 +106,6 @@ class AuthScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 14),
-
 
                       // OR divider
                       Row(
@@ -138,7 +136,6 @@ class AuthScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-
 
                       const SizedBox(height: 14),
                       SizedBox(
@@ -216,21 +213,47 @@ class AuthScreen extends StatelessWidget {
                       const SizedBox(height: 18),
                       // Sign up
                       RichText(
-                        text: const TextSpan(
-                          style: TextStyle(
+                        text: TextSpan(
+                          style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 15,
                             fontFamily: 'HenkenGrotesk',
                           ),
                           children: [
-                            TextSpan(text: "Don't have an account? "),
+                            const TextSpan(text: "Don't have an account? "),
                             TextSpan(
                               text: 'Sign up',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w400,
                                 fontFamily: 'HenkenGrotesk',
                               ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.of(context).push(
+                                    PageRouteBuilder(
+                                      transitionDuration:
+                                          const Duration(milliseconds: 350),
+                                      pageBuilder: (context, animation,
+                                              secondaryAnimation) =>
+                                          const SignUpStep1(),
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        final offsetAnimation = Tween<Offset>(
+                                          begin: const Offset(1, 0),
+                                          end: Offset.zero,
+                                        ).animate(CurvedAnimation(
+                                          parent: animation,
+                                          curve: Curves.easeOutCubic,
+                                        ));
+                                        return SlideTransition(
+                                          position: offsetAnimation,
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
                             ),
                           ],
                         ),
