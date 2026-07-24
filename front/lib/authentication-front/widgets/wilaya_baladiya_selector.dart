@@ -1,25 +1,6 @@
 import 'package:flutter/material.dart';
 import 'algeria_wilayas_data.dart';
 
-/// Reusable Wilaya (province) + Baladiya (commune) cascading selector.
-///
-/// Shows two field-style pickers stacked vertically: selecting a Wilaya
-/// resets and unlocks the Baladiya picker for that Wilaya's communes.
-/// Both open a themed, searchable bottom sheet instead of a native
-/// dropdown, styled to match the rest of the app's fields.
-///
-/// Usage:
-/// ```dart
-/// WilayaBaladiyaSelector(
-///   selectedWilayaCode: _wilayaCode,
-///   selectedBaladiya: _baladiya,
-///   onWilayaChanged: (code) => setState(() {
-///     _wilayaCode = code;
-///     _baladiya = null; // reset commune when the province changes
-///   }),
-///   onBaladiyaChanged: (baladiya) => setState(() => _baladiya = baladiya),
-/// )
-/// ```
 class WilayaBaladiyaSelector extends StatelessWidget {
   const WilayaBaladiyaSelector({
     super.key,

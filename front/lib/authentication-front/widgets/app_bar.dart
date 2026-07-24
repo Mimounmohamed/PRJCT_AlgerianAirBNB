@@ -35,7 +35,7 @@ class AkriliAppBar extends StatelessWidget implements PreferredSizeWidget {
       centerTitle: true,
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back, color: Color(0xFF0F4C4C)),
+              icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
               onPressed: onBack ?? () => Navigator.of(context).maybePop(),
             )
           : null,
@@ -43,7 +43,7 @@ class AkriliAppBar extends StatelessWidget implements PreferredSizeWidget {
           title,
           style: TextStyle(
             fontFamily: 'CormorantGaramond',
-            fontSize: 20,
+            fontSize: 24,
             fontWeight: FontWeight.w700,
             letterSpacing: 2,
             color: Color(0xFF1A1A1A),
