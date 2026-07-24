@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'signin_google.dart';
 import 'package:flutter/gestures.dart';
 import '../sign_in_screens/signUP_step1.dart';
+import 'Login_email_or_phone.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -189,7 +190,31 @@ class AuthScreen extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton.icon(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              PageRouteBuilder(
+                                transitionDuration:
+                                    const Duration(milliseconds: 350),
+                                pageBuilder: (context, animation,
+                                        secondaryAnimation) =>
+                                    const LoginEmailOrPhoneScreen(),
+                                transitionsBuilder: (context, animation,
+                                    secondaryAnimation, child) {
+                                  final offsetAnimation = Tween<Offset>(
+                                    begin: const Offset(1, 0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  ));
+                                  return SlideTransition(
+                                    position: offsetAnimation,
+                                    child: child,
+                                  );
+                                },
+                              ),
+                            );
+                          },
                           icon: const Icon(Icons.login, size: 20, color: Colors.white),
                           label: const Text(
                             'Log in',
