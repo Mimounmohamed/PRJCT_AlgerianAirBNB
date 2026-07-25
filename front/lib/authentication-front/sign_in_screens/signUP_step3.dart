@@ -6,7 +6,9 @@ import '../widgets/signin_progressbar.dart';
 import 'Mar7aban.dart';
 
 class SignUpStep3 extends StatefulWidget {
-  const SignUpStep3({super.key});
+  final String token;
+  final String userName;
+  const SignUpStep3({super.key, required this.token, required this.userName});
 
   @override
   State<SignUpStep3> createState() => _SignUpStep3State();
@@ -31,20 +33,21 @@ class _SignUpStep3State extends State<SignUpStep3> {
   }
 
   void _onCompleteProfile() {
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(
-      builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
-    ),
-  );
-}
+    // TODO: upload _profileImage to cloud storage and save URL via API
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => WelcomeHomeScreen(userName: widget.userName),
+      ),
+    );
+  }
 
   void _onSkip() {
-  Navigator.of(context).pushReplacement(
-    MaterialPageRoute(
-      builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
-    ),
-  );
-}
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (context) => WelcomeHomeScreen(userName: widget.userName),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {

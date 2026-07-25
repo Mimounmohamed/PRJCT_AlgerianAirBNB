@@ -3,7 +3,8 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../Login_screens/courtyard.dart';
-import 'signUP_step2.dart'; 
+import 'signUP_step2.dart';
+import 'package:dio/dio.dart';
 
 class SignUpStep1 extends StatefulWidget {
   const SignUpStep1({super.key});
@@ -18,6 +19,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,11 +36,52 @@ class _SignUpStep1State extends State<SignUpStep1> {
     );
   }
 
-  void _onContinue() {
-  Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => const SignUpStep2()),
-  );
-}
+  void _onContinue() async {
+    // Validate fields
+    if (_fullNameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _phoneController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final dio = Dio();
+      final response = await dio.post(
+        'http://10.0.2.2:5000/api/auth/register',
+        data: {
+          'fullName': _fullNameController.text,
+          'email': _emailController.text,
+          'phone': _phoneController.text,
+          'password': _passwordController.text,
+        },
+      );
+
+      final token = response.data['token'];
+      final userName = response.data['user']['fullName'];
+
+      if (!mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => SignUpStep2(token: token, userName: userName),
+        ),
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? 'Something went wrong';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   void _goBackToCourtyard() {
     Navigator.of(context).pushReplacement(
@@ -244,7 +287,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
                                 style: TextStyle(
                                   color: Color(0xFF0F4C4C),
                                   fontSize: 12,
-                                  
                                 ),
                               ),
                             ),
@@ -256,7 +298,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _onContinue,
+                        onPressed: _isLoading ? null : _onContinue,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF0F4C4C),
                           padding: const EdgeInsets.symmetric(vertical: 18),
@@ -264,22 +306,31 @@ class _SignUpStep1State extends State<SignUpStep1> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Continue',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Continue',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SizedBox(width: 8),
+                                  Icon(Icons.arrow_forward,
+                                      color: Colors.white, size: 18),
+                                ],
                               ),
-                            ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward,
-                                color: Colors.white, size: 18),
-                          ],
-                        ),
                       ),
                     ),
                     const SizedBox(height: 20),
