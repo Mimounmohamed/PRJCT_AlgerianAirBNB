@@ -3,8 +3,9 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../Login_screens/courtyard.dart';
-import 'signUP_step2.dart';
 import 'package:dio/dio.dart';
+import '../Login_screens/Login_email_or_phone.dart';
+import 'signUP_step2.dart';
 
 class SignUpStep1 extends StatefulWidget {
   const SignUpStep1({super.key});
@@ -32,7 +33,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
 
   void _goToLogin() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      MaterialPageRoute(builder: (context) => const LoginEmailOrPhoneScreen()),
     );
   }
 
@@ -136,7 +137,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF0F4C4C)),
+              borderSide: const BorderSide(color: Color(0xFF006972)),
             ),
           ),
         ),
@@ -246,7 +247,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                             TextSpan(
                               text: 'Terms of Service',
                               style: const TextStyle(
-                                color: Color(0xFF0F4C4C),
+                                color: Color(0xFF006972),
                                 decoration: TextDecoration.underline,
                               ),
                               recognizer: TapGestureRecognizer()
@@ -285,7 +286,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                               child: const Text(
                                 'Privacy Policy',
                                 style: TextStyle(
-                                  color: Color(0xFF0F4C4C),
+                                  color: Color(0xFF006972),
                                   fontSize: 12,
                                 ),
                               ),
@@ -300,7 +301,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _onContinue,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF0F4C4C),
+                          backgroundColor: const Color(0xFF006972),
                           padding: const EdgeInsets.symmetric(vertical: 18),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -346,7 +347,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                             TextSpan(
                               text: 'Log in',
                               style: const TextStyle(
-                                color: Color(0xFF0F4C4C),
+                                color: Color(0xFF006972),
                                 fontWeight: FontWeight.w600,
                               ),
                               recognizer: TapGestureRecognizer()
@@ -375,7 +376,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: const BoxDecoration(
-                        color: Color(0xFF0F4C4C),
+                        color: Color(0xFF006972),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(Icons.explore_outlined,
@@ -390,7 +391,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                             'Authentic Stays',
                             style: TextStyle(
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF0F4C4C),
+                              color: Color(0xFF006972),
                               fontSize: 17,
                             ),
                           ),
@@ -398,7 +399,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                           Text(
                             "Discover Algeria's hidden architectural gems.",
                             style: TextStyle(
-                              color: Color(0xFF3E5C5E),
+                              color: Color(0xFF006972),
                               fontSize: 13,
                             ),
                           ),

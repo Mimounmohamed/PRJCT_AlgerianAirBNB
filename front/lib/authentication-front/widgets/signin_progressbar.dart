@@ -46,7 +46,7 @@ class StepProgressIndicator extends StatelessWidget {
                 height: segmentHeight,
                 decoration: BoxDecoration(
                   color: (isCurrent || isCompleted)
-                      ? const Color(0xFF0F4C4C)
+                      ? const Color(0xFF006972)
                       : const Color(0xFFDCD3C4),
                   borderRadius: BorderRadius.circular(segmentHeight / 2),
                 ),

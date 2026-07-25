@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/app_bar.dart';
-import '../Mar7aban.dart';
-import 'verifCODE.dart';
+import '../../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
+import 'new_password.dart';
 
-class VerifyAccountScreen extends StatelessWidget {
-  const VerifyAccountScreen({
+/// Password-recovery entry point: same "choose SMS or Email" pattern as
+/// VerifyAccountScreen, reused here for password reset instead of account
+/// verification. Reuses [VerifyCodeScreen] from OTP_VerifyACC directly
+/// (rather than duplicating an OTP-entry screen) since that screen is
+/// already generic — only what happens *after* verification differs, which
+/// is wired below via `onVerified`.
+class ResetPasswordMethodScreen extends StatelessWidget {
+  const ResetPasswordMethodScreen({
     super.key,
     required this.maskedPhone,
     required this.maskedEmail,
@@ -26,12 +32,14 @@ class VerifyAccountScreen extends StatelessWidget {
           method: method,
           maskedContact: maskedContact,
           onVerified: () {
-            Navigator.of(context).pushAndRemoveUntil(
+            // Password reset needs one more step than account verification:
+            // instead of landing on the home screen, the user sets a new
+            // password. pushReplacement so they can't back-swipe into the
+            // OTP screen once the code's already been consumed.
+            Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) =>
-                    const WelcomeHomeScreen(userName: 'Anis'),
+                builder: (context) => const NewPasswordScreen(),
               ),
-              (route) => false,
             );
           },
           onResend: () {
@@ -47,7 +55,7 @@ class VerifyAccountScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
       appBar: AkriliAppBar(
-        title: 'Verify your account',
+        title: 'Reset password',
         onBack: () => _onBack(context),
       ),
       body: SafeArea(
@@ -63,7 +71,7 @@ class VerifyAccountScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               const Text(
-                'Choose how to receive your code',
+                'Forgot your password?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontFamily: 'CormorantGaramond',
@@ -74,12 +82,12 @@ class VerifyAccountScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               const Text(
-                'Select one of the methods below to verify your identity '
-                'and secure your stay.',
+                "No worries. Select one of the methods below and we'll "
+                'send you a code to reset it.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,
-                  color: Color.fromARGB(255, 51, 50, 50),
+                  color: Color(0xFF6B6B6B),
                   height: 1.4,
                 ),
               ),
@@ -98,7 +106,7 @@ class VerifyAccountScreen extends StatelessWidget {
                   fontFamily: 'CormorantGaramond',
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
-                  height: 1.5, // 27px line-height at 18px font size
+                  height: 1.5,
                   letterSpacing: 2,
                 ),
               ),

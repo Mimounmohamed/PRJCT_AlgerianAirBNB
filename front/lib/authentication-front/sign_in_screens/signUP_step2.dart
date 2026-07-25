@@ -88,7 +88,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF0F4C4C) : Colors.transparent,
+            color: isSelected ? const Color(0xFF006972) : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
@@ -259,7 +259,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _onContinue,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF0F4C4C),
+                    backgroundColor: const Color(0xFF006972),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
