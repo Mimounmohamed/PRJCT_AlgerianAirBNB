@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
+import '../sign_in_screens/signUP_step1.dart';
+import 'OTP_ResetPass/reset_password_method.dart';
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
   const LoginEmailOrPhoneScreen({super.key});
@@ -31,12 +33,20 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
   }
 
   void _onForgotPassword() {
-    // TODO: navigate to the OTP_ResetPass flow once its class name is confirmed.
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const ResetPasswordMethodScreen(
+          maskedPhone: '+213 XXX XX XX 88', // TODO: resolve from the account tied to _identifierController
+          maskedEmail: 'y***@domain.com', // TODO: resolve from the account tied to _identifierController
+        ),
+      ),
+    );
   }
 
   void _onSignUp() {
-    // TODO: navigate to signUP_step1.dart once the relative path is confirmed
-    // from this screen's location.
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const SignUpStep1()),
+    );
   }
 
   Widget _labeledField({
@@ -102,18 +112,18 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       ),
       body: Stack(
         children: [
-          // Decorative star, sitting behind the content, positioned down near the Log in button.
+          // Decorative star, bottom-left, sitting behind the content, slightly smaller and 10px higher than the right one.
           Positioned(
             left: -20,
-            top: 260,
+            bottom: 30,
             child: SizedBox(
-              width: 260,
-              height: 260,
+              width: 220,
+              height: 220,
               child: ClipRect(
                 child: OverflowBox(
-                  maxWidth: 900,
-                  maxHeight: 900,
-                  alignment: Alignment.topLeft,
+                  maxWidth: 760,
+                  maxHeight: 760,
+                  alignment: Alignment.bottomLeft,
                   child: Opacity(
                     opacity: 0.5,
                     child: ColorFiltered(
@@ -123,9 +133,9 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
                       ),
                       child: Image.asset(
                         'assets/images/phonenumber.png',
-                        width: 900,
-                        height: 900,
-                        alignment: Alignment.topLeft,
+                        width: 760,
+                        height: 760,
+                        alignment: Alignment.bottomLeft,
                       ),
                     ),
                   ),
