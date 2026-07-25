@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/2c2b6b31-496f-4504-9c73-8f43b48c0679/resourceGroups/appsvc_linux_francecentral/providers/Microsoft.Web/sites/krili-backend-api",
+    "appService.deploySubpath": "back"
+}
