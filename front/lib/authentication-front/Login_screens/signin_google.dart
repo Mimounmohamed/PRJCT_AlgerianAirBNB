@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import '../sign_in_screens/Mar7aban.dart';
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
+
+  void _onContinueWithGoogle(BuildContext context) {
+    // TODO: call the actual Google sign-in SDK flow here. Once Google
+    // confirms the account, there's no OTP step needed (Google already
+    // verified the identity) — go straight to the home screen.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+      ),
+      (route) => false,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -109,7 +122,7 @@ class GoogleSignInScreen extends StatelessWidget {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () => _onContinueWithGoogle(context),
                           icon: Container(
                             width: 22,
                             height: 22,

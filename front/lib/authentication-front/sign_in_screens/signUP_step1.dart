@@ -3,7 +3,8 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../Login_screens/courtyard.dart';
-import 'signUP_step2.dart'; 
+import '../Login_screens/Login_email_or_phone.dart';
+import 'signUP_step2.dart';
 
 class SignUpStep1 extends StatefulWidget {
   const SignUpStep1({super.key});
@@ -30,15 +31,15 @@ class _SignUpStep1State extends State<SignUpStep1> {
 
   void _goToLogin() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const AuthScreen()),
+      MaterialPageRoute(builder: (context) => const LoginEmailOrPhoneScreen()),
     );
   }
 
   void _onContinue() {
-  Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => const SignUpStep2()),
-  );
-}
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const SignUpStep2()),
+    );
+  }
 
   void _goBackToCourtyard() {
     Navigator.of(context).pushReplacement(
@@ -244,7 +245,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
                                 style: TextStyle(
                                   color: Color(0xFF006972),
                                   fontSize: 12,
-                                  
                                 ),
                               ),
                             ),
