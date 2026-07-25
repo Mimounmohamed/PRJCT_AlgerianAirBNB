@@ -1,0 +1,124 @@
+const express = require('express');
+const router = express.Router();
+const { protect } = require('../middleware/auth.middleware');
+const Conversation = require('../models/Conversation');
+const Message = require('../models/Message');
+
+// GET /api/messages — Get all conversations for current user
+router.get('/', protect, async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ participants: req.user._id })
+      .populate('participants', 'fullName profilePhoto')
+      .populate('listingId', 'title photos')
+      .sort({ 'lastMessage.sentAt': -1 });
+    res.json(conversations);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/messages/:conversationId — Get messages in a conversation
+router.get('/:conversationId', protect, async (req, res) => {
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const messages = await Message.find({ conversationId: req.params.conversationId })
+      .populate('senderId', 'fullName profilePhoto')
+      .sort({ sentAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    // Mark as read
+    await Message.updateMany(
+      { conversationId: req.params.conversationId, senderId: { $ne: req.user._id }, read: false },
+      { read: true, readAt: new Date() }
+    );
+
+    // Reset unread count
+    await Conversation.findByIdAndUpdate(req.params.conversationId, {
+      [`unreadCount.${req.user._id}`]: 0,
+    });
+
+    res.json(messages.reverse());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/messages/:conversationId — Send a message
+router.post('/:conversationId', protect, async (req, res) => {
+  try {
+    const { content, messageType = 'text', imageUrl } = req.body;
+
+    const conversation = await Conversation.findById(req.params.conversationId);
+    if (!conversation) return res.status(404).json({ error: 'Conversation not found.' });
+
+    const message = await Message.create({
+      conversationId: req.params.conversationId,
+      senderId: req.user._id,
+      content,
+      messageType,
+      imageUrl,
+    });
+
+    // Update last message preview
+    conversation.lastMessage = {
+      content,
+      senderId: req.user._id,
+      sentAt: new Date(),
+      read: false,
+    };
+
+    // Increment unread count for other participant
+    const otherId = conversation.participants.find(
+      (p) => p.toString() !== req.user._id.toString()
+    );
+    conversation.unreadCount.set(otherId.toString(), (conversation.unreadCount.get(otherId.toString()) || 0) + 1);
+    await conversation.save();
+
+    res.status(201).json(message);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/messages/start — Start a new conversation
+router.post('/start', protect, async (req, res) => {
+  try {
+    const { recipientId, listingId, content } = req.body;
+
+    // Check if conversation already exists
+    let conversation = await Conversation.findOne({
+      participants: { $all: [req.user._id, recipientId] },
+      listingId,
+    });
+
+    if (!conversation) {
+      conversation = await Conversation.create({
+        participants: [req.user._id, recipientId],
+        listingId,
+      });
+    }
+
+    // Send the first message
+    const message = await Message.create({
+      conversationId: conversation._id,
+      senderId: req.user._id,
+      content,
+    });
+
+    conversation.lastMessage = {
+      content,
+      senderId: req.user._id,
+      sentAt: new Date(),
+      read: false,
+    };
+    conversation.unreadCount.set(recipientId, 1);
+    await conversation.save();
+
+    res.status(201).json({ conversation, message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+module.exports = router;

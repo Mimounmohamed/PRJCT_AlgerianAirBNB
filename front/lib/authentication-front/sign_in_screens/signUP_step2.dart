@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../widgets/birthday_field.dart';
@@ -8,7 +9,9 @@ import 'signUP_step3.dart';
 enum Gender { male, female, other }
 
 class SignUpStep2 extends StatefulWidget {
-  const SignUpStep2({super.key});
+  final String token;
+  final String userName;
+  const SignUpStep2({super.key, required this.token, required this.userName});
 
   @override
   State<SignUpStep2> createState() => _SignUpStep2State();
@@ -20,6 +23,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
   String? _wilayaCode;
   String? _baladiya;
   final _fullAddressController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -31,11 +35,49 @@ class _SignUpStep2State extends State<SignUpStep2> {
     Navigator.of(context).pop();
   }
 
-  void _onContinue() {
-  Navigator.of(context).push(
-    MaterialPageRoute(builder: (context) => const SignUpStep3()),
-  );
-}
+  void _onContinue() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final dio = Dio();
+      await dio.put(
+        'http://10.0.2.2:5000/api/auth/complete-profile',
+        data: {
+          'gender': _selectedGender == Gender.male
+              ? 'Male'
+              : _selectedGender == Gender.female
+                  ? 'Female'
+                  : 'Other',
+          'birthday': _birthday?.toIso8601String(),
+          'wilaya': _wilayaCode,
+          'baladiya': _baladiya,
+          'fullAddress': _fullAddressController.text,
+        },
+        options: Options(
+          headers: {'Authorization': 'Bearer ${widget.token}'},
+        ),
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => SignUpStep3(
+            token: widget.token,
+            userName: widget.userName,
+          ),
+        ),
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data['error'] ?? 'Something went wrong';
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   Widget _genderOption(String label, Gender value) {
     final isSelected = _selectedGender == value;
@@ -215,7 +257,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _onContinue,
+                  onPressed: _isLoading ? null : _onContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF006972),
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -223,21 +265,31 @@ class _SignUpStep2State extends State<SignUpStep2> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Continue',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Continue',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_forward,
+                                color: Colors.white, size: 18),
+                          ],
                         ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward, color: Colors.white, size: 18),
-                    ],
-                  ),
                 ),
               ),
               const SizedBox(height: 24),

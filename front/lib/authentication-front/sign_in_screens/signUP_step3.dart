@@ -6,7 +6,9 @@ import '../widgets/signin_progressbar.dart';
 import 'OTP_VerifyACC/Choose_method.dart';
 
 class SignUpStep3 extends StatefulWidget {
-  const SignUpStep3({super.key});
+  final String token;
+  final String userName;
+  const SignUpStep3({super.key, required this.token, required this.userName});
 
   @override
   State<SignUpStep3> createState() => _SignUpStep3State();
