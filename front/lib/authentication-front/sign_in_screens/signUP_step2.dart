@@ -3,7 +3,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../widgets/birthday_field.dart';
 import '../widgets/wilaya_baladiya_selector.dart';
-import '../../services/auth_service.dart'; // <-- Imported your custom auth service
+import '../../services/auth_service.dart';
 import 'signUP_step3.dart';
 
 enum Gender { male, female, other }
@@ -11,7 +11,15 @@ enum Gender { male, female, other }
 class SignUpStep2 extends StatefulWidget {
   final String token;
   final String userName;
-  const SignUpStep2({super.key, required this.token, required this.userName});
+  final String email;
+  final String phone;
+  const SignUpStep2({
+    super.key,
+    required this.token,
+    required this.userName,
+    required this.email,
+    required this.phone,
+  });
 
   @override
   State<SignUpStep2> createState() => _SignUpStep2State();
@@ -36,7 +44,6 @@ class _SignUpStep2State extends State<SignUpStep2> {
   }
 
   void _onContinue() async {
-    // Validate fields before proceeding
     if (_birthday == null ||
         _wilayaCode == null ||
         _baladiya == null ||
@@ -50,14 +57,12 @@ class _SignUpStep2State extends State<SignUpStep2> {
     setState(() => _isLoading = true);
 
     try {
-      // Map gender enum to string matching your backend
       final genderString = _selectedGender == Gender.male
           ? 'Male'
           : _selectedGender == Gender.female
               ? 'Female'
               : 'Other';
 
-      // Call AuthService completeProfile method
       await AuthService.completeProfile(
         token: widget.token,
         gender: genderString,
@@ -69,12 +74,13 @@ class _SignUpStep2State extends State<SignUpStep2> {
 
       if (!mounted) return;
 
-      // Proceed to Step 3 (Profile Photo)
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => SignUpStep3(
             token: widget.token,
             userName: widget.userName,
+            email: widget.email,
+            phone: widget.phone,
           ),
         ),
       );

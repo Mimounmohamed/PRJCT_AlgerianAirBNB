@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-
+const twilio = require('twilio');
 const User = require('../models/User');
 const OtpVerification = require('../models/OtpVerification');
 const { generateToken } = require('../middleware/auth.middleware');
 
+
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_AUTH_TOKEN
+);
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/register
 // Step 1: Create account (name, email, phone, password)
@@ -14,12 +19,10 @@ router.post('/register', async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
-    // Check for existing user
-    const exists = await User.findOne({
-      $or: [{ email }, { 'phone.number': phone }],
-    });
+    // Check for existing user (email only — phone duplicates allowed for testing)
+    const exists = await User.findOne({ email });
     if (exists) {
-      return res.status(409).json({ error: 'Email or phone already registered.' });
+      return res.status(409).json({ error: 'Email already registered.' });
     }
 
     const user = await User.create({
@@ -218,6 +221,10 @@ router.post('/google', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/send-otp
+// Send OTP for signup verification (SMS via Twilio, email logged for now)
+// ─────────────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -234,7 +241,9 @@ router.post('/send-otp', async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    const target = channel === 'sms' ? user.phone.number : user.email;
+    const target = channel === 'sms'
+      ? `${user.phone.countryCode}${user.phone.number.replace(/^0/, '')}`
+      : user.email;
     const otpType = channel === 'sms' ? 'phone' : 'email';
 
     if (!target) {
@@ -245,7 +254,18 @@ router.post('/send-otp', async (req, res) => {
       target, otpType, 'signup', user._id
     );
 
-    console.log(`[DEV] Signup OTP for ${target} (${channel}): ${plainCode}`);
+    // Send via Twilio SMS (if channel is sms)
+    if (channel === 'sms') {
+  console.log(`[DEBUG] Sending SMS to: "${target}"`); // TEMP — remove after debugging
+  await twilioClient.messages.create({
+    body: `Your AKRILI verification code is: ${plainCode}`,
+    from: process.env.TWILIO_PHONE_NUMBER,
+    to: target,
+  });
+} else {
+      // TODO: Handle email sending if you use Nodemailer/SendGrid for email channel
+      console.log(`[DEV] Email OTP for ${target}: ${plainCode}`);
+    }
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {

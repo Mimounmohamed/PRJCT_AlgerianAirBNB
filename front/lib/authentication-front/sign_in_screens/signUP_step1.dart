@@ -37,18 +37,16 @@ class _SignUpStep1State extends State<SignUpStep1> {
     );
   }
 
-  // Email format validation helper
   bool _isValidEmail(String email) {
     return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
   }
 
-  // Google/Microsoft-grade strong password validation
   bool _isStrongPassword(String password) {
     if (password.length < 8) return false;
-    if (!password.contains(RegExp(r'[A-Z]'))) return false; // Uppercase
-    if (!password.contains(RegExp(r'[a-z]'))) return false; // Lowercase
-    if (!password.contains(RegExp(r'[0-9]'))) return false; // Number
-    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>&\-_]'))) return false; // Special character
+    if (!password.contains(RegExp(r'[A-Z]'))) return false;
+    if (!password.contains(RegExp(r'[a-z]'))) return false;
+    if (!password.contains(RegExp(r'[0-9]'))) return false;
+    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>&\-_]'))) return false;
     return true;
   }
 
@@ -58,7 +56,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
     final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    // 1. Empty fields check
     if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
@@ -66,7 +63,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
       return;
     }
 
-    // 2. Email format check
     if (!_isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please enter a valid email address')),
@@ -74,7 +70,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
       return;
     }
 
-    // 3. Strong password requirements check
     if (!_isStrongPassword(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -89,7 +84,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
     setState(() => _isLoading = true);
 
     try {
-      // Call AuthService registration method
       final response = await AuthService.register(
         fullName: fullName,
         email: email,
@@ -104,7 +98,12 @@ class _SignUpStep1State extends State<SignUpStep1> {
 
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => SignUpStep2(token: token, userName: userName),
+          builder: (context) => SignUpStep2(
+            token: token,
+            userName: userName,
+            email: email,
+            phone: phone,
+          ),
         ),
       );
     } catch (e) {

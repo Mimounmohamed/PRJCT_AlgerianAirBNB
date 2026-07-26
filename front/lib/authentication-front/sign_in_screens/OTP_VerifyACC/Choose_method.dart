@@ -8,14 +8,18 @@ import 'verifCODE.dart';
 class VerifyAccountScreen extends StatefulWidget {
   const VerifyAccountScreen({
     super.key,
-    required this.token, // <-- Added token parameter here
+    required this.token,
     required this.maskedPhone,
     required this.maskedEmail,
+    required this.realPhone, // full E.164 phone, e.g. +213558852374
+    required this.realEmail, // full email address
   });
 
   final String token;
   final String maskedPhone;
   final String maskedEmail;
+  final String realPhone;
+  final String realEmail;
 
   @override
   State<VerifyAccountScreen> createState() => _VerifyAccountScreenState();
@@ -34,14 +38,13 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     try {
       final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
-      // Call backend to trigger OTP
       await AuthService.sendOtp(
         token: widget.token,
         channel: channel,
       );
 
       final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
-      final target = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
+      final target = method == OtpMethod.sms ? widget.realPhone : widget.realEmail;
 
       if (!mounted) return;
 

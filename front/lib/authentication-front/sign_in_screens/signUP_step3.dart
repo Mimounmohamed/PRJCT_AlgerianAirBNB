@@ -9,7 +9,15 @@ import 'OTP_VerifyACC/Choose_method.dart';
 class SignUpStep3 extends StatefulWidget {
   final String token;
   final String userName;
-  const SignUpStep3({super.key, required this.token, required this.userName});
+  final String email;
+  final String phone;
+  const SignUpStep3({
+    super.key,
+    required this.token,
+    required this.userName,
+    required this.email,
+    required this.phone,
+  });
 
   @override
   State<SignUpStep3> createState() => _SignUpStep3State();
@@ -34,6 +42,31 @@ class _SignUpStep3State extends State<SignUpStep3> {
     }
   }
 
+  String _maskPhone(String phone) {
+    if (phone.length < 2) return phone;
+    return '+213 XXX XX XX ${phone.substring(phone.length - 2)}';
+  }
+
+  String _maskEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2 || parts[0].isEmpty) return email;
+    return '${parts[0][0]}***@${parts[1]}';
+  }
+
+  void _goToVerify() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VerifyAccountScreen(
+          token: widget.token,
+          maskedPhone: _maskPhone(widget.phone),
+          maskedEmail: _maskEmail(widget.email),
+          realPhone: widget.phone,
+          realEmail: widget.email,
+        ),
+      ),
+    );
+  }
+
   void _onCompleteProfile() async {
     setState(() => _isLoading = true);
 
@@ -49,16 +82,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
       }
 
       if (!mounted) return;
-
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => VerifyAccountScreen(
-            token: widget.token,
-            maskedPhone: '+213 XXX XX XX 88',
-            maskedEmail: 'y***@domain.com',
-          ),
-        ),
-      );
+      _goToVerify();
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
@@ -71,15 +95,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
   }
 
   void _onSkip() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => VerifyAccountScreen(
-          token: widget.token,
-          maskedPhone: '+213 XXX XX XX 88',
-          maskedEmail: 'y***@domain.com',
-        ),
-      ),
-    );
+    _goToVerify();
   }
 
   @override

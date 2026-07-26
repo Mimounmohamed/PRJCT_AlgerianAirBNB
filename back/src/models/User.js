@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema(
     email:    { type: String, unique: true, sparse: true, lowercase: true, trim: true },
     phone: {
       countryCode: { type: String, default: '+213' },
-      number:      { type: String, unique: true, sparse: true, trim: true },
+      number:      { type: String, unique: false, sparse: true, trim: true },
     },
     passwordHash: { type: String, select: false },
     profilePhoto: { type: String, default: null },
@@ -99,7 +99,6 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
 
 // ── Indexes ────────────────────────────────────────────────
 userSchema.index({ email: 1 });
-userSchema.index({ 'phone.number': 1 });
 userSchema.index({ isHost: 1 });
 userSchema.index({ isSuperhost: 1 });
 
