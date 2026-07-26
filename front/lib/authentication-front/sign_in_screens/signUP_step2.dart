@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../widgets/birthday_field.dart';
 import '../widgets/wilaya_baladiya_selector.dart';
+import '../../services/auth_service.dart'; // <-- Imported your custom auth service
 import 'signUP_step3.dart';
 
 enum Gender { male, female, other }
@@ -36,30 +36,40 @@ class _SignUpStep2State extends State<SignUpStep2> {
   }
 
   void _onContinue() async {
+    // Validate fields before proceeding
+    if (_birthday == null ||
+        _wilayaCode == null ||
+        _baladiya == null ||
+        _fullAddressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all personal information fields')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      final dio = Dio();
-      await dio.put(
-        'http://10.0.2.2:5000/api/auth/complete-profile',
-        data: {
-          'gender': _selectedGender == Gender.male
-              ? 'Male'
-              : _selectedGender == Gender.female
-                  ? 'Female'
-                  : 'Other',
-          'birthday': _birthday?.toIso8601String(),
-          'wilaya': _wilayaCode,
-          'baladiya': _baladiya,
-          'fullAddress': _fullAddressController.text,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer ${widget.token}'},
-        ),
+      // Map gender enum to string matching your backend
+      final genderString = _selectedGender == Gender.male
+          ? 'Male'
+          : _selectedGender == Gender.female
+              ? 'Female'
+              : 'Other';
+
+      // Call AuthService completeProfile method
+      await AuthService.completeProfile(
+        token: widget.token,
+        gender: genderString,
+        birthday: _birthday?.toIso8601String() ?? '',
+        wilaya: _wilayaCode!,
+        baladiya: _baladiya!,
+        fullAddress: _fullAddressController.text.trim(),
       );
 
       if (!mounted) return;
 
+      // Proceed to Step 3 (Profile Photo)
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => SignUpStep3(
@@ -68,8 +78,8 @@ class _SignUpStep2State extends State<SignUpStep2> {
           ),
         ),
       );
-    } on DioException catch (e) {
-      final msg = e.response?.data['error'] ?? 'Something went wrong';
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),

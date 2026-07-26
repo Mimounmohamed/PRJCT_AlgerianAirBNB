@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'base_client.dart';
+import 'dart:io';
 
 class AuthService {
   // Step 1: Register
@@ -79,4 +80,31 @@ class AuthService {
     }
     return data;
   }
+
+   static Future<String> uploadToCloudinary(File imageFile) async {
+    const cloudName = 'bcaeahkm';
+    const uploadPreset = 'akrili_unsigned'; // Replace with your Cloudinary unsigned preset name
+
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['secure_url']; // Returns the public image URL link
+    } else {
+      final errorData = jsonDecode(response.body);
+      throw Exception(errorData['error']['message'] ?? 'Image upload failed');
+    }
+  }
+
+
+
 }
+
+ 

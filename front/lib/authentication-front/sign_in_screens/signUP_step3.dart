@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
+import '../../services/auth_service.dart'; // <-- Imported your custom auth service
 import 'OTP_VerifyACC/Choose_method.dart';
 
 class SignUpStep3 extends StatefulWidget {
@@ -17,6 +18,7 @@ class SignUpStep3 extends StatefulWidget {
 class _SignUpStep3State extends State<SignUpStep3> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
   void _onBack() {
     Navigator.of(context).pop();
@@ -32,23 +34,52 @@ class _SignUpStep3State extends State<SignUpStep3> {
     }
   }
 
-  void _onCompleteProfile() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const VerifyAccountScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
-          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
+  void _onCompleteProfile() async {
+    setState(() => _isLoading = true);
+
+    try {
+      String? imageUrl;
+
+      // 1. If an image was selected, upload it to Cloudinary first
+      if (_profileImage != null) {
+        imageUrl = await AuthService.uploadToCloudinary(_profileImage!);
+        
+        // 2. Send the image URL to your Azure backend
+        await AuthService.updateProfilePhoto(
+          token: widget.token,
+          profilePhotoUrl: imageUrl,
+        );
+      }
+
+      if (!mounted) return;
+
+      // 3. Proceed to OTP Verification screen
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => const VerifyAccountScreen(
+            maskedPhone: '+213 XXX XX XX 88', // TODO: pass real phone if needed
+            maskedEmail: 'y***@domain.com', // TODO: pass real email if needed
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _onSkip() {
+    // Skip uploading a photo and go straight to verification
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const VerifyAccountScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
-          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
+          maskedPhone: '+213 XXX XX XX 88',
+          maskedEmail: 'y***@domain.com',
         ),
       ),
     );
@@ -175,7 +206,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _onCompleteProfile,
+                      onPressed: _isLoading ? null : _onCompleteProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF006972),
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -183,19 +214,28 @@ class _SignUpStep3State extends State<SignUpStep3> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: const Text(
-                        'Complete Profile',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Complete Profile',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: _onSkip,
+                    onTap: _isLoading ? null : _onSkip,
                     child: const Text(
                       'Skip for now',
                       style: TextStyle(

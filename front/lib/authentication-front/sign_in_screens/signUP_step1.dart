@@ -3,8 +3,8 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../Login_screens/courtyard.dart';
-import 'package:dio/dio.dart';
 import '../Login_screens/Login_email_or_phone.dart';
+import '../../services/auth_service.dart';
 import 'signUP_step2.dart';
 
 class SignUpStep1 extends StatefulWidget {
@@ -37,14 +37,51 @@ class _SignUpStep1State extends State<SignUpStep1> {
     );
   }
 
+  // Email format validation helper
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email);
+  }
+
+  // Google/Microsoft-grade strong password validation
+  bool _isStrongPassword(String password) {
+    if (password.length < 8) return false;
+    if (!password.contains(RegExp(r'[A-Z]'))) return false; // Uppercase
+    if (!password.contains(RegExp(r'[a-z]'))) return false; // Lowercase
+    if (!password.contains(RegExp(r'[0-9]'))) return false; // Number
+    if (!password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>&\-_]'))) return false; // Special character
+    return true;
+  }
+
   void _onContinue() async {
-    // Validate fields
-    if (_fullNameController.text.isEmpty ||
-        _emailController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+    final fullName = _fullNameController.text.trim();
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text;
+
+    // 1. Empty fields check
+    if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    // 2. Email format check
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address')),
+      );
+      return;
+    }
+
+    // 3. Strong password requirements check
+    if (!_isStrongPassword(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.',
+          ),
+        ),
       );
       return;
     }
@@ -52,19 +89,16 @@ class _SignUpStep1State extends State<SignUpStep1> {
     setState(() => _isLoading = true);
 
     try {
-      final dio = Dio();
-      final response = await dio.post(
-        'http://10.0.2.2:5000/api/auth/register',
-        data: {
-          'fullName': _fullNameController.text,
-          'email': _emailController.text,
-          'phone': _phoneController.text,
-          'password': _passwordController.text,
-        },
+      // Call AuthService registration method
+      final response = await AuthService.register(
+        fullName: fullName,
+        email: email,
+        phone: phone,
+        password: password,
       );
 
-      final token = response.data['token'];
-      final userName = response.data['user']['fullName'];
+      final token = response['token'];
+      final userName = response['user']['fullName'];
 
       if (!mounted) return;
 
@@ -73,8 +107,8 @@ class _SignUpStep1State extends State<SignUpStep1> {
           builder: (context) => SignUpStep2(token: token, userName: userName),
         ),
       );
-    } on DioException catch (e) {
-      final msg = e.response?.data['error'] ?? 'Something went wrong';
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
@@ -362,7 +396,6 @@ class _SignUpStep1State extends State<SignUpStep1> {
                 ),
               ),
             ),
-            // Authentic Stays — pinned to the bottom of the screen, enlarged
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
               child: Container(
@@ -383,10 +416,10 @@ class _SignUpStep1State extends State<SignUpStep1> {
                           color: Colors.white, size: 22),
                     ),
                     const SizedBox(width: 14),
-                    Expanded(
+                    const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
+                        children: [
                           Text(
                             'Authentic Stays',
                             style: TextStyle(
