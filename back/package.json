@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "description": "AKRILI - Algerian Airbnb Backend API",
   "main": "src/server.js",
-  
   "scripts": {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js"
-},
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",

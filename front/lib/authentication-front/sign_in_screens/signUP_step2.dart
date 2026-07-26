@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dio/dio.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../widgets/birthday_field.dart';
 import '../widgets/wilaya_baladiya_selector.dart';
+import '../../services/auth_service.dart';
 import 'signUP_step3.dart';
 
 enum Gender { male, female, other }
@@ -11,7 +11,15 @@ enum Gender { male, female, other }
 class SignUpStep2 extends StatefulWidget {
   final String token;
   final String userName;
-  const SignUpStep2({super.key, required this.token, required this.userName});
+  final String email;
+  final String phone;
+  const SignUpStep2({
+    super.key,
+    required this.token,
+    required this.userName,
+    required this.email,
+    required this.phone,
+  });
 
   @override
   State<SignUpStep2> createState() => _SignUpStep2State();
@@ -36,26 +44,32 @@ class _SignUpStep2State extends State<SignUpStep2> {
   }
 
   void _onContinue() async {
+    if (_birthday == null ||
+        _wilayaCode == null ||
+        _baladiya == null ||
+        _fullAddressController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all personal information fields')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
-      final dio = Dio();
-      await dio.put(
-        'http://10.0.2.2:5000/api/auth/complete-profile',
-        data: {
-          'gender': _selectedGender == Gender.male
-              ? 'Male'
-              : _selectedGender == Gender.female
-                  ? 'Female'
-                  : 'Other',
-          'birthday': _birthday?.toIso8601String(),
-          'wilaya': _wilayaCode,
-          'baladiya': _baladiya,
-          'fullAddress': _fullAddressController.text,
-        },
-        options: Options(
-          headers: {'Authorization': 'Bearer ${widget.token}'},
-        ),
+      final genderString = _selectedGender == Gender.male
+          ? 'Male'
+          : _selectedGender == Gender.female
+              ? 'Female'
+              : 'Other';
+
+      await AuthService.completeProfile(
+        token: widget.token,
+        gender: genderString,
+        birthday: _birthday?.toIso8601String() ?? '',
+        wilaya: _wilayaCode!,
+        baladiya: _baladiya!,
+        fullAddress: _fullAddressController.text.trim(),
       );
 
       if (!mounted) return;
@@ -65,11 +79,13 @@ class _SignUpStep2State extends State<SignUpStep2> {
           builder: (context) => SignUpStep3(
             token: widget.token,
             userName: widget.userName,
+            email: widget.email,
+            phone: widget.phone,
           ),
         ),
       );
-    } on DioException catch (e) {
-      final msg = e.response?.data['error'] ?? 'Something went wrong';
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),

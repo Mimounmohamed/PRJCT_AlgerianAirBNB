@@ -3,12 +3,21 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
+import '../../services/auth_service.dart';
 import 'OTP_VerifyACC/Choose_method.dart';
 
 class SignUpStep3 extends StatefulWidget {
   final String token;
   final String userName;
-  const SignUpStep3({super.key, required this.token, required this.userName});
+  final String email;
+  final String phone;
+  const SignUpStep3({
+    super.key,
+    required this.token,
+    required this.userName,
+    required this.email,
+    required this.phone,
+  });
 
   @override
   State<SignUpStep3> createState() => _SignUpStep3State();
@@ -17,6 +26,7 @@ class SignUpStep3 extends StatefulWidget {
 class _SignUpStep3State extends State<SignUpStep3> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
+  bool _isLoading = false;
 
   void _onBack() {
     Navigator.of(context).pop();
@@ -32,26 +42,60 @@ class _SignUpStep3State extends State<SignUpStep3> {
     }
   }
 
-  void _onCompleteProfile() {
+  String _maskPhone(String phone) {
+    if (phone.length < 2) return phone;
+    return '+213 XXX XX XX ${phone.substring(phone.length - 2)}';
+  }
+
+  String _maskEmail(String email) {
+    final parts = email.split('@');
+    if (parts.length != 2 || parts[0].isEmpty) return email;
+    return '${parts[0][0]}***@${parts[1]}';
+  }
+
+  void _goToVerify() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const VerifyAccountScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
-          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
+        builder: (context) => VerifyAccountScreen(
+          token: widget.token,
+          maskedPhone: _maskPhone(widget.phone),
+          maskedEmail: _maskEmail(widget.email),
+          realPhone: widget.phone,
+          realEmail: widget.email,
         ),
       ),
     );
   }
 
+  void _onCompleteProfile() async {
+    setState(() => _isLoading = true);
+
+    try {
+      String? imageUrl;
+
+      if (_profileImage != null) {
+        imageUrl = await AuthService.uploadToCloudinary(_profileImage!);
+        await AuthService.updateProfilePhoto(
+          token: widget.token,
+          profilePhotoUrl: imageUrl,
+        );
+      }
+
+      if (!mounted) return;
+      _goToVerify();
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   void _onSkip() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const VerifyAccountScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
-          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
-        ),
-      ),
-    );
+    _goToVerify();
   }
 
   @override
@@ -175,7 +219,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _onCompleteProfile,
+                      onPressed: _isLoading ? null : _onCompleteProfile,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF006972),
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -183,19 +227,28 @@ class _SignUpStep3State extends State<SignUpStep3> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: const Text(
-                        'Complete Profile',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text(
+                              'Complete Profile',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: _onSkip,
+                    onTap: _isLoading ? null : _onSkip,
                     child: const Text(
                       'Skip for now',
                       style: TextStyle(

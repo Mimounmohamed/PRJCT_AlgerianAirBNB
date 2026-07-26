@@ -4,12 +4,6 @@ import '../../widgets/app_bar.dart';
 import '../../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
 import 'new_password.dart';
 
-/// Password-recovery entry point: same "choose SMS or Email" pattern as
-/// VerifyAccountScreen, reused here for password reset instead of account
-/// verification. Reuses [VerifyCodeScreen] from OTP_VerifyACC directly
-/// (rather than duplicating an OTP-entry screen) since that screen is
-/// already generic — only what happens *after* verification differs, which
-/// is wired below via `onVerified`.
 class ResetPasswordMethodScreen extends StatelessWidget {
   const ResetPasswordMethodScreen({
     super.key,
@@ -26,23 +20,25 @@ class ResetPasswordMethodScreen extends StatelessWidget {
 
   void _onSendCode(BuildContext context, OtpMethod method) {
     final maskedContact = method == OtpMethod.sms ? maskedPhone : maskedEmail;
+    // For password reset, target can be the unmasked or masked contact 
+    // depending on what your backend expects for password reset lookup.
+    final target = maskedContact; 
+
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => VerifyCodeScreen(
           method: method,
           maskedContact: maskedContact,
+          target: target,
+          purpose: 'password-reset', // Specifying purpose for password recovery
           onVerified: () {
-            // Password reset needs one more step than account verification:
-            // instead of landing on the home screen, the user sets a new
-            // password. pushReplacement so they can't back-swipe into the
-            // OTP screen once the code's already been consumed.
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
                 builder: (context) => const NewPasswordScreen(),
               ),
             );
           },
-          onResend: () {
+          onResend: () async {
             // TODO: call the resend-code API for `method`.
           },
         ),
