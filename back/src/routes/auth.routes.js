@@ -217,4 +217,39 @@ router.post('/google', async (req, res) => {
   }
 });
 
+router.post('/send-otp', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const { channel } = req.body; // Expects 'sms' or 'email'
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const target = channel === 'sms' ? user.phone.number : user.email;
+    const otpType = channel === 'sms' ? 'phone' : 'email';
+
+    if (!target) {
+      return res.status(400).json({ error: `No ${channel} found for this account.` });
+    }
+
+    const { plainCode } = await OtpVerification.generateOTP(
+      target, otpType, 'signup', user._id
+    );
+
+    console.log(`[DEV] Signup OTP for ${target} (${channel}): ${plainCode}`);
+
+    res.json({ message: `OTP sent to your ${channel}.` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

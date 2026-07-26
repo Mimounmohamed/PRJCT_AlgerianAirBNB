@@ -104,6 +104,50 @@ class AuthService {
   }
 
 
+  static Future<void> sendOtp({
+    required String token, 
+    required String channel, // 'sms' or 'email'
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/send-otp'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'channel': channel}),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send OTP');
+    }
+  }
+
+  static Future<void> verifyOtp({
+    required String token, 
+    required String target, // phone number or email string
+    required String code,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/verify-otp'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'target': target,
+        'code': code,
+        'purpose': 'signup',
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Invalid OTP code');
+    }
+  }
+
+
 
 }
 
