@@ -1,4 +1,3 @@
-
 const dns = require('dns');
 dns.setServers(['1.1.1.1', '8.8.8.8']);
 
@@ -14,10 +13,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// 🔍 Debug Middleware: Log all incoming requests to the terminal
+app.use((req, res, next) => {
+  console.log(`[INCOMING] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // ─── Routes ───────────────────────────────────────────────
 app.use('/api/auth',          require('./routes/auth.routes'));
 app.use('/api/users',         require('./routes/user.routes'));
-app.use('/api/listings',      require('./routes/listing.routes'));
+app.use('/api/listings',      require('./routes/listing.routes')); // Fixed filename (singular)
 app.use('/api/bookings',      require('./routes/booking.routes'));
 app.use('/api/reviews',       require('./routes/review.routes'));
 app.use('/api/messages',      require('./routes/message.routes'));

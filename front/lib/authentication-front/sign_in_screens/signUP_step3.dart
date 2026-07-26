@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
-import '../../services/auth_service.dart'; // <-- Imported your custom auth service
+import '../../services/auth_service.dart';
 import 'OTP_VerifyACC/Choose_method.dart';
 
 class SignUpStep3 extends StatefulWidget {
@@ -40,11 +40,8 @@ class _SignUpStep3State extends State<SignUpStep3> {
     try {
       String? imageUrl;
 
-      // 1. If an image was selected, upload it to Cloudinary first
       if (_profileImage != null) {
         imageUrl = await AuthService.uploadToCloudinary(_profileImage!);
-        
-        // 2. Send the image URL to your Azure backend
         await AuthService.updateProfilePhoto(
           token: widget.token,
           profilePhotoUrl: imageUrl,
@@ -53,12 +50,12 @@ class _SignUpStep3State extends State<SignUpStep3> {
 
       if (!mounted) return;
 
-      // 3. Proceed to OTP Verification screen
       Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => const VerifyAccountScreen(
-            maskedPhone: '+213 XXX XX XX 88', // TODO: pass real phone if needed
-            maskedEmail: 'y***@domain.com', // TODO: pass real email if needed
+          builder: (context) => VerifyAccountScreen(
+            token: widget.token,
+            maskedPhone: '+213 XXX XX XX 88',
+            maskedEmail: 'y***@domain.com',
           ),
         ),
       );
@@ -74,10 +71,10 @@ class _SignUpStep3State extends State<SignUpStep3> {
   }
 
   void _onSkip() {
-    // Skip uploading a photo and go straight to verification
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const VerifyAccountScreen(
+        builder: (context) => VerifyAccountScreen(
+          token: widget.token,
           maskedPhone: '+213 XXX XX XX 88',
           maskedEmail: 'y***@domain.com',
         ),

@@ -26,19 +26,26 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
 
   void _onContinue() {
     final digits = _phoneController.text.trim();
-    final maskedPhone = digits.isEmpty
-        ? '+213 XXX XX XX XX'
-        : '+213 ${digits.replaceRange(
-            0,
-            digits.length > 2 ? digits.length - 2 : 0,
-            'X' * (digits.length > 2 ? digits.length - 2 : digits.length),
-          )}';
+    if (digits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your phone number')),
+      );
+      return;
+    }
+
+    final maskedPhone = '+213 ${digits.replaceRange(
+      0,
+      digits.length > 2 ? digits.length - 2 : 0,
+      'X' * (digits.length > 2 ? digits.length - 2 : digits.length),
+    )}';
 
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => VerifyCodeScreen(
           method: OtpMethod.sms,
           maskedContact: maskedPhone,
+          target: digits,
+          purpose: 'login',
           onVerified: () {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
@@ -48,8 +55,8 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
               (route) => false,
             );
           },
-          onResend: () {
-            // TODO: call the resend-code API for SMS.
+          onResend: () async {
+            // TODO: Call your phone login resend API here if needed
           },
         ),
       ),

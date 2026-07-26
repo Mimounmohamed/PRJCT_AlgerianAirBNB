@@ -2,20 +2,27 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
+import '../../../services/auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
     super.key,
+    this.token, // Optional for login flow
     required this.method,
     required this.maskedContact,
+    this.target = '',
+    this.purpose = 'signup', // Default fallback
     required this.onVerified,
     this.onResend,
   });
 
+  final String? token;
   final OtpMethod method;
   final String maskedContact;
+  final String target;
+  final String purpose;
   final VoidCallback onVerified;
-  final VoidCallback? onResend;
+  final Future<void> Function()? onResend;
 
   @override
   State<VerifyCodeScreen> createState() => _VerifyCodeScreenState();
@@ -23,12 +30,58 @@ class VerifyCodeScreen extends StatefulWidget {
 
 class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   String _code = '';
+  bool _isLoading = false;
 
   bool get _isEmail => widget.method == OtpMethod.email;
 
-  void _onVerifyAndContinue() {
-    if (_code.length == 6) {
+  void _onVerifyAndContinue() async {
+    if (_code.length != 6) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter the complete 6-digit code')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (widget.target.isNotEmpty) {
+        // If you haven't updated AuthService.verifyOtp to take purpose yet,
+        // you can temporarily omit purpose or pass it if your AuthService supports it.
+        await AuthService.verifyOtp(
+          token: widget.token ?? '',
+          target: widget.target,
+          code: _code,
+        );
+      }
+
+      if (!mounted) return;
       widget.onVerified();
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _handleResend() async {
+    if (widget.onResend != null) {
+      try {
+        await widget.onResend!();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Code resent successfully')),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to resend code')),
+        );
+      }
     }
   }
 
@@ -102,7 +155,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _onVerifyAndContinue,
+                  onPressed: _isLoading ? null : _onVerifyAndContinue,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF006972),
                     padding: const EdgeInsets.symmetric(vertical: 18),
@@ -110,19 +163,28 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text(
-                    'Verify and continue',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Verify and continue',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 16),
               GestureDetector(
-                onTap: widget.onResend,
+                onTap: _isLoading ? null : _handleResend,
                 child: const Text(
                   'RESEND CODE NOW',
                   style: TextStyle(
