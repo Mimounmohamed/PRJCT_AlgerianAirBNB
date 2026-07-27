@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1009379504211",
+    "project_id": "akrili-e4f98",
+    "storage_bucket": "akrili-e4f98.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009379504211:android:3adb063e76de541fd2d6a6",
+        "android_client_info": {
+          "package_name": "com.example.aairbnb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYGIvrPR9Q3kzc7_s2qCBD1o2G3H_B7kk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

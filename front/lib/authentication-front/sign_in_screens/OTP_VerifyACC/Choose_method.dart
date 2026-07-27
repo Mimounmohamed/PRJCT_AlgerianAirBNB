@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/app_bar.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/firebase_phone_auth_service.dart';
 import '../Mar7aban.dart';
 import 'verifCODE.dart';
 
@@ -11,8 +12,8 @@ class VerifyAccountScreen extends StatefulWidget {
     required this.token,
     required this.maskedPhone,
     required this.maskedEmail,
-    required this.realPhone, // full E.164 phone, e.g. +213558852374
-    required this.realEmail, // full email address
+    required this.realPhone,
+    required this.realEmail,
   });
 
   final String token;
@@ -32,54 +33,92 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     Navigator.of(context).maybePop();
   }
 
-  void _onSendCode(OtpMethod method) async {
-    setState(() => _isLoading = true);
+  String get _fullPhoneE164 {
+    final stripped = widget.realPhone.replaceFirst(RegExp(r'^0'), '');
+    return '+213$stripped';
+  }
 
-    try {
-      final channel = method == OtpMethod.sms ? 'sms' : 'email';
+  void _goToVerifyCodeScreen(OtpMethod method) {
+    final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
+    final target = method == OtpMethod.sms ? _fullPhoneE164 : widget.realEmail;
+    final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
-      await AuthService.sendOtp(
-        token: widget.token,
-        channel: channel,
-      );
-
-      final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
-      final target = method == OtpMethod.sms ? widget.realPhone : widget.realEmail;
-
-      if (!mounted) return;
-
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => VerifyCodeScreen(
-            token: widget.token,
-            method: method,
-            maskedContact: maskedContact,
-            target: target,
-            onVerified: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VerifyCodeScreen(
+          token: widget.token,
+          method: method,
+          maskedContact: maskedContact,
+          target: target,
+          onVerified: (finalToken, userName) {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => WelcomeHomeScreen(
+                  userName: userName.isNotEmpty ? userName : 'there',
+                  token: finalToken,
                 ),
-                (route) => false,
+              ),
+              (route) => false,
+            );
+          },
+          onResend: () async {
+            if (method == OtpMethod.sms) {
+              await FirebasePhoneAuthService.sendCode(
+                phoneNumber: _fullPhoneE164,
+                onCodeSent: () {},
+                onError: (error) {
+                  throw Exception(error);
+                },
               );
-            },
-            onResend: () async {
+            } else {
               await AuthService.sendOtp(
                 token: widget.token,
                 channel: channel,
               );
-            },
-          ),
+            }
+          },
         ),
-      );
+      ),
+    );
+  }
+
+  void _onSendCode(OtpMethod method) async {
+    setState(() => _isLoading = true);
+
+    try {
+      if (method == OtpMethod.sms) {
+        await FirebasePhoneAuthService.sendCode(
+          phoneNumber: _fullPhoneE164,
+          onCodeSent: () {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            _goToVerifyCodeScreen(method);
+          },
+          onError: (error) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error)),
+            );
+          },
+        );
+      } else {
+        await AuthService.sendOtp(
+          token: widget.token,
+          channel: 'email',
+        );
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        _goToVerifyCodeScreen(method);
+      }
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 

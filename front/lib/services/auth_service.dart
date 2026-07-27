@@ -4,7 +4,6 @@ import 'base_client.dart';
 import 'dart:io';
 
 class AuthService {
-  // Step 1: Register
   static Future<Map<String, dynamic>> register({
     required String fullName,
     required String email,
@@ -21,7 +20,7 @@ class AuthService {
         'password': password,
       }),
     );
-    
+
     final data = jsonDecode(response.body);
     if (response.statusCode != 201) {
       throw Exception(data['error'] ?? 'Registration failed');
@@ -29,7 +28,6 @@ class AuthService {
     return data;
   }
 
-  // Step 2: Complete Profile
   static Future<Map<String, dynamic>> completeProfile({
     required String token,
     required String gender,
@@ -60,7 +58,6 @@ class AuthService {
     return data;
   }
 
-  // Step 3: Update Profile Photo
   static Future<Map<String, dynamic>> updateProfilePhoto({
     required String token,
     required String profilePhotoUrl,
@@ -81,12 +78,12 @@ class AuthService {
     return data;
   }
 
-   static Future<String> uploadToCloudinary(File imageFile) async {
+  static Future<String> uploadToCloudinary(File imageFile) async {
     const cloudName = 'bcaeahkm';
-    const uploadPreset = 'akrili_unsigned'; // Replace with your Cloudinary unsigned preset name
+    const uploadPreset = 'akrili_unsigned';
 
     final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
-    
+
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
       ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
@@ -96,17 +93,16 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['secure_url']; // Returns the public image URL link
+      return data['secure_url'];
     } else {
       final errorData = jsonDecode(response.body);
       throw Exception(errorData['error']['message'] ?? 'Image upload failed');
     }
   }
 
-
   static Future<void> sendOtp({
-    required String token, 
-    required String channel, // 'sms' or 'email'
+    required String token,
+    required String channel,
   }) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/send-otp'),
@@ -123,9 +119,10 @@ class AuthService {
     }
   }
 
-  static Future<void> verifyOtp({
-    required String token, 
-    required String target, // phone number or email string
+  // CHANGED: now returns Map<String, dynamic> instead of void
+  static Future<Map<String, dynamic>> verifyOtp({
+    required String token,
+    required String target,
     required String code,
   }) async {
     final response = await http.post(
@@ -141,14 +138,30 @@ class AuthService {
       }),
     );
 
+    final data = jsonDecode(response.body);
     if (response.statusCode != 200) {
-      final data = jsonDecode(response.body);
       throw Exception(data['error'] ?? 'Invalid OTP code');
     }
+    return data;
   }
 
+  static Future<Map<String, dynamic>> verifyFirebasePhone({
+    required String token,
+    required String idToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/verify-firebase-phone'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'idToken': idToken}),
+    );
 
-
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Phone verification failed');
+    }
+    return data;
+  }
 }
-
- 

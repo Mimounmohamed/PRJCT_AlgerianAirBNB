@@ -3,15 +3,16 @@ import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/firebase_phone_auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
     super.key,
-    this.token, // Optional for login flow
+    this.token,
     required this.method,
     required this.maskedContact,
     this.target = '',
-    this.purpose = 'signup', // Default fallback
+    this.purpose = 'signup',
     required this.onVerified,
     this.onResend,
   });
@@ -21,7 +22,7 @@ class VerifyCodeScreen extends StatefulWidget {
   final String maskedContact;
   final String target;
   final String purpose;
-  final VoidCallback onVerified;
+  final void Function(String finalToken, String userName) onVerified;
   final Future<void> Function()? onResend;
 
   @override
@@ -45,10 +46,17 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (widget.target.isNotEmpty) {
-        // If you haven't updated AuthService.verifyOtp to take purpose yet,
-        // you can temporarily omit purpose or pass it if your AuthService supports it.
-        await AuthService.verifyOtp(
+      Map<String, dynamic> result;
+
+      if (widget.method == OtpMethod.sms) {
+        final idToken = await FirebasePhoneAuthService.verifyCode(_code);
+
+        result = await AuthService.verifyFirebasePhone(
+          token: widget.token ?? '',
+          idToken: idToken,
+        );
+      } else {
+        result = await AuthService.verifyOtp(
           token: widget.token ?? '',
           target: widget.target,
           code: _code,
@@ -56,7 +64,11 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       }
 
       if (!mounted) return;
-      widget.onVerified();
+
+      final finalToken = result['token'] as String? ?? '';
+      final userName = (result['user'] != null ? result['user']['fullName'] : null) as String? ?? '';
+
+      widget.onVerified(finalToken, userName);
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;

@@ -1,5 +1,7 @@
 const dns = require('dns');
-dns.setServers(['1.1.1.1', '8.8.8.8']);
+if (process.env.NODE_ENV !== 'production') {
+  dns.setServers(['1.1.1.1', '8.8.8.8']);
+}
 
 const express = require('express');
 const mongoose = require('mongoose');

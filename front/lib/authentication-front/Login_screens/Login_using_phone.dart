@@ -3,6 +3,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/otp_method_selector.dart';
 import '../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
 import '../sign_in_screens/Mar7aban.dart';
+import '../../../services/firebase_phone_auth_service.dart';
 
 class LoginUsingPhoneScreen extends StatefulWidget {
   const LoginUsingPhoneScreen({super.key});
@@ -13,6 +14,7 @@ class LoginUsingPhoneScreen extends StatefulWidget {
 
 class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
   final _phoneController = TextEditingController();
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -24,7 +26,13 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
     Navigator.of(context).maybePop();
   }
 
-  void _onContinue() {
+  String get _fullPhoneE164 {
+    final digits = _phoneController.text.trim();
+    final stripped = digits.replaceFirst(RegExp(r'^0'), '');
+    return '+213$stripped';
+  }
+
+  void _onContinue() async {
     final digits = _phoneController.text.trim();
     if (digits.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -39,28 +47,64 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
       'X' * (digits.length > 2 ? digits.length - 2 : digits.length),
     )}';
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => VerifyCodeScreen(
-          method: OtpMethod.sms,
-          maskedContact: maskedPhone,
-          target: digits,
-          purpose: 'login',
-          onVerified: () {
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(
-                builder: (context) =>
-                    const WelcomeHomeScreen(userName: 'Anis'),
+    final fullPhone = _fullPhoneE164;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebasePhoneAuthService.sendCode(
+        phoneNumber: fullPhone,
+        onCodeSent: () {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => VerifyCodeScreen(
+                method: OtpMethod.sms,
+                maskedContact: maskedPhone,
+                target: fullPhone,
+                purpose: 'login',
+                onVerified: (finalToken, userName) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(
+                      builder: (context) => WelcomeHomeScreen(
+                        userName: userName.isNotEmpty ? userName : 'there',
+                        token: finalToken,
+                      ),
+                    ),
+                    (route) => false,
+                  );
+                },
+                onResend: () async {
+                  await FirebasePhoneAuthService.sendCode(
+                    phoneNumber: fullPhone,
+                    onCodeSent: () {},
+                    onError: (error) {
+                      throw Exception(error);
+                    },
+                  );
+                },
               ),
-              (route) => false,
-            );
-          },
-          onResend: () async {
-            // TODO: Call your phone login resend API here if needed
-          },
-        ),
-      ),
-    );
+            ),
+          );
+        },
+        onError: (error) {
+          if (!mounted) return;
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(error)),
+          );
+        },
+      );
+    } catch (e) {
+      final msg = e.toString().replaceAll('Exception: ', '');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -71,72 +115,72 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
         title: 'AKRILI',
         onBack: _onBack,
       ),
-      body: Stack(
-        children: [
-          // Decorative star, bottom-left, sitting behind the content.
-          Positioned(
-            left: -20,
-            bottom: 30,
-            child: SizedBox(
-              width: 220,
-              height: 220,
-              child: ClipRect(
-                child: OverflowBox(
-                  maxWidth: 760,
-                  maxHeight: 760,
-                  alignment: Alignment.bottomLeft,
-                  child: Opacity(
-                    opacity: 0.5,
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF0F4C4C),
-                        BlendMode.softLight,
-                      ),
-                      child: Image.asset(
-                        'assets/images/phonenumber.png',
-                        width: 760,
-                        height: 760,
-                        alignment: Alignment.bottomLeft,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Decorative star, anchored bottom-right, sitting behind the content.
-          Positioned(
-            right: 0,
-            bottom: 20,
-            child: SizedBox(
-              width: 260,
-              height: 260,
-              child: ClipRect(
-                child: OverflowBox(
-                  maxWidth: 900,
-                  maxHeight: 900,
-                  alignment: Alignment.bottomRight,
-                  child: Opacity(
-                    opacity: 0.55,
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF006972),
-                        BlendMode.softLight,
-                      ),
-                      child: Image.asset(
-                        'assets/images/phonenumber.png',
-                        width: 900,
-                        height: 900,
-                        alignment: Alignment.bottomRight,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Decorative star, bottom-left, sitting behind the content.
+            Positioned(
+              left: -20,
+              bottom: 30,
+              child: SizedBox(
+                width: 220,
+                height: 220,
+                child: ClipRect(
+                  child: OverflowBox(
+                    maxWidth: 760,
+                    maxHeight: 760,
+                    alignment: Alignment.bottomLeft,
+                    child: Opacity(
+                      opacity: 0.5,
+                      child: ColorFiltered(
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF0F4C4C),
+                          BlendMode.softLight,
+                        ),
+                        child: Image.asset(
+                          'assets/images/phonenumber.png',
+                          width: 760,
+                          height: 760,
+                          alignment: Alignment.bottomLeft,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-          SafeArea(
-            child: Padding(
+            // Decorative star, anchored bottom-right, sitting behind the content.
+            Positioned(
+              right: 0,
+              bottom: 20,
+              child: SizedBox(
+                width: 260,
+                height: 260,
+                child: ClipRect(
+                  child: OverflowBox(
+                    maxWidth: 900,
+                    maxHeight: 900,
+                    alignment: Alignment.bottomRight,
+                    child: Opacity(
+                      opacity: 0.55,
+                      child: ColorFiltered(
+                        colorFilter: const ColorFilter.mode(
+                          Color(0xFF006972),
+                          BlendMode.softLight,
+                        ),
+                        child: Image.asset(
+                          'assets/images/phonenumber.png',
+                          width: 900,
+                          height: 900,
+                          alignment: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,7 +304,7 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _onContinue,
+                      onPressed: _isLoading ? null : _onContinue,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF006972),
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -268,29 +312,45 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Continue',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Continue',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Icon(Icons.arrow_forward,
+                                    color: Colors.white, size: 18),
+                              ],
                             ),
-                          ),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_forward,
-                              color: Colors.white, size: 18),
-                        ],
-                      ),
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+            if (_isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.2),
+                child: const Center(
+                  child: CircularProgressIndicator(color: Color(0xFF006972)),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

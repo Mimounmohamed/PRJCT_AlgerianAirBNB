@@ -3,8 +3,9 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 class WelcomeHomeScreen extends StatelessWidget {
   final String userName;
+  final String? token;
 
-  const WelcomeHomeScreen({super.key, this.userName = 'Anis'});
+  const WelcomeHomeScreen({super.key, this.userName = 'Anis', this.token});
 
   void _onStartExploring(BuildContext context) {
     // TODO: navigate to the main explore/listings screen.
@@ -53,7 +54,6 @@ class WelcomeHomeScreen extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Background image
           const DecoratedBox(
             decoration: BoxDecoration(
               image: DecorationImage(
@@ -62,7 +62,6 @@ class WelcomeHomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Darkening gradient so text stays readable over the photo
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -77,7 +76,6 @@ class WelcomeHomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Greeting + CTA
           Positioned(
             left: 24,
             right: 24,
