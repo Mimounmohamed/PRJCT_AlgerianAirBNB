@@ -3,46 +3,56 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
 const User = require('../models/User');
+const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
 const { generateToken } = require('../middleware/auth.middleware');
 const { auth: firebaseAuth } = require('../config/firebaseAdmin');
 
-
 const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID, 
+  process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
+// Generates a temporary token referencing a PendingSignup doc (not a real User yet)
+function generatePendingToken(pendingId) {
+  return jwt.sign({ id: pendingId, pending: true }, process.env.JWT_SECRET, {
+    expiresIn: '24h',
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/register
-// Step 1: Create account (name, email, phone, password)
+// Step 1: Create a PENDING signup (not a real User yet)
 // ─────────────────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
-    // Check for existing user (email only — phone duplicates allowed for testing)
-    const exists = await User.findOne({ email });
-    if (exists) {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res.status(409).json({ error: 'Email already registered.' });
     }
 
-    const user = await User.create({
+    // Remove any previous incomplete attempt for this email, then start fresh
+    await PendingSignup.deleteMany({ email });
+
+    const pending = await PendingSignup.create({
       fullName,
       email,
       phone: { countryCode: '+213', number: phone },
-      passwordHash: password, // will be hashed by pre-save hook
+      passwordHash: password, // hashed by pre-save hook
     });
 
-    const token = generateToken(user._id);
+    const token = generatePendingToken(pending._id);
 
     res.status(201).json({
-      message: 'Account created successfully.',
+      message: 'Account details saved. Please complete your profile and verify your account.',
       token,
       user: {
-        _id:      user._id,
-        fullName: user.fullName,
-        email:    user.email,
-        phone:    user.phone,
+        _id:      pending._id,
+        fullName: pending.fullName,
+        email:    pending.email,
+        phone:    pending.phone,
       },
     });
   } catch (err) {
@@ -52,7 +62,7 @@ router.post('/register', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // PUT /api/auth/complete-profile
-// Step 2: Personal info (gender, birthday, wilaya, baladiya, address)
+// Step 2: Update the PENDING signup with personal info
 // ─────────────────────────────────────────────────────────────
 router.put('/complete-profile', async (req, res) => {
   try {
@@ -66,13 +76,17 @@ router.put('/complete-profile', async (req, res) => {
 
     const { gender, birthday, wilaya, baladiya, fullAddress } = req.body;
 
-    const user = await User.findByIdAndUpdate(
+    const pending = await PendingSignup.findByIdAndUpdate(
       decoded.id,
       { gender, birthday, wilaya, baladiya, fullAddress },
       { new: true }
     );
 
-    res.json({ message: 'Profile updated.', user });
+    if (!pending) {
+      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
+    }
+
+    res.json({ message: 'Profile updated.', user: pending });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -80,7 +94,7 @@ router.put('/complete-profile', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // PUT /api/auth/profile-photo
-// Step 3: Profile photo
+// Step 3: Update the PENDING signup with a profile photo
 // ─────────────────────────────────────────────────────────────
 router.put('/profile-photo', async (req, res) => {
   try {
@@ -94,13 +108,17 @@ router.put('/profile-photo', async (req, res) => {
 
     const { profilePhoto } = req.body;
 
-    const user = await User.findByIdAndUpdate(
+    const pending = await PendingSignup.findByIdAndUpdate(
       decoded.id,
       { profilePhoto },
       { new: true }
     );
 
-    res.json({ message: 'Photo updated.', user });
+    if (!pending) {
+      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
+    }
+
+    res.json({ message: 'Photo updated.', user: pending });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -108,7 +126,6 @@ router.put('/profile-photo', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/login/email
-// Login with email + password
 // ─────────────────────────────────────────────────────────────
 router.post('/login/email', async (req, res) => {
   try {
@@ -132,7 +149,6 @@ router.post('/login/email', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/login/phone
-// Step 1: Send OTP to phone number
 // ─────────────────────────────────────────────────────────────
 router.post('/login/phone', async (req, res) => {
   try {
@@ -147,10 +163,7 @@ router.post('/login/phone', async (req, res) => {
       phone, 'phone', 'login', user._id
     );
 
-    // TODO: Send plainCode via Twilio SMS
-    // await twilioClient.messages.create({ body: `Your AKRILI code: ${plainCode}`, from: ..., to: ... });
-
-    console.log(`[DEV] OTP for ${phone}: ${plainCode}`); // Remove in production!
+    console.log(`[DEV] OTP for ${phone}: ${plainCode}`);
 
     res.json({ message: 'OTP sent to your phone number.' });
   } catch (err) {
@@ -160,7 +173,7 @@ router.post('/login/phone', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/verify-otp
-// Verify OTP and return JWT
+// Verifies EMAIL OTP for signup — creates the REAL User here
 // ─────────────────────────────────────────────────────────────
 router.post('/verify-otp', async (req, res) => {
   try {
@@ -181,13 +194,36 @@ router.post('/verify-otp', async (req, res) => {
       return res.status(400).json({ error: result.reason });
     }
 
-    // Find or create user for signup flow
-    let user = await User.findById(otpRecord.userId);
-    if (!user && purpose === 'signup') {
-      // User will be created in the next registration step
-      return res.json({ message: 'OTP verified.', verified: true });
+    if (purpose === 'signup') {
+      // otpRecord.userId actually stores the PendingSignup._id in this flow
+      const pending = await PendingSignup.findById(otpRecord.userId).select('+passwordHash');
+      if (!pending) {
+        return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
+      }
+
+      const user = await User.create({
+        fullName:     pending.fullName,
+        email:        pending.email,
+        phone:        pending.phone,
+        passwordHash: pending.passwordHash, // already hashed — see note below
+        gender:       pending.gender,
+        birthday:     pending.birthday,
+        wilaya:       pending.wilaya,
+        fullAddress:  pending.fullAddress,
+        profilePhoto: pending.profilePhoto,
+        identityVerified: true,
+      });
+
+      await PendingSignup.deleteOne({ _id: pending._id });
+
+      const appToken = generateToken(user._id);
+      return res.json({ message: 'Account created and verified.', token: appToken, user: {
+        _id: user._id, fullName: user.fullName, email: user.email,
+      }});
     }
 
+    // Non-signup purposes (login, 2FA, password reset) — existing real Users
+    let user = await User.findById(otpRecord.userId);
     const token = generateToken(user._id);
     res.json({ token, user: { _id: user._id, fullName: user.fullName } });
   } catch (err) {
@@ -197,7 +233,6 @@ router.post('/verify-otp', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/google
-// Sign in / Register with Google
 // ─────────────────────────────────────────────────────────────
 router.post('/google', async (req, res) => {
   try {
@@ -206,7 +241,6 @@ router.post('/google', async (req, res) => {
     let user = await User.findOne({ 'socialAccounts.google.id': googleId });
 
     if (!user) {
-      // Create new user from Google data
       user = await User.create({
         fullName,
         email,
@@ -224,7 +258,7 @@ router.post('/google', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/send-otp
-// Send OTP for signup verification (SMS via Twilio, email logged for now)
+// Sends OTP against the PENDING signup's phone/email
 // ─────────────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {
   try {
@@ -236,59 +270,67 @@ router.post('/send-otp', async (req, res) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const { channel } = req.body; // Expects 'sms' or 'email'
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
+    const { channel } = req.body;
+    const pending = await PendingSignup.findById(decoded.id);
+    if (!pending) {
+      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
     }
 
     const target = channel === 'sms'
-      ? `${user.phone.countryCode}${user.phone.number.replace(/^0/, '')}`
-      : user.email;
+      ? `${pending.phone.countryCode}${pending.phone.number.replace(/^0/, '')}`
+      : pending.email;
     const otpType = channel === 'sms' ? 'phone' : 'email';
 
     if (!target) {
       return res.status(400).json({ error: `No ${channel} found for this account.` });
     }
 
+    // Note: userId here stores the PendingSignup._id, consumed in /verify-otp above
     const { plainCode } = await OtpVerification.generateOTP(
-      target, otpType, 'signup', user._id
+      target, otpType, 'signup', pending._id
     );
 
-    // Send via Twilio SMS (if channel is sms)
     if (channel === 'sms') {
-  console.log(`[DEBUG] Sending SMS to: "${target}"`); // TEMP — remove after debugging
-  await twilioClient.messages.create({
-    body: `Your AKRILI verification code is: ${plainCode}`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: target,
-  });
-} else {
-      // TODO: Handle email sending if you use Nodemailer/SendGrid for email channel
+      console.log(`[DEBUG] Sending SMS to: "${target}"`);
+      await twilioClient.messages.create({
+        body: `Your AKRILI verification code is: ${plainCode}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: target,
+      });
+    } else {
       console.log(`[DEV] Email OTP for ${target}: ${plainCode}`);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {
+    console.error('[TWILIO ERROR]', JSON.stringify({
+      message: err.message,
+      code: err.code,
+      status: err.status,
+      moreInfo: err.moreInfo,
+    }));
     res.status(500).json({ error: err.message });
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/verify-firebase-phone
+// Verifies Firebase SMS auth for signup — creates the REAL User here
+// ─────────────────────────────────────────────────────────────
 router.post('/verify-firebase-phone', async (req, res) => {
   try {
     if (!firebaseAuth) {
       console.error('[FIREBASE-VERIFY] Firebase Auth SDK is not initialized on the server.');
-      return res.status(500).json({ 
-        error: 'Firebase Admin SDK is not configured on the server. Please verify environment variables in Azure.' 
+      return res.status(500).json({
+        error: 'Firebase Admin SDK is not configured on the server. Please verify environment variables in Azure.'
       });
     }
 
     const { idToken } = req.body;
     console.log('[FIREBASE-VERIFY] Received idToken (length):', idToken?.length);
 
-    // FIX: Use 'firebaseAuth' instead of undefined 'admin'
-    const decoded = await firebaseAuth.verifyIdToken(idToken);
-    console.log('[FIREBASE-VERIFY] Token verified. Phone:', decoded.phone_number, '| UID:', decoded.uid);
+    const decodedFirebase = await firebaseAuth.verifyIdToken(idToken);
+    console.log('[FIREBASE-VERIFY] Token verified. Phone:', decodedFirebase.phone_number, '| UID:', decodedFirebase.uid);
 
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -297,19 +339,34 @@ router.post('/verify-firebase-phone', async (req, res) => {
     }
     const jwtToken = authHeader.split(' ')[1];
     const jwtDecoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
-    console.log('[FIREBASE-VERIFY] App JWT decoded. User ID:', jwtDecoded.id);
+    console.log('[FIREBASE-VERIFY] Pending token decoded. ID:', jwtDecoded.id);
 
-    const user = await User.findById(jwtDecoded.id);
-    if (!user) {
-      console.log('[FIREBASE-VERIFY] User not found for ID:', jwtDecoded.id);
-      return res.status(404).json({ error: 'User not found.' });
+    const pending = await PendingSignup.findById(jwtDecoded.id).select('+passwordHash');
+    if (!pending) {
+      console.log('[FIREBASE-VERIFY] Pending signup not found for ID:', jwtDecoded.id);
+      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
     }
 
-    user.identityVerified = true;
-    await user.save();
-    console.log('[FIREBASE-VERIFY] User updated successfully:', user._id);
+    const user = await User.create({
+      fullName:     pending.fullName,
+      email:        pending.email,
+      phone:        pending.phone,
+      passwordHash: pending.passwordHash,
+      gender:       pending.gender,
+      birthday:     pending.birthday,
+      wilaya:       pending.wilaya,
+      fullAddress:  pending.fullAddress,
+      profilePhoto: pending.profilePhoto,
+      identityVerified: true,
+    });
 
-    res.json({ message: 'Phone verified.', user });
+    await PendingSignup.deleteOne({ _id: pending._id });
+    console.log('[FIREBASE-VERIFY] Real User created:', user._id);
+
+    const appToken = generateToken(user._id);
+    res.json({ message: 'Phone verified. Account created.', token: appToken, user: {
+      _id: user._id, fullName: user.fullName, email: user.email,
+    }});
   } catch (err) {
     console.error('[FIREBASE-VERIFY ERROR]', JSON.stringify({
       message: err.message,

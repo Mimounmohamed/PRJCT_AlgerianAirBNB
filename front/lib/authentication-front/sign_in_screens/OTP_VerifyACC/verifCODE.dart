@@ -22,7 +22,7 @@ class VerifyCodeScreen extends StatefulWidget {
   final String maskedContact;
   final String target;
   final String purpose;
-  final VoidCallback onVerified;
+  final void Function(String finalToken, String userName) onVerified;
   final Future<void> Function()? onResend;
 
   @override
@@ -46,25 +46,29 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     try {
+      Map<String, dynamic> result;
+
       if (widget.method == OtpMethod.sms) {
         final idToken = await FirebasePhoneAuthService.verifyCode(_code);
 
-        await AuthService.verifyFirebasePhone(
+        result = await AuthService.verifyFirebasePhone(
           token: widget.token ?? '',
           idToken: idToken,
         );
       } else {
-        if (widget.target.isNotEmpty) {
-          await AuthService.verifyOtp(
-            token: widget.token ?? '',
-            target: widget.target,
-            code: _code,
-          );
-        }
+        result = await AuthService.verifyOtp(
+          token: widget.token ?? '',
+          target: widget.target,
+          code: _code,
+        );
       }
 
       if (!mounted) return;
-      widget.onVerified();
+
+      final finalToken = result['token'] as String? ?? '';
+      final userName = (result['user'] != null ? result['user']['fullName'] : null) as String? ?? '';
+
+      widget.onVerified(finalToken, userName);
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;

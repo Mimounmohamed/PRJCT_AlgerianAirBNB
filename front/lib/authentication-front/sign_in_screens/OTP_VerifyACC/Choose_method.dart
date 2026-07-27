@@ -12,7 +12,7 @@ class VerifyAccountScreen extends StatefulWidget {
     required this.token,
     required this.maskedPhone,
     required this.maskedEmail,
-    required this.realPhone, // raw local number, e.g. 0558852374
+    required this.realPhone,
     required this.realEmail,
   });
 
@@ -50,17 +50,19 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
           method: method,
           maskedContact: maskedContact,
           target: target,
-          onVerified: () {
+          onVerified: (finalToken, userName) {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(
-                builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+                builder: (context) => WelcomeHomeScreen(
+                  userName: userName.isNotEmpty ? userName : 'there',
+                  token: finalToken,
+                ),
               ),
               (route) => false,
             );
           },
           onResend: () async {
             if (method == OtpMethod.sms) {
-              print('[DEBUG] Resending to Firebase: "$_fullPhoneE164"'); // TEMP
               await FirebasePhoneAuthService.sendCode(
                 phoneNumber: _fullPhoneE164,
                 onCodeSent: () {},
@@ -85,7 +87,6 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
     try {
       if (method == OtpMethod.sms) {
-        print('[DEBUG] Sending to Firebase: "$_fullPhoneE164"'); // TEMP
         await FirebasePhoneAuthService.sendCode(
           phoneNumber: _fullPhoneE164,
           onCodeSent: () {

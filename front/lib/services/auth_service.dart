@@ -4,7 +4,6 @@ import 'base_client.dart';
 import 'dart:io';
 
 class AuthService {
-  // Step 1: Register
   static Future<Map<String, dynamic>> register({
     required String fullName,
     required String email,
@@ -29,7 +28,6 @@ class AuthService {
     return data;
   }
 
-  // Step 2: Complete Profile
   static Future<Map<String, dynamic>> completeProfile({
     required String token,
     required String gender,
@@ -60,7 +58,6 @@ class AuthService {
     return data;
   }
 
-  // Step 3: Update Profile Photo
   static Future<Map<String, dynamic>> updateProfilePhoto({
     required String token,
     required String profilePhotoUrl,
@@ -105,7 +102,7 @@ class AuthService {
 
   static Future<void> sendOtp({
     required String token,
-    required String channel, // 'sms' or 'email'
+    required String channel,
   }) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/send-otp'),
@@ -122,7 +119,8 @@ class AuthService {
     }
   }
 
-  static Future<void> verifyOtp({
+  // CHANGED: now returns Map<String, dynamic> instead of void
+  static Future<Map<String, dynamic>> verifyOtp({
     required String token,
     required String target,
     required String code,
@@ -140,10 +138,11 @@ class AuthService {
       }),
     );
 
+    final data = jsonDecode(response.body);
     if (response.statusCode != 200) {
-      final data = jsonDecode(response.body);
       throw Exception(data['error'] ?? 'Invalid OTP code');
     }
+    return data;
   }
 
   static Future<Map<String, dynamic>> verifyFirebasePhone({
