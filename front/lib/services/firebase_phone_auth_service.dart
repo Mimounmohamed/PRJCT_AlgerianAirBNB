@@ -5,7 +5,7 @@ class FirebasePhoneAuthService {
   static String? _verificationId;
 
   static Future<void> sendCode({
-    required String phoneNumber,
+    required String phoneNumber, // full E.164, e.g. +213558852374
     required void Function() onCodeSent,
     required void Function(String error) onError,
   }) async {

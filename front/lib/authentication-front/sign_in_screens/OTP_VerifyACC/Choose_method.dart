@@ -12,8 +12,8 @@ class VerifyAccountScreen extends StatefulWidget {
     required this.token,
     required this.maskedPhone,
     required this.maskedEmail,
-    required this.realPhone, // full E.164 phone, e.g. +213558852374
-    required this.realEmail, // full email address
+    required this.realPhone, // raw local number, e.g. 0558852374
+    required this.realEmail,
   });
 
   final String token;
@@ -33,9 +33,14 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     Navigator.of(context).maybePop();
   }
 
+  String get _fullPhoneE164 {
+    final stripped = widget.realPhone.replaceFirst(RegExp(r'^0'), '');
+    return '+213$stripped';
+  }
+
   void _goToVerifyCodeScreen(OtpMethod method) {
     final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
-    final target = method == OtpMethod.sms ? widget.realPhone : widget.realEmail;
+    final target = method == OtpMethod.sms ? _fullPhoneE164 : widget.realEmail;
     final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
     Navigator.of(context).push(
@@ -55,8 +60,9 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
           },
           onResend: () async {
             if (method == OtpMethod.sms) {
+              print('[DEBUG] Resending to Firebase: "$_fullPhoneE164"'); // TEMP
               await FirebasePhoneAuthService.sendCode(
-                phoneNumber: widget.realPhone,
+                phoneNumber: _fullPhoneE164,
                 onCodeSent: () {},
                 onError: (error) {
                   throw Exception(error);
@@ -79,9 +85,9 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
 
     try {
       if (method == OtpMethod.sms) {
-        // Firebase sends the SMS itself — no backend call needed here
+        print('[DEBUG] Sending to Firebase: "$_fullPhoneE164"'); // TEMP
         await FirebasePhoneAuthService.sendCode(
-          phoneNumber: widget.realPhone,
+          phoneNumber: _fullPhoneE164,
           onCodeSent: () {
             if (!mounted) return;
             setState(() => _isLoading = false);
@@ -96,7 +102,6 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
           },
         );
       } else {
-        // Email — unchanged, uses existing backend OTP flow
         await AuthService.sendOtp(
           token: widget.token,
           channel: 'email',

@@ -21,7 +21,7 @@ class AuthService {
         'password': password,
       }),
     );
-    
+
     final data = jsonDecode(response.body);
     if (response.statusCode != 201) {
       throw Exception(data['error'] ?? 'Registration failed');
@@ -81,12 +81,12 @@ class AuthService {
     return data;
   }
 
-   static Future<String> uploadToCloudinary(File imageFile) async {
+  static Future<String> uploadToCloudinary(File imageFile) async {
     const cloudName = 'bcaeahkm';
-    const uploadPreset = 'akrili_unsigned'; // Replace with your Cloudinary unsigned preset name
+    const uploadPreset = 'akrili_unsigned';
 
     final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
-    
+
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
       ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
@@ -96,16 +96,15 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['secure_url']; // Returns the public image URL link
+      return data['secure_url'];
     } else {
       final errorData = jsonDecode(response.body);
       throw Exception(errorData['error']['message'] ?? 'Image upload failed');
     }
   }
 
-
   static Future<void> sendOtp({
-    required String token, 
+    required String token,
     required String channel, // 'sms' or 'email'
   }) async {
     final response = await http.post(
@@ -124,8 +123,8 @@ class AuthService {
   }
 
   static Future<void> verifyOtp({
-    required String token, 
-    required String target, // phone number or email string
+    required String token,
+    required String target,
     required String code,
   }) async {
     final response = await http.post(
@@ -147,7 +146,6 @@ class AuthService {
     }
   }
 
-  // Verify Firebase phone auth token with backend
   static Future<Map<String, dynamic>> verifyFirebasePhone({
     required String token,
     required String idToken,

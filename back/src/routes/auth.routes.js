@@ -276,6 +276,13 @@ router.post('/send-otp', async (req, res) => {
 
 router.post('/verify-firebase-phone', async (req, res) => {
   try {
+    if (!firebaseAuth) {
+      console.error('[FIREBASE-VERIFY] Firebase Auth SDK is not initialized on the server.');
+      return res.status(500).json({ 
+        error: 'Firebase Admin SDK is not configured on the server. Please verify environment variables in Azure.' 
+      });
+    }
+
     const { idToken } = req.body;
     console.log('[FIREBASE-VERIFY] Received idToken (length):', idToken?.length);
 
