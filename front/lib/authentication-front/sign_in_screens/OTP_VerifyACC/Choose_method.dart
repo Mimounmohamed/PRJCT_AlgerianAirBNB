@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/app_bar.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/firebase_phone_auth_service.dart';
 import '../Mar7aban.dart';
 import 'verifCODE.dart';
 
@@ -32,54 +33,86 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     Navigator.of(context).maybePop();
   }
 
-  void _onSendCode(OtpMethod method) async {
-    setState(() => _isLoading = true);
+  void _goToVerifyCodeScreen(OtpMethod method) {
+    final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
+    final target = method == OtpMethod.sms ? widget.realPhone : widget.realEmail;
+    final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
-    try {
-      final channel = method == OtpMethod.sms ? 'sms' : 'email';
-
-      await AuthService.sendOtp(
-        token: widget.token,
-        channel: channel,
-      );
-
-      final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
-      final target = method == OtpMethod.sms ? widget.realPhone : widget.realEmail;
-
-      if (!mounted) return;
-
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => VerifyCodeScreen(
-            token: widget.token,
-            method: method,
-            maskedContact: maskedContact,
-            target: target,
-            onVerified: () {
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(
-                  builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
-                ),
-                (route) => false,
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => VerifyCodeScreen(
+          token: widget.token,
+          method: method,
+          maskedContact: maskedContact,
+          target: target,
+          onVerified: () {
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+              ),
+              (route) => false,
+            );
+          },
+          onResend: () async {
+            if (method == OtpMethod.sms) {
+              await FirebasePhoneAuthService.sendCode(
+                phoneNumber: widget.realPhone,
+                onCodeSent: () {},
+                onError: (error) {
+                  throw Exception(error);
+                },
               );
-            },
-            onResend: () async {
+            } else {
               await AuthService.sendOtp(
                 token: widget.token,
                 channel: channel,
               );
-            },
-          ),
+            }
+          },
         ),
-      );
+      ),
+    );
+  }
+
+  void _onSendCode(OtpMethod method) async {
+    setState(() => _isLoading = true);
+
+    try {
+      if (method == OtpMethod.sms) {
+        // Firebase sends the SMS itself — no backend call needed here
+        await FirebasePhoneAuthService.sendCode(
+          phoneNumber: widget.realPhone,
+          onCodeSent: () {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            _goToVerifyCodeScreen(method);
+          },
+          onError: (error) {
+            if (!mounted) return;
+            setState(() => _isLoading = false);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(error)),
+            );
+          },
+        );
+      } else {
+        // Email — unchanged, uses existing backend OTP flow
+        await AuthService.sendOtp(
+          token: widget.token,
+          channel: 'email',
+        );
+
+        if (!mounted) return;
+        setState(() => _isLoading = false);
+        _goToVerifyCodeScreen(method);
+      }
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(msg)),
       );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      setState(() => _isLoading = false);
     }
   }
 

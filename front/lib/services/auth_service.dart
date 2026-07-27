@@ -147,8 +147,24 @@ class AuthService {
     }
   }
 
+  // Verify Firebase phone auth token with backend
+  static Future<Map<String, dynamic>> verifyFirebasePhone({
+    required String token,
+    required String idToken,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/verify-firebase-phone'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'idToken': idToken}),
+    );
 
-
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Phone verification failed');
+    }
+    return data;
+  }
 }
-
- 

@@ -5,6 +5,7 @@ const twilio = require('twilio');
 const User = require('../models/User');
 const OtpVerification = require('../models/OtpVerification');
 const { generateToken } = require('../middleware/auth.middleware');
+const { auth: firebaseAuth } = require('../config/firebaseAdmin');
 
 
 const twilioClient = twilio(
@@ -269,6 +270,45 @@ router.post('/send-otp', async (req, res) => {
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/verify-firebase-phone', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    console.log('[FIREBASE-VERIFY] Received idToken (length):', idToken?.length);
+
+    // FIX: Use 'firebaseAuth' instead of undefined 'admin'
+    const decoded = await firebaseAuth.verifyIdToken(idToken);
+    console.log('[FIREBASE-VERIFY] Token verified. Phone:', decoded.phone_number, '| UID:', decoded.uid);
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('[FIREBASE-VERIFY] Missing app JWT in Authorization header.');
+      return res.status(401).json({ error: 'No token provided.' });
+    }
+    const jwtToken = authHeader.split(' ')[1];
+    const jwtDecoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
+    console.log('[FIREBASE-VERIFY] App JWT decoded. User ID:', jwtDecoded.id);
+
+    const user = await User.findById(jwtDecoded.id);
+    if (!user) {
+      console.log('[FIREBASE-VERIFY] User not found for ID:', jwtDecoded.id);
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    user.identityVerified = true;
+    await user.save();
+    console.log('[FIREBASE-VERIFY] User updated successfully:', user._id);
+
+    res.json({ message: 'Phone verified.', user });
+  } catch (err) {
+    console.error('[FIREBASE-VERIFY ERROR]', JSON.stringify({
+      message: err.message,
+      code: err.code,
+      name: err.name,
+    }));
     res.status(500).json({ error: err.message });
   }
 });

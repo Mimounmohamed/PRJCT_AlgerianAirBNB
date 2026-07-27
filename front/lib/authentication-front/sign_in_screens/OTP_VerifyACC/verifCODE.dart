@@ -3,6 +3,7 @@ import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/firebase_phone_auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
@@ -45,14 +46,24 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (widget.target.isNotEmpty) {
-        // If you haven't updated AuthService.verifyOtp to take purpose yet,
-        // you can temporarily omit purpose or pass it if your AuthService supports it.
-        await AuthService.verifyOtp(
+      if (widget.method == OtpMethod.sms) {
+        // Firebase handles the actual code verification client-side
+        final idToken = await FirebasePhoneAuthService.verifyCode(_code);
+
+        // Tell our backend the phone is verified, so it can update the user record
+        await AuthService.verifyFirebasePhone(
           token: widget.token ?? '',
-          target: widget.target,
-          code: _code,
+          idToken: idToken,
         );
+      } else {
+        // Email — unchanged, uses existing backend OTP flow
+        if (widget.target.isNotEmpty) {
+          await AuthService.verifyOtp(
+            token: widget.token ?? '',
+            target: widget.target,
+            code: _code,
+          );
+        }
       }
 
       if (!mounted) return;
