@@ -254,21 +254,25 @@ router.post('/send-otp', async (req, res) => {
       target, otpType, 'signup', user._id
     );
 
-    // Send via Twilio SMS (if channel is sms)
-    if (channel === 'sms') {
-  console.log(`[DEBUG] Sending SMS to: "${target}"`); // TEMP — remove after debugging
-  await twilioClient.messages.create({
-    body: `Your AKRILI verification code is: ${plainCode}`,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: target,
-  });
-} else {
-      // TODO: Handle email sending if you use Nodemailer/SendGrid for email channel
+   if (channel === 'sms') {
+      console.log(`[DEBUG] Sending SMS to: "${target}"`);
+      await twilioClient.messages.create({
+        body: `Your AKRILI verification code is: ${plainCode}`,
+        from: process.env.TWILIO_PHONE_NUMBER,
+        to: target,
+      });
+    } else {
       console.log(`[DEV] Email OTP for ${target}: ${plainCode}`);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {
+    console.error('[TWILIO ERROR]', JSON.stringify({
+      message: err.message,
+      code: err.code,
+      status: err.status,
+      moreInfo: err.moreInfo,
+    }));
     res.status(500).json({ error: err.message });
   }
 });
