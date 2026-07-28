@@ -1,16 +1,5 @@
 import 'package:flutter/material.dart';
 
-/// Reusable date-of-birth field. Tapping anywhere on the field (or the
-/// calendar icon) opens a themed [showDatePicker].
-///
-/// Usage:
-/// ```dart
-/// BirthdayField(
-///   label: 'Birthday',
-///   selectedDate: _birthday,
-///   onDateSelected: (date) => setState(() => _birthday = date),
-/// )
-/// ```
 class BirthdayField extends StatelessWidget {
   const BirthdayField({
     super.key,
@@ -42,13 +31,13 @@ class BirthdayField extends StatelessWidget {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF0F4C4C), // header background / selected day
+              primary: Color(0xFF006972), // header background / selected day
               onPrimary: Colors.white, // header text / selected day text
               onSurface: Color(0xFF1A1A1A), // calendar body text
             ),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
-                foregroundColor: const Color(0xFF0F4C4C), // OK / Cancel
+                foregroundColor: const Color(0xFF006972), // OK / Cancel
               ),
             ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFFFBF3E7)),
           ),

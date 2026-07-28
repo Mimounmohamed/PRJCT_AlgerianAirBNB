@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
-import 'Mar7aban.dart';
+import 'OTP_VerifyACC/Choose_method.dart';
 
 class SignUpStep3 extends StatefulWidget {
   final String token;
@@ -33,18 +33,23 @@ class _SignUpStep3State extends State<SignUpStep3> {
   }
 
   void _onCompleteProfile() {
-    // TODO: upload _profileImage to cloud storage and save URL via API
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => WelcomeHomeScreen(userName: widget.userName),
+        builder: (context) => const VerifyAccountScreen(
+          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
+          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
+        ),
       ),
     );
   }
 
   void _onSkip() {
-    Navigator.of(context).pushReplacement(
+    Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => WelcomeHomeScreen(userName: widget.userName),
+        builder: (context) => const VerifyAccountScreen(
+          maskedPhone: '+213 XXX XX XX 88', // TODO: pass the real phone from step1
+          maskedEmail: 'y***@domain.com', // TODO: pass the real email from step1
+        ),
       ),
     );
   }
@@ -131,7 +136,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0F4C4C),
+                                  color: const Color(0xFF006972),
                                   shape: BoxShape.circle,
                                   border: Border.all(
                                     color: const Color(0xFFFBF3E7),
@@ -172,7 +177,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
                     child: ElevatedButton(
                       onPressed: _onCompleteProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF0F4C4C),
+                        backgroundColor: const Color(0xFF006972),
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -194,7 +199,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
                     child: const Text(
                       'Skip for now',
                       style: TextStyle(
-                        color: Color(0xFF0F4C4C),
+                        color: Color(0xFF006972),
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                       ),
