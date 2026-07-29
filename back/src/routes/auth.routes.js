@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
+const { Resend } = require('resend');
 const User = require('../models/User');
 const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
@@ -12,6 +13,8 @@ const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
 );
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Generates a temporary token referencing a PendingSignup doc (not a real User yet)
 function generatePendingToken(pendingId) {
@@ -298,12 +301,25 @@ router.post('/send-otp', async (req, res) => {
         to: target,
       });
     } else {
-      console.log(`[DEV] Email OTP for ${target}: ${plainCode}`);
+      console.log(`[DEBUG] Sending email OTP to: "${target}"`);
+      const { data, error } = await resend.emails.send({
+        from: 'AKRILI <onboarding@resend.dev>', // swap for your verified domain later
+        to: [target],
+        subject: 'Your AKRILI verification code',
+        html: `<p>Your AKRILI verification code is: <strong>${plainCode}</strong></p><p>This code expires in 10 minutes.</p>`,
+      });
+
+      if (error) {
+        console.error('[RESEND ERROR]', JSON.stringify(error));
+        return res.status(500).json({ error: 'Failed to send verification email.' });
+      }
+
+      console.log('[RESEND] Email sent successfully. ID:', data?.id);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {
-    console.error('[TWILIO ERROR]', JSON.stringify({
+    console.error('[SEND-OTP ERROR]', JSON.stringify({
       message: err.message,
       code: err.code,
       status: err.status,
