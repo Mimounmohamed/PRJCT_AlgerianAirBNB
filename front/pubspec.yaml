@@ -1,0 +1,49 @@
+name: aairbnb
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.3
+
+dependencies:
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  image_picker: ^1.1.2
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  flutter_svg: ^2.0.10+1
+  dio: ^5.10.0
+  http: ^1.6.0
+  google_sign_in: ^6.2.2
+
+google_sign_in: ^6.2.2
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  fonts:
+    - family: CormorantGaramond
+      fonts:
+        - asset: assets/fonts/CormorantGaramond-Italic-VariableFont_wght.ttf
+        - asset: assets/fonts/CormorantGaramond-VariableFont_wght.ttf
+          weight: 700
+    - family: HankenGrotesk
+      fonts:
+        - asset: assets/fonts/HankenGrotesk-VariableFont_wght.ttf
+        - asset: assets/fonts/HankenGrotesk-Italic-VariableFont_wght.ttf
+          style: italic
