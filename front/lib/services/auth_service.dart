@@ -164,6 +164,7 @@ class AuthService {
     }
     return data;
   }
+<<<<<<< HEAD
 
   static Future<Map<String, dynamic>> loginWithEmail({
   required String email,
@@ -210,4 +211,6 @@ static Future<Map<String, dynamic>> loginWithGoogle({
 }
 
 
+=======
+>>>>>>> origin/yacien-loginjdida
 }

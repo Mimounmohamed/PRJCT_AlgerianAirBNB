@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
+<<<<<<< HEAD
 import 'package:google_sign_in/google_sign_in.dart';
 import '../sign_in_screens/Mar7aban.dart';
 import '../../services/auth_service.dart';
+=======
+import '../sign_in_screens/Mar7aban.dart';
+>>>>>>> origin/yacien-loginjdida
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
 
+<<<<<<< HEAD
   void _onContinueWithGoogle(BuildContext context) async {
     try {
       final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
@@ -37,6 +42,18 @@ class GoogleSignInScreen extends StatelessWidget {
         SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
       );
     }
+=======
+  void _onContinueWithGoogle(BuildContext context) {
+    // TODO: call the actual Google sign-in SDK flow here. Once Google
+    // confirms the account, there's no OTP step needed (Google already
+    // verified the identity) — go straight to the home screen.
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
+      ),
+      (route) => false,
+    );
+>>>>>>> origin/yacien-loginjdida
   }
 
   @override
@@ -85,7 +102,11 @@ class GoogleSignInScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
               child: ConstrainedBox(
+<<<<<<< HEAD
                 constraints: const BoxConstraints(maxWidth: 448, maxHeight: 395),
+=======
+                constraints: const BoxConstraints(maxWidth: 448,maxHeight: 395,),
+>>>>>>> origin/yacien-loginjdida
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(

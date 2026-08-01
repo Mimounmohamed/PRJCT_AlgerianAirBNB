@@ -3,8 +3,11 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../sign_in_screens/signUP_step1.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
+<<<<<<< HEAD
 import '../../services/auth_service.dart';
 import '../sign_in_screens/Mar7aban.dart';
+=======
+>>>>>>> origin/yacien-loginjdida
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
   const LoginEmailOrPhoneScreen({super.key});
@@ -30,6 +33,7 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
     Navigator.of(context).maybePop();
   }
 
+<<<<<<< HEAD
   bool _isLoading = false;
 
 void _onLogin() async {
@@ -72,6 +76,12 @@ void _onLogin() async {
   }
 }
 
+=======
+  void _onLogin() {
+    // TODO: call the login API with _identifierController / _passwordController.
+  }
+
+>>>>>>> origin/yacien-loginjdida
   void _onForgotPassword() {
     Navigator.of(context).push(
       MaterialPageRoute(

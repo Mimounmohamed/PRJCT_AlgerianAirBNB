@@ -18,10 +18,13 @@ dependencies:
   flutter_svg: ^2.0.10+1
   dio: ^5.10.0
   http: ^1.6.0
+<<<<<<< HEAD
   google_sign_in: ^6.2.2
 
 google_sign_in: ^6.2.2
 
+=======
+>>>>>>> origin/yacien-loginjdida
 
 dev_dependencies:
   flutter_test:
