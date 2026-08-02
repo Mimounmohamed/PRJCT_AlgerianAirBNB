@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
-const { Resend } = require('resend');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
@@ -14,7 +14,15 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: false, // true for port 465, false for 587 (STARTTLS)
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const LOGO_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290463/logo_yu3xmx.png';
 const WELCOME_IMAGE_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290452/marhaban_v7kstu.png';
@@ -31,9 +39,9 @@ function generatePendingToken(pendingId) {
 async function sendWelcomeEmail(user) {
   try {
     console.log(`[DEBUG] Sending welcome email to: "${user.email}"`);
-    const { data, error } = await resend.emails.send({
-      from: 'AKRILI <onboarding@resend.dev>',
-      to: [user.email],
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: user.email,
       subject: 'Welcome to AKRILI!',
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
@@ -59,12 +67,7 @@ async function sendWelcomeEmail(user) {
         </div>
       `,
     });
-
-    if (error) {
-      console.error('[WELCOME EMAIL ERROR]', JSON.stringify(error));
-      return;
-    }
-    console.log('[RESEND] Welcome email sent. ID:', data?.id);
+    console.log('[NODEMAILER] Welcome email sent. Message ID:', info.messageId);
   } catch (err) {
     console.error('[WELCOME EMAIL ERROR]', err.message);
   }
@@ -344,9 +347,9 @@ router.post('/send-otp', async (req, res) => {
       });
     } else {
       console.log(`[DEBUG] Sending email OTP to: "${target}"`);
-      const { data, error } = await resend.emails.send({
-        from: 'AKRILI <onboarding@resend.dev>',
-        to: [target],
+      const info = await mailTransporter.sendMail({
+        from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+        to: target,
         subject: 'Your AKRILI verification code',
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
@@ -382,12 +385,7 @@ router.post('/send-otp', async (req, res) => {
         `,
       });
 
-      if (error) {
-        console.error('[RESEND ERROR]', JSON.stringify(error));
-        return res.status(500).json({ error: 'Failed to send verification email.' });
-      }
-
-      console.log('[RESEND] Email sent successfully. ID:', data?.id);
+      console.log('[NODEMAILER] Email sent successfully. Message ID:', info.messageId);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
@@ -395,8 +393,7 @@ router.post('/send-otp', async (req, res) => {
     console.error('[SEND-OTP ERROR]', JSON.stringify({
       message: err.message,
       code: err.code,
-      status: err.status,
-      moreInfo: err.moreInfo,
+      command: err.command,
     }));
     res.status(500).json({ error: err.message });
   }
