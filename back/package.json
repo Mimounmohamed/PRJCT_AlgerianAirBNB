@@ -18,6 +18,7 @@
     "mongoose": "^8.24.1",
     "multer": "^1.4.5-lts.2",
     "nodemailer": "^6.9.14",
+    "resend": "^6.18.0",
     "twilio": "^5.2.3"
   },
   "devDependencies": {

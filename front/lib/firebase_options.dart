@@ -57,7 +57,6 @@ class DefaultFirebaseOptions {
     projectId: 'akrili-e4f98',
     storageBucket: 'akrili-e4f98.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCtCrLU7g5wTmF9qxJOcPXSiWCptSgCi68',
     appId: '1:1009379504211:ios:b02c9c2d94bb265fd2d6a6',
@@ -66,7 +65,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'akrili-e4f98.firebasestorage.app',
     iosBundleId: 'com.example.aairbnb',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyCtCrLU7g5wTmF9qxJOcPXSiWCptSgCi68',
     appId: '1:1009379504211:ios:b02c9c2d94bb265fd2d6a6',

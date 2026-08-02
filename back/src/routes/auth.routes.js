@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const twilio = require('twilio');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
@@ -13,11 +14,63 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
-// Generates a temporary token referencing a PendingSignup doc (not a real User yet)
+const mailTransporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: false, // true for port 465, false for 587 (STARTTLS)
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+const LOGO_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290463/logo_yu3xmx.png';
+const WELCOME_IMAGE_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290452/marhaban_v7kstu.png';
+
 function generatePendingToken(pendingId) {
   return jwt.sign({ id: pendingId, pending: true }, process.env.JWT_SECRET, {
     expiresIn: '24h',
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Sends the branded welcome email after a real User is created
+// ─────────────────────────────────────────────────────────────
+async function sendWelcomeEmail(user) {
+  try {
+    console.log(`[DEBUG] Sending welcome email to: "${user.email}"`);
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: 'Welcome to AKRILI!',
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 28px 24px 20px; text-align: center;">
+              <h1 style="color: #1A1A1A; font-size: 22px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 0 16px;">
+              <img src="${WELCOME_IMAGE_URL}" alt="" width="460" style="display: block; width: 100%; height: 220px; object-fit: cover; border-radius: 14px;" />
+            </div>
+            <div style="padding: 32px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
+              <h2 style="color: #1A1A1A; font-size: 24px; font-weight: 700; margin: 0 0 10px;">Marhaban, ${user.fullName}!</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 28px;">
+                Your account is verified and ready. Your journey into the heart of Algeria begins here — discover authentic stays that tell a story.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log('[NODEMAILER] Welcome email sent. Message ID:', info.messageId);
+  } catch (err) {
+    console.error('[WELCOME EMAIL ERROR]', err.message);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -33,14 +86,13 @@ router.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'Email already registered.' });
     }
 
-    // Remove any previous incomplete attempt for this email, then start fresh
     await PendingSignup.deleteMany({ email });
 
     const pending = await PendingSignup.create({
       fullName,
       email,
       phone: { countryCode: '+213', number: phone },
-      passwordHash: password, // hashed by pre-save hook
+      passwordHash: password,
     });
 
     const token = generatePendingToken(pending._id);
@@ -62,7 +114,6 @@ router.post('/register', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // PUT /api/auth/complete-profile
-// Step 2: Update the PENDING signup with personal info
 // ─────────────────────────────────────────────────────────────
 router.put('/complete-profile', async (req, res) => {
   try {
@@ -94,7 +145,6 @@ router.put('/complete-profile', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // PUT /api/auth/profile-photo
-// Step 3: Update the PENDING signup with a profile photo
 // ─────────────────────────────────────────────────────────────
 router.put('/profile-photo', async (req, res) => {
   try {
@@ -195,7 +245,6 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     if (purpose === 'signup') {
-      // otpRecord.userId actually stores the PendingSignup._id in this flow
       const pending = await PendingSignup.findById(otpRecord.userId).select('+passwordHash');
       if (!pending) {
         return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
@@ -205,7 +254,7 @@ router.post('/verify-otp', async (req, res) => {
         fullName:     pending.fullName,
         email:        pending.email,
         phone:        pending.phone,
-        passwordHash: pending.passwordHash, // already hashed — see note below
+        passwordHash: pending.passwordHash,
         gender:       pending.gender,
         birthday:     pending.birthday,
         wilaya:       pending.wilaya,
@@ -216,13 +265,14 @@ router.post('/verify-otp', async (req, res) => {
 
       await PendingSignup.deleteOne({ _id: pending._id });
 
+      sendWelcomeEmail(user); // fire-and-forget, don't block the response
+
       const appToken = generateToken(user._id);
       return res.json({ message: 'Account created and verified.', token: appToken, user: {
         _id: user._id, fullName: user.fullName, email: user.email,
       }});
     }
 
-    // Non-signup purposes (login, 2FA, password reset) — existing real Users
     let user = await User.findById(otpRecord.userId);
     const token = generateToken(user._id);
     res.json({ token, user: { _id: user._id, fullName: user.fullName } });
@@ -258,7 +308,6 @@ router.post('/google', async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/auth/send-otp
-// Sends OTP against the PENDING signup's phone/email
 // ─────────────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {
   try {
@@ -285,7 +334,6 @@ router.post('/send-otp', async (req, res) => {
       return res.status(400).json({ error: `No ${channel} found for this account.` });
     }
 
-    // Note: userId here stores the PendingSignup._id, consumed in /verify-otp above
     const { plainCode } = await OtpVerification.generateOTP(
       target, otpType, 'signup', pending._id
     );
@@ -298,16 +346,54 @@ router.post('/send-otp', async (req, res) => {
         to: target,
       });
     } else {
-      console.log(`[DEV] Email OTP for ${target}: ${plainCode}`);
+      console.log(`[DEBUG] Sending email OTP to: "${target}"`);
+      const info = await mailTransporter.sendMail({
+        from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+        to: target,
+        subject: 'Your AKRILI verification code',
+        html: `
+          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+            <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+              <div style="padding: 36px 24px 20px; text-align: center;">
+                <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+                <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+              </div>
+              <div style="padding: 8px 32px 8px; text-align: center;">
+                <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
+                <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">Verify your account</h2>
+                <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                  Enter the code below to verify your email and start exploring authentic Algerian stays.
+                </p>
+              </div>
+              <div style="padding: 0 32px;">
+                <div style="background-color: #FBF3E7; border: 1px solid #D9CDB5; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 28px;">
+                  <p style="color: #9A9188; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; text-transform: uppercase;">Your verification code</p>
+                  <span style="font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #006972;">${plainCode}</span>
+                </div>
+              </div>
+              <div style="padding: 0 32px 32px; text-align: center;">
+                <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                  This code expires in 10 minutes. Didn't request this? You can safely ignore this email.
+                </p>
+              </div>
+              <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+                <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+                <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+              </div>
+            </div>
+          </div>
+        `,
+      });
+
+      console.log('[NODEMAILER] Email sent successfully. Message ID:', info.messageId);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
   } catch (err) {
-    console.error('[TWILIO ERROR]', JSON.stringify({
+    console.error('[SEND-OTP ERROR]', JSON.stringify({
       message: err.message,
       code: err.code,
-      status: err.status,
-      moreInfo: err.moreInfo,
+      command: err.command,
     }));
     res.status(500).json({ error: err.message });
   }
@@ -362,6 +448,8 @@ router.post('/verify-firebase-phone', async (req, res) => {
 
     await PendingSignup.deleteOne({ _id: pending._id });
     console.log('[FIREBASE-VERIFY] Real User created:', user._id);
+
+    sendWelcomeEmail(user); // fire-and-forget, don't block the response
 
     const appToken = generateToken(user._id);
     res.json({ message: 'Phone verified. Account created.', token: appToken, user: {
