@@ -3,6 +3,8 @@ import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../sign_in_screens/signUP_step1.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
+import '../../services/auth_service.dart';
+import '../sign_in_screens/Mar7aban.dart';
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
   const LoginEmailOrPhoneScreen({super.key});
@@ -28,9 +30,47 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
     Navigator.of(context).maybePop();
   }
 
-  void _onLogin() {
-    // TODO: call the login API with _identifierController / _passwordController.
+  bool _isLoading = false;
+
+void _onLogin() async {
+  final identifier = _identifierController.text.trim();
+  final password = _passwordController.text.trim();
+
+  if (identifier.isEmpty || password.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please fill in all fields')),
+    );
+    return;
   }
+
+  setState(() => _isLoading = true);
+
+  try {
+    final data = await AuthService.loginWithEmail(
+      email: identifier,
+      password: password,
+    );
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => WelcomeHomeScreen(
+          userName: data['user']?['fullName'] ?? 'there',
+          token: data['token'] ?? '',
+        ),
+      ),
+      (route) => false,
+    );
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+    );
+  }
+}
 
   void _onForgotPassword() {
     Navigator.of(context).push(

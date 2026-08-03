@@ -1,19 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../sign_in_screens/Mar7aban.dart';
+import '../../services/auth_service.dart';
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
 
-  void _onContinueWithGoogle(BuildContext context) {
-    // TODO: call the actual Google sign-in SDK flow here. Once Google
-    // confirms the account, there's no OTP step needed (Google already
-    // verified the identity) — go straight to the home screen.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const WelcomeHomeScreen(userName: 'Anis'),
-      ),
-      (route) => false,
-    );
+  void _onContinueWithGoogle(BuildContext context) async {
+    try {
+      final googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+      final account = await googleSignIn.signIn();
+
+      if (account == null) return;
+
+      final data = await AuthService.loginWithGoogle(
+        googleId: account.id,
+        email: account.email,
+        fullName: account.displayName ?? '',
+        profilePhoto: account.photoUrl,
+      );
+
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => WelcomeHomeScreen(
+            userName: data['user']?['fullName'] ?? 'there',
+            token: data['token'] ?? '',
+          ),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
   }
 
   @override
@@ -62,9 +85,8 @@ class GoogleSignInScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 24, left: 16, right: 16),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 448,maxHeight: 395,),
+                constraints: const BoxConstraints(maxWidth: 448, maxHeight: 395),
                 child: Container(
-                  width: double.infinity,
                   decoration: BoxDecoration(
                     color: const Color(0xFFFBF6EF),
                     borderRadius: BorderRadius.circular(28),

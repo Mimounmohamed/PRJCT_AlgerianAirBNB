@@ -164,4 +164,50 @@ class AuthService {
     }
     return data;
   }
+
+  static Future<Map<String, dynamic>> loginWithEmail({
+  required String email,
+  required String password,
+}) async {
+  final response = await http.post(
+    Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'email': email,
+      'password': password,
+    }),
+  );
+
+  final data = jsonDecode(response.body);
+  if (response.statusCode != 200) {
+    throw Exception(data['error'] ?? 'Login failed');
+  }
+  return data;
+}
+
+static Future<Map<String, dynamic>> loginWithGoogle({
+  required String googleId,
+  required String email,
+  required String fullName,
+  required String? profilePhoto,
+}) async {
+  final response = await http.post(
+    Uri.parse('${ApiConfig.baseUrl}/auth/google'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'googleId': googleId,
+      'email': email,
+      'fullName': fullName,
+      'profilePhoto': profilePhoto,
+    }),
+  );
+
+  final data = jsonDecode(response.body);
+  if (response.statusCode != 200) {
+    throw Exception(data['error'] ?? 'Google login failed');
+  }
+  return data;
+}
+
+
 }
