@@ -166,48 +166,99 @@ class AuthService {
   }
 
   static Future<Map<String, dynamic>> loginWithEmail({
-  required String email,
-  required String password,
-}) async {
-  final response = await http.post(
-    Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'email': email,
-      'password': password,
-    }),
-  );
+    required String email,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
 
-  final data = jsonDecode(response.body);
-  if (response.statusCode != 200) {
-    throw Exception(data['error'] ?? 'Login failed');
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Login failed');
+    }
+    return data;
   }
-  return data;
-}
 
-static Future<Map<String, dynamic>> loginWithGoogle({
-  required String googleId,
-  required String email,
-  required String fullName,
-  required String? profilePhoto,
-}) async {
-  final response = await http.post(
-    Uri.parse('${ApiConfig.baseUrl}/auth/google'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'googleId': googleId,
-      'email': email,
-      'fullName': fullName,
-      'profilePhoto': profilePhoto,
-    }),
-  );
+  static Future<Map<String, dynamic>> loginWithGoogle({
+    required String googleId,
+    required String email,
+    required String fullName,
+    required String? profilePhoto,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'googleId': googleId,
+        'email': email,
+        'fullName': fullName,
+        'profilePhoto': profilePhoto,
+      }),
+    );
 
-  final data = jsonDecode(response.body);
-  if (response.statusCode != 200) {
-    throw Exception(data['error'] ?? 'Google login failed');
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Google login failed');
+    }
+    return data;
   }
-  return data;
-}
 
+  static Future<Map<String, dynamic>> getProfile({
+    required String token,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
 
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to load profile');
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String token,
+    required Map<String, dynamic> fields,
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(fields),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to update profile');
+    }
+    return data;
+  }
+
+  static Future<void> deactivateAccount({
+    required String token,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to deactivate account');
+    }
+  }
 }
