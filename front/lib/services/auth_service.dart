@@ -82,7 +82,9 @@ class AuthService {
     const cloudName = 'bcaeahkm';
     const uploadPreset = 'akrili_unsigned';
 
-    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    final uri = Uri.parse(
+      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
+    );
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
@@ -131,11 +133,7 @@ class AuthService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({
-        'target': target,
-        'code': code,
-        'purpose': 'signup',
-      }),
+      body: jsonEncode({'target': target, 'code': code, 'purpose': 'signup'}),
     );
 
     final data = jsonDecode(response.body);
@@ -172,10 +170,7 @@ class AuthService {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     final data = jsonDecode(response.body);
@@ -214,9 +209,7 @@ class AuthService {
   }) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -246,14 +239,10 @@ class AuthService {
     return data;
   }
 
-  static Future<void> deactivateAccount({
-    required String token,
-  }) async {
+  static Future<void> deactivateAccount({required String token}) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {
-        'Authorization': 'Bearer $token',
-      },
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode != 200) {

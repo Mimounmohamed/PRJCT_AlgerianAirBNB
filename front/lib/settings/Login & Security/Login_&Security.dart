@@ -10,6 +10,8 @@ class LoginSecurityScreen extends StatefulWidget {
 }
 
 class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
+  bool _twoStepEnabled = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -145,10 +147,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFFFFFCF6),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: const Color(0xFFEFE6D6),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
                 boxShadow: const [
                   BoxShadow(
                     color: Color.fromRGBO(58, 39, 29, 0.04),
@@ -164,8 +163,11 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                 children: [
                   const Row(
                     children: [
-                      Icon(Icons.people_outline,
-                          color: Color(0xFF2A1B12), size: 22),
+                      Icon(
+                        Icons.people_outline,
+                        color: Color(0xFF2A1B12),
+                        size: 22,
+                      ),
                       SizedBox(width: 12),
                       Text(
                         'Social accounts',
@@ -256,10 +258,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFFCF6),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFFEFE6D6),
-                    width: 1,
-                  ),
+                  border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
                   boxShadow: const [
                     BoxShadow(
                       color: Color.fromRGBO(58, 39, 29, 0.04),
@@ -302,10 +301,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Color(0xFF9B8C7E),
-                    ),
+                    Icon(Icons.chevron_right, color: Color(0xFF9B8C7E)),
                   ],
                 ),
               ),
@@ -390,10 +386,7 @@ class _SecurityCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: const Color(0xFFFFFCF6),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFFEFE6D6),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
           boxShadow: const [
             BoxShadow(
               color: Color.fromRGBO(58, 39, 29, 0.04),

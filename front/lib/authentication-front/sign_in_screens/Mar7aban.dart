@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-
+import '../../personal_info.dart';
 class WelcomeHomeScreen extends StatelessWidget {
   final String userName;
   final String? token;
@@ -8,8 +8,12 @@ class WelcomeHomeScreen extends StatelessWidget {
   const WelcomeHomeScreen({super.key, this.userName = 'Anis', this.token});
 
   void _onStartExploring(BuildContext context) {
-    // TODO: navigate to the main explore/listings screen.
-  }
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => PersonalInfoScreen(token: token ?? ''),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
