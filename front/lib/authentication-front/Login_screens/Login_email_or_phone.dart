@@ -72,12 +72,21 @@ void _onLogin() async {
   }
 }
 
-  void _onForgotPassword() {
+    void _onForgotPassword() async {
+    final identifier = _identifierController.text.trim();
+    if (identifier.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email first')),
+      );
+      return;
+    }
+
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => const ResetPasswordMethodScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: resolve from the account tied to _identifierController
-          maskedEmail: 'y***@domain.com', // TODO: resolve from the account tied to _identifierController
+        builder: (context) => ResetPasswordMethodScreen(
+          maskedPhone: '+213 XXX XX XX XX',
+          maskedEmail: identifier.replaceRange(1, identifier.indexOf('@'), '***'),
+          realEmail: identifier,
         ),
       ),
     );

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../Login_email_or_phone.dart';
+import '../../../services/auth_service.dart';
 
-/// Final step of the password-recovery flow: set a new password after the
-/// OTP has been verified. Not present in the account-verification flow —
-/// added here because password reset needs this extra step before the user
-/// can actually log back in.
+
 class NewPasswordScreen extends StatefulWidget {
-  const NewPasswordScreen({super.key});
+  const NewPasswordScreen({super.key, required this.email});
+  final String email;
 
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
@@ -19,6 +18,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   String? _errorText;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,12 +26,12 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-
+  
   void _onBack() {
     Navigator.of(context).maybePop();
   }
 
-  void _onResetPassword() {
+    void _onResetPassword() async {
     if (_newPasswordController.text.isEmpty ||
         _newPasswordController.text.length < 8) {
       setState(() => _errorText = 'Password must be at least 8 characters.');
@@ -41,16 +41,31 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       setState(() => _errorText = "Passwords don't match.");
       return;
     }
-    setState(() => _errorText = null);
+    setState(() { _errorText = null; _isLoading = true; });
 
-    // TODO: call the reset-password API with _newPasswordController.text,
-    // then navigate to the Login screen once reset succeeds.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const LoginEmailOrPhoneScreen(),
-      ),
-      (route) => false,
-    );
+    try {
+      await AuthService.resetPassword(
+        email: widget.email,
+        newPassword: _newPasswordController.text,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset successfully!')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const LoginEmailOrPhoneScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorText = e.toString().replaceAll('Exception: ', '');
+        _isLoading = false;
+      });
+    }
   }
 
   Widget _passwordField({

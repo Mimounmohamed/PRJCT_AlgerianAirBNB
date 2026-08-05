@@ -474,7 +474,7 @@ router.post('/send-reset-otp', async (req, res) => {
     }
 
     const { plainCode } = await OtpVerification.generateOTP(
-      target, otpType, 'password-reset', user._id
+      target, otpType, 'password_reset', user._id
     );
 
     if (channel === 'sms') {
@@ -498,6 +498,32 @@ router.post('/send-reset-otp', async (req, res) => {
     res.json({ message: `Reset code sent to your ${channel}.` });
   } catch (err) {
     console.error('[SEND-RESET-OTP ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required.' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+
+    const user = await User.findOne({ email }).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    user.passwordHash = newPassword;  // pre-save hook auto-hashes it
+    await user.save();
+
+    res.json({ message: 'Password reset successfully.' });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

@@ -43,11 +43,11 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
           method: method,
           maskedContact: maskedContact,
           target: target,
-          purpose: 'password-reset',
+          purpose: 'password_reset',
           onVerified: (finalToken, userName) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => const NewPasswordScreen(),
+                builder: (context) => NewPasswordScreen(email: widget.realEmail),
               ),
             );
           },
