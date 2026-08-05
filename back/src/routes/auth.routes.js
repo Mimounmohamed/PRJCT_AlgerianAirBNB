@@ -451,9 +451,7 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/send-reset-otp  (no auth token needed)
-// ─────────────────────────────────────────────────────────────
+
 router.post('/send-reset-otp', async (req, res) => {
   try {
     const { phone, email, channel } = req.body;
@@ -487,11 +485,11 @@ router.post('/send-reset-otp', async (req, res) => {
         });
       }
     } else {
-      await mailTransporter.sendMail({
-        from: `"AKRILI" <${process.env.EMAIL_USER}>`,
-        to: target,
-        subject: 'AKRILI \u2014 Password Reset Code',
-        html: `<p>Your password reset code is: <strong>${plainCode}</strong></p><p>This code expires in 10 minutes.</p>`,
+      // FIX: Use the branded HTML template for email password resets too
+      await sendOtpByEmail(target, plainCode, {
+        subject: 'AKRILI — Password Reset Code',
+        title: 'Reset your password',
+        description: `Enter the code below to reset your password and secure your account.`,
       });
     }
 
@@ -523,6 +521,102 @@ router.post('/reset-password', async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password reset successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+//when a user logs in with their phone number, it finds their account, masks their email (or vice versa)
+router.post('/login/phone', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ 'phone.number': phone });
+    if (!user) {
+      return res.status(404).json({ error: 'Phone number not registered.' });
+    }
+
+    // Mask the user's email to show only the last few characters (e.g., ab***@gmail.com)
+    let maskedEmail = '';
+    if (user.email) {
+      const [name, domain] = user.email.split('@');
+      const visiblePart = name.length > 2 ? name.slice(-2) : name;
+      maskedEmail = `***${visiblePart}@${domain}`;
+    }
+
+    // Mask the phone to show only the last 2 digits
+    const phoneNumber = user.phone.number;
+    const lastTwoDigits = phoneNumber.slice(-2);
+    const maskedPhone = `••••••••${lastTwoDigits}`;
+
+    // Send OTP code via email/SMS as needed...
+    const { plainCode } = await OtpVerification.generateOTP(
+      phone, 'phone', 'login', user._id
+    );
+
+    const e164 = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+    if (user.email) {
+      await sendOtpByEmail(user.email, plainCode, {
+        subject: 'AKRILI — Phone Login Code',
+        title: 'Phone login code',
+        description: `Use this code to log in to your AKRILI account (phone: ${e164}).`,
+      });
+    }
+
+    // Return the masked details back to the client app
+    res.json({
+      message: 'OTP sent.',
+      maskedEmail,
+      maskedPhone,
+      realPhone: user.phone.number,
+      realEmail: user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//your app calls this endpoint so the server can search the MongoDB database
+router.post('/lookup-recovery', async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ error: 'Email or phone number is required.' });
+    }
+
+    // Check if identifier is an email or phone number
+    const isEmail = identifier.includes('@');
+    const query = isEmail ? { email: identifier } : { 'phone.number': identifier };
+
+    const user = await User.findOne(query);
+    if (!user) {
+      return res.status(404).json({ error: 'Account not found with this identifier.' });
+    }
+
+    // Mask email (e.g., m***@gmail.com)
+    let maskedEmail = '';
+    if (user.email) {
+      const [name, domain] = user.email.split('@');
+      const visiblePart = name.length > 2 ? name.slice(-2) : name;
+      maskedEmail = `***${visiblePart}@${domain}`;
+    }
+
+    // Mask phone to show only the last two digits (e.g., ••••••••89)
+    let maskedPhone = '';
+    let realPhone = '';
+    if (user.phone && user.phone.number) {
+      realPhone = user.phone.number;
+      const lastTwo = realPhone.slice(-2);
+      maskedPhone = `••••••••${lastTwo}`;
+    }
+
+    res.json({
+      realEmail: user.email || '',
+      realPhone: realPhone,
+      maskedEmail: maskedEmail,
+      maskedPhone: maskedPhone,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -276,4 +276,18 @@ class AuthService {
       throw Exception(data['error'] ?? 'Password reset failed');
     }
   }
+
+  static Future<Map<String, dynamic>> lookupRecovery(String identifier) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/lookup-recovery'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier}),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to look up account.');
+    }
+    return data;
+  }
 }
