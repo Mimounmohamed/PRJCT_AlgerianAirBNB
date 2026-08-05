@@ -3,7 +3,6 @@ import '../../widgets/otp_method_selector.dart';
 import '../../widgets/app_bar.dart';
 import '../../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/firebase_phone_auth_service.dart';
 import 'new_password.dart';
 
 class ResetPasswordMethodScreen extends StatefulWidget {
@@ -31,16 +30,12 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
     Navigator.of(context).maybePop();
   }
 
-  String get _fullPhoneE164 {
-    final stripped = widget.realPhone.replaceFirst(RegExp(r'^0'), '');
-    return '+213$stripped';
-  }
-
   void _goToVerifyCodeScreen(OtpMethod method) {
     final maskedContact = method == OtpMethod.sms ? widget.maskedPhone : widget.maskedEmail;
     final target = method == OtpMethod.sms
-        ? (_fullPhoneE164.length > 4 ? _fullPhoneE164 : widget.maskedPhone)
+        ? (widget.realPhone.isNotEmpty ? widget.realPhone : widget.maskedPhone)
         : (widget.realEmail.isNotEmpty ? widget.realEmail : widget.maskedEmail);
+    final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -57,20 +52,11 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
             );
           },
           onResend: () async {
-            if (method == OtpMethod.sms && _fullPhoneE164.length > 4) {
-              await FirebasePhoneAuthService.sendCode(
-                phoneNumber: _fullPhoneE164,
-                onCodeSent: () {},
-                onError: (error) {
-                  throw Exception(error);
-                },
-              );
-            } else if (method == OtpMethod.email && widget.realEmail.isNotEmpty) {
-              await AuthService.sendOtp(
-                token: '',
-                channel: 'email',
-              );
-            }
+            await AuthService.sendResetOtp(
+              phone: method == OtpMethod.sms ? widget.realPhone : '',
+              email: method == OtpMethod.email ? widget.realEmail : '',
+              channel: channel,
+            );
           },
         ),
       ),
@@ -81,40 +67,17 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (method == OtpMethod.sms) {
-        if (_fullPhoneE164.length > 4) {
-          await FirebasePhoneAuthService.sendCode(
-            phoneNumber: _fullPhoneE164,
-            onCodeSent: () {
-              if (!mounted) return;
-              setState(() => _isLoading = false);
-              _goToVerifyCodeScreen(method);
-            },
-            onError: (error) {
-              if (!mounted) return;
-              setState(() => _isLoading = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(error)),
-              );
-            },
-          );
-        } else {
-          // If real phone wasn't provided, navigate directly to verify code screen
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          _goToVerifyCodeScreen(method);
-        }
-      } else {
-        if (widget.realEmail.isNotEmpty) {
-          await AuthService.sendOtp(
-            token: '',
-            channel: 'email',
-          );
-        }
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        _goToVerifyCodeScreen(method);
-      }
+      final channel = method == OtpMethod.sms ? 'sms' : 'email';
+
+      await AuthService.sendResetOtp(
+        phone: method == OtpMethod.sms ? widget.realPhone : '',
+        email: method == OtpMethod.email ? widget.realEmail : '',
+        channel: channel,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _goToVerifyCodeScreen(method);
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
@@ -193,7 +156,7 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
             ),
             if (_isLoading)
               Container(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 child: const Center(
                   child: CircularProgressIndicator(color: Color(0xFF006972)),
                 ),

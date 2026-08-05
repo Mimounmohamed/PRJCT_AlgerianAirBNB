@@ -3,7 +3,6 @@ import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/firebase_phone_auth_service.dart';
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
@@ -46,22 +45,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      Map<String, dynamic> result;
-
-      if (widget.method == OtpMethod.sms) {
-        final idToken = await FirebasePhoneAuthService.verifyCode(_code);
-
-        result = await AuthService.verifyFirebasePhone(
-          token: widget.token ?? '',
-          idToken: idToken,
-        );
-      } else {
-        result = await AuthService.verifyOtp(
-          token: widget.token ?? '',
-          target: widget.target,
-          code: _code,
-        );
-      }
+      // Both SMS and Email now use the same backend verify-otp endpoint
+      final result = await AuthService.verifyOtp(
+        token: widget.token ?? '',
+        target: widget.target,
+        code: _code,
+        purpose: widget.purpose,
+      );
 
       if (!mounted) return;
 

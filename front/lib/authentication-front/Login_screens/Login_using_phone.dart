@@ -3,7 +3,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/otp_method_selector.dart';
 import '../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
 import '../sign_in_screens/Mar7aban.dart';
-import '../../../services/firebase_phone_auth_service.dart';
+import '../../services/auth_service.dart';
 
 class LoginUsingPhoneScreen extends StatefulWidget {
   const LoginUsingPhoneScreen({super.key});
@@ -26,12 +26,6 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
     Navigator.of(context).maybePop();
   }
 
-  String get _fullPhoneE164 {
-    final digits = _phoneController.text.trim();
-    final stripped = digits.replaceFirst(RegExp(r'^0'), '');
-    return '+213$stripped';
-  }
-
   void _onContinue() async {
     final digits = _phoneController.text.trim();
     if (digits.isEmpty) {
@@ -47,55 +41,38 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
       'X' * (digits.length > 2 ? digits.length - 2 : digits.length),
     )}';
 
-    final fullPhone = _fullPhoneE164;
-
     setState(() => _isLoading = true);
 
     try {
-      await FirebasePhoneAuthService.sendCode(
-        phoneNumber: fullPhone,
-        onCodeSent: () {
-          if (!mounted) return;
-          setState(() => _isLoading = false);
+      // Call backend — it generates OTP and sends SMS via BudgetSMS
+      await AuthService.loginWithPhone(phone: digits);
 
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => VerifyCodeScreen(
-                method: OtpMethod.sms,
-                maskedContact: maskedPhone,
-                target: fullPhone,
-                purpose: 'login',
-                onVerified: (finalToken, userName) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(
-                      builder: (context) => WelcomeHomeScreen(
-                        userName: userName.isNotEmpty ? userName : 'there',
-                        token: finalToken,
-                      ),
-                    ),
-                    (route) => false,
-                  );
-                },
-                onResend: () async {
-                  await FirebasePhoneAuthService.sendCode(
-                    phoneNumber: fullPhone,
-                    onCodeSent: () {},
-                    onError: (error) {
-                      throw Exception(error);
-                    },
-                  );
-                },
-              ),
-            ),
-          );
-        },
-        onError: (error) {
-          if (!mounted) return;
-          setState(() => _isLoading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error)),
-          );
-        },
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => VerifyCodeScreen(
+            method: OtpMethod.sms,
+            maskedContact: maskedPhone,
+            target: digits,
+            purpose: 'login',
+            onVerified: (finalToken, userName) {
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(
+                  builder: (context) => WelcomeHomeScreen(
+                    userName: userName.isNotEmpty ? userName : 'there',
+                    token: finalToken,
+                  ),
+                ),
+                (route) => false,
+              );
+            },
+            onResend: () async {
+              await AuthService.loginWithPhone(phone: digits);
+            },
+          ),
+        ),
       );
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
@@ -221,7 +198,7 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Static country code chip — Algerian flag + +213, no dropdown behavior.
+                      // Static country code chip — Algerian flag + +213
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
@@ -344,7 +321,7 @@ class _LoginUsingPhoneScreenState extends State<LoginUsingPhoneScreen> {
             ),
             if (_isLoading)
               Container(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 child: const Center(
                   child: CircularProgressIndicator(color: Color(0xFF006972)),
                 ),
