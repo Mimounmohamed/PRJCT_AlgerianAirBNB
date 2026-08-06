@@ -100,6 +100,7 @@ class AuthService {
     }
   }
 
+  // ── OTP: Send code (requires auth token — used during signup) ──
   static Future<void> sendOtp({
     required String token,
     required String channel,
@@ -119,22 +120,27 @@ class AuthService {
     }
   }
 
-  // CHANGED: now returns Map<String, dynamic> instead of void
+  // ── OTP: Verify code ──
   static Future<Map<String, dynamic>> verifyOtp({
-    required String token,
+    String token = '',
     required String target,
     required String code,
+    String purpose = 'signup',
   }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/verify-otp'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
+      headers: headers,
       body: jsonEncode({
         'target': target,
         'code': code,
-        'purpose': 'signup',
+        'purpose': purpose,
       }),
     );
 
@@ -145,6 +151,48 @@ class AuthService {
     return data;
   }
 
+  // ── Phone Login: Step 1 — send OTP to phone (no auth needed) ──
+  static Future<void> loginWithPhone({
+    required String phone,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/login/phone'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone}),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send login OTP');
+    }
+  }
+
+  // ── Password Reset: Send OTP (no auth needed) ──
+  static Future<void> sendResetOtp({
+    String phone = '',
+    String email = '',
+    required String channel,
+  }) async {
+    final body = <String, String>{'channel': channel};
+    if (channel == 'sms' && phone.isNotEmpty) {
+      body['phone'] = phone;
+    } else if (channel == 'email' && email.isNotEmpty) {
+      body['email'] = email;
+    }
+
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/send-reset-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send reset code');
+    }
+  }
+
+  // ── Firebase Phone Verify (kept for backwards compat) ──
   static Future<Map<String, dynamic>> verifyFirebasePhone({
     required String token,
     required String idToken,
@@ -165,49 +213,81 @@ class AuthService {
     return data;
   }
 
+  // ── Email + Password Login ──
   static Future<Map<String, dynamic>> loginWithEmail({
-  required String email,
-  required String password,
-}) async {
-  final response = await http.post(
-    Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'email': email,
-      'password': password,
-    }),
-  );
+    required String email,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
+    );
 
-  final data = jsonDecode(response.body);
-  if (response.statusCode != 200) {
-    throw Exception(data['error'] ?? 'Login failed');
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Login failed');
+    }
+    return data;
   }
-  return data;
-}
 
-static Future<Map<String, dynamic>> loginWithGoogle({
-  required String googleId,
-  required String email,
-  required String fullName,
-  required String? profilePhoto,
-}) async {
-  final response = await http.post(
-    Uri.parse('${ApiConfig.baseUrl}/auth/google'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'googleId': googleId,
-      'email': email,
-      'fullName': fullName,
-      'profilePhoto': profilePhoto,
-    }),
-  );
+  // ── Google Login ──
+  static Future<Map<String, dynamic>> loginWithGoogle({
+    required String googleId,
+    required String email,
+    required String fullName,
+    required String? profilePhoto,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/google'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'googleId': googleId,
+        'email': email,
+        'fullName': fullName,
+        'profilePhoto': profilePhoto,
+      }),
+    );
 
-  final data = jsonDecode(response.body);
-  if (response.statusCode != 200) {
-    throw Exception(data['error'] ?? 'Google login failed');
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Google login failed');
+    }
+    return data;
   }
-  return data;
-}
 
+    static Future<void> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'newPassword': newPassword,
+      }),
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Password reset failed');
+    }
+  }
 
+  static Future<Map<String, dynamic>> lookupRecovery(String identifier) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/lookup-recovery'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier}),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to look up account.');
+    }
+    return data;
+  }
 }

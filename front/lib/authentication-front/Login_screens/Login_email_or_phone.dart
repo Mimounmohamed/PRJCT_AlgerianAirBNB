@@ -18,6 +18,7 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
   final _identifierController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -30,57 +31,81 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
     Navigator.of(context).maybePop();
   }
 
-  bool _isLoading = false;
+  void _onLogin() async {
+    final identifier = _identifierController.text.trim();
+    final password = _passwordController.text.trim();
 
-void _onLogin() async {
-  final identifier = _identifierController.text.trim();
-  final password = _passwordController.text.trim();
+    if (identifier.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
 
-  if (identifier.isEmpty || password.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Please fill in all fields')),
-    );
-    return;
+    setState(() => _isLoading = true);
+
+    try {
+      final data = await AuthService.loginWithEmail(
+        email: identifier,
+        password: password,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => WelcomeHomeScreen(
+            userName: data['user']?['fullName'] ?? 'there',
+            token: data['token'] ?? '',
+          ),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
   }
 
-  setState(() => _isLoading = true);
+  void _onForgotPassword() async {
+    final identifier = _identifierController.text.trim();
+    if (identifier.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter your email or phone number first')),
+      );
+      return;
+    }
 
-  try {
-    final data = await AuthService.loginWithEmail(
-      email: identifier,
-      password: password,
-    );
+    setState(() => _isLoading = true);
 
-    if (!mounted) return;
-    setState(() => _isLoading = false);
+    try {
+      // Calls the database to lookup user data and fetch the exact masked elements
+      final data = await AuthService.lookupRecovery(identifier);
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => WelcomeHomeScreen(
-          userName: data['user']?['fullName'] ?? 'there',
-          token: data['token'] ?? '',
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => ResetPasswordMethodScreen(
+            maskedPhone: data['maskedPhone'] ?? '',
+            maskedEmail: data['maskedEmail'] ?? '',
+            realPhone: data['realPhone'] ?? '',
+            realEmail: data['realEmail'] ?? '',
+          ),
         ),
-      ),
-      (route) => false,
-    );
-  } catch (e) {
-    if (!mounted) return;
-    setState(() => _isLoading = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-    );
-  }
-}
-
-  void _onForgotPassword() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const ResetPasswordMethodScreen(
-          maskedPhone: '+213 XXX XX XX 88', // TODO: resolve from the account tied to _identifierController
-          maskedEmail: 'y***@domain.com', // TODO: resolve from the account tied to _identifierController
-        ),
-      ),
-    );
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+      );
+    }
   }
 
   void _onSignUp() {
@@ -152,68 +177,6 @@ void _onLogin() async {
       ),
       body: Stack(
         children: [
-          // Decorative star, bottom-left, sitting behind the content, slightly smaller and 10px higher than the right one.
-          Positioned(
-            left: -20,
-            bottom: 30,
-            child: SizedBox(
-              width: 220,
-              height: 220,
-              child: ClipRect(
-                child: OverflowBox(
-                  maxWidth: 760,
-                  maxHeight: 760,
-                  alignment: Alignment.bottomLeft,
-                  child: Opacity(
-                    opacity: 0.5,
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF0F4C4C),
-                        BlendMode.softLight,
-                      ),
-                      child: Image.asset(
-                        'assets/images/phonenumber.png',
-                        width: 760,
-                        height: 760,
-                        alignment: Alignment.bottomLeft,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Decorative star, anchored bottom-right, sitting behind the content.
-          Positioned(
-            right: 0,
-            bottom: 20,
-            child: SizedBox(
-              width: 260,
-              height: 260,
-              child: ClipRect(
-                child: OverflowBox(
-                  maxWidth: 900,
-                  maxHeight: 900,
-                  alignment: Alignment.bottomRight,
-                  child: Opacity(
-                    opacity: 0.55,
-                    child: ColorFiltered(
-                      colorFilter: const ColorFilter.mode(
-                        Color(0xFF0F4C4C),
-                        BlendMode.softLight,
-                      ),
-                      child: Image.asset(
-                        'assets/images/phonenumber.png',
-                        width: 900,
-                        height: 900,
-                        alignment: Alignment.bottomRight,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -320,6 +283,13 @@ void _onLogin() async {
               ),
             ),
           ),
+          if (_isLoading)
+            Container(
+              color: Colors.black.withValues(alpha: 0.2),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF006972)),
+              ),
+            ),
         ],
       ),
     );

@@ -18,7 +18,7 @@ router.put('/me', protect, async (req, res) => {
   try {
     const allowed = [
       'fullName', 'gender', 'birthday', 'country', 'city',
-      'wilaya', 'fullAddress', 'profilePhoto',
+      'wilaya', 'fullAddress', 'profilePhoto', 'phone', 'email'
     ];
     const updates = {};
     allowed.forEach((field) => {

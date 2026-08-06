@@ -1,18 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const twilio = require('twilio');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
 const { generateToken } = require('../middleware/auth.middleware');
-const { auth: firebaseAuth } = require('../config/firebaseAdmin');
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 
 const mailTransporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -26,6 +19,104 @@ const mailTransporter = nodemailer.createTransport({
 
 const LOGO_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290463/logo_yu3xmx.png';
 const WELCOME_IMAGE_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290452/marhaban_v7kstu.png';
+
+// ─────────────────────────────────────────────────────────────
+// Reusable branded OTP email — works for phone OTP, email OTP,
+// password reset, etc. Just pass a title + description.
+// ─────────────────────────────────────────────────────────────
+async function sendOtpByEmail(toEmail, code, { title = 'Your verification code', description = 'Enter the code below to continue.', subject = 'Your AKRILI code' } = {}) {
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 36px 24px 20px; text-align: center;">
+              <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+              <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 8px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
+              <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">${title}</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                ${description}
+              </p>
+            </div>
+            <div style="padding: 0 32px;">
+              <div style="background-color: #FBF3E7; border: 1px solid #D9CDB5; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 28px;">
+                <p style="color: #9A9188; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; text-transform: uppercase;">Your verification code</p>
+                <span style="font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #006972;">${code}</span>
+              </div>
+            </div>
+            <div style="padding: 0 32px 32px; text-align: center;">
+              <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                This code expires in 10 minutes. Didn't request this? You can safely ignore this email.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[NODEMAILER] OTP email sent to ${toEmail}. Message ID: ${info.messageId}`);
+  } catch (err) {
+    console.error(`[NODEMAILER ERROR] Failed to send OTP email to ${toEmail}:`, err.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Branded alert email — same AKRILI design but with a warning
+// icon instead of the OTP code box. Used for password change
+// confirmations, security alerts, etc.
+// ─────────────────────────────────────────────────────────────
+async function sendAlertEmail(toEmail, { title = 'Security Alert', description = '', subject = 'AKRILI — Security Alert', alertType = 'warning' } = {}) {
+  const iconColor = alertType === 'success' ? '#006972' : '#D32F2F';
+  const iconSymbol = alertType === 'success' ? '✓' : '!';
+  const borderColor = alertType === 'success' ? '#006972' : '#D32F2F';
+
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 36px 24px 20px; text-align: center;">
+              <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+              <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 8px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: ${borderColor}; margin: 0 auto 20px;"></div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 18px;"><tr><td style="width: 56px; height: 56px; border-radius: 50%; background-color: ${iconColor}; text-align: center; vertical-align: middle;"><span style="color: #FFFFFF; font-size: 28px; font-weight: 900;">${iconSymbol}</span></td></tr></table>
+              <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">${title}</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                ${description}
+              </p>
+            </div>
+            <div style="padding: 0 32px 32px; text-align: center;">
+              <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                If you did not perform this action, please secure your account immediately.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[NODEMAILER] Alert email sent to ${toEmail}. Message ID: ${info.messageId}`);
+  } catch (err) {
+    console.error(`[NODEMAILER ERROR] Failed to send alert email to ${toEmail}:`, err.message);
+  }
+}
 
 function generatePendingToken(pendingId) {
   return jwt.sign({ id: pendingId, pending: true }, process.env.JWT_SECRET, {
@@ -213,7 +304,15 @@ router.post('/login/phone', async (req, res) => {
       phone, 'phone', 'login', user._id
     );
 
-    console.log(`[DEV] OTP for ${phone}: ${plainCode}`);
+    // Send the OTP code via email
+    const e164 = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+    if (user.email) {
+      await sendOtpByEmail(user.email, plainCode, {
+        subject: 'AKRILI — Phone Login Code',
+        title: 'Phone login code',
+        description: `Use this code to log in to your AKRILI account (phone: ${e164}).`,
+      });
+    }
 
     res.json({ message: 'OTP sent to your phone number.' });
   } catch (err) {
@@ -339,12 +438,14 @@ router.post('/send-otp', async (req, res) => {
     );
 
     if (channel === 'sms') {
-      console.log(`[DEBUG] Sending SMS to: "${target}"`);
-      await twilioClient.messages.create({
-        body: `Your AKRILI verification code is: ${plainCode}`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: target,
-      });
+      // Send the phone OTP via email
+      if (pending.email) {
+        await sendOtpByEmail(pending.email, plainCode, {
+          subject: 'AKRILI — Phone Verification Code',
+          title: 'Verify your phone number',
+          description: `Use this code to verify your phone number (${target}) and complete your AKRILI account.`,
+        });
+      }
     } else {
       console.log(`[DEBUG] Sending email OTP to: "${target}"`);
       const info = await mailTransporter.sendMail({
@@ -399,68 +500,212 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/verify-firebase-phone
-// Verifies Firebase SMS auth for signup — creates the REAL User here
-// ─────────────────────────────────────────────────────────────
-router.post('/verify-firebase-phone', async (req, res) => {
+
+router.post('/send-reset-otp', async (req, res) => {
   try {
-    if (!firebaseAuth) {
-      console.error('[FIREBASE-VERIFY] Firebase Auth SDK is not initialized on the server.');
-      return res.status(500).json({
-        error: 'Firebase Admin SDK is not configured on the server. Please verify environment variables in Azure.'
+    const { phone, email, channel } = req.body;
+    let user, target, otpType;
+
+    if (channel === 'sms' && phone) {
+      user = await User.findOne({ 'phone.number': phone });
+      if (!user) return res.status(404).json({ error: 'Phone number not registered.' });
+      target = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+      otpType = 'phone';
+    } else if (channel === 'email' && email) {
+      user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ error: 'Email not registered.' });
+      target = email;
+      otpType = 'email';
+    } else {
+      return res.status(400).json({ error: 'Provide phone or email with channel.' });
+    }
+
+    const { plainCode } = await OtpVerification.generateOTP(
+      target, otpType, 'password_reset', user._id
+    );
+
+    if (channel === 'sms') {
+      // Send the reset OTP via email
+      if (user.email) {
+        await sendOtpByEmail(user.email, plainCode, {
+          subject: 'AKRILI — Password Reset Code',
+          title: 'Reset your password',
+          description: `Use this code to reset your password for your AKRILI account.`,
+        });
+      }
+    } else {
+      // FIX: Use the branded HTML template for email password resets too
+      await sendOtpByEmail(target, plainCode, {
+        subject: 'AKRILI — Password Reset Code',
+        title: 'Reset your password',
+        description: `Enter the code below to reset your password and secure your account.`,
       });
     }
 
-    const { idToken } = req.body;
-    console.log('[FIREBASE-VERIFY] Received idToken (length):', idToken?.length);
+    res.json({ message: `Reset code sent to your ${channel}.` });
+  } catch (err) {
+    console.error('[SEND-RESET-OTP ERROR]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
-    const decodedFirebase = await firebaseAuth.verifyIdToken(idToken);
-    console.log('[FIREBASE-VERIFY] Token verified. Phone:', decodedFirebase.phone_number, '| UID:', decodedFirebase.uid);
 
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('[FIREBASE-VERIFY] Missing app JWT in Authorization header.');
-      return res.status(401).json({ error: 'No token provided.' });
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required.' });
     }
-    const jwtToken = authHeader.split(' ')[1];
-    const jwtDecoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
-    console.log('[FIREBASE-VERIFY] Pending token decoded. ID:', jwtDecoded.id);
-
-    const pending = await PendingSignup.findById(jwtDecoded.id).select('+passwordHash');
-    if (!pending) {
-      console.log('[FIREBASE-VERIFY] Pending signup not found for ID:', jwtDecoded.id);
-      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
     }
 
-    const user = await User.create({
-      fullName:     pending.fullName,
-      email:        pending.email,
-      phone:        pending.phone,
-      passwordHash: pending.passwordHash,
-      gender:       pending.gender,
-      birthday:     pending.birthday,
-      wilaya:       pending.wilaya,
-      fullAddress:  pending.fullAddress,
-      profilePhoto: pending.profilePhoto,
-      identityVerified: true,
+    const user = await User.findOne({ email }).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // ── Rate limit: max 2 resets per 24h ──
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Clean up old entries outside the 24h window
+    user.passwordResetHistory = (user.passwordResetHistory || []).filter(
+      (d) => new Date(d) > windowStart
+    );
+
+    if (user.passwordResetHistory.length >= 2) {
+      // Send warning email (fire-and-forget)
+      sendAlertEmail(user.email, {
+        subject: 'AKRILI — Security Alert: Too Many Password Changes',
+        title: 'Too many password changes!',
+        description:
+          'Someone has attempted to change your password too many times in the last 24 hours. ' +
+          'For your security, password changes are limited to <strong>2 per 24 hours</strong>. ' +
+          'If this wasn\'t you, please secure your account immediately.',
+        alertType: 'warning',
+      });
+
+      return res.status(429).json({
+        error: 'Password changed too many times. Please try again after 24 hours.',
+      });
+    }
+
+    // ── Save new password ──
+    user.passwordHash = newPassword; // pre-save hook auto-hashes it
+    user.passwordResetHistory.push(now);
+    await user.save();
+
+    // ── Send confirmation email (fire-and-forget) ──
+    sendAlertEmail(user.email, {
+      subject: 'AKRILI — Password Changed Successfully',
+      title: 'Password changed successfully',
+      description:
+        'Your AKRILI account password was just changed. ' +
+        'If this was you, no action is needed. ' +
+        'If you did not make this change, please reset your password immediately.',
+      alertType: 'success',
     });
 
-    await PendingSignup.deleteOne({ _id: pending._id });
-    console.log('[FIREBASE-VERIFY] Real User created:', user._id);
-
-    sendWelcomeEmail(user); // fire-and-forget, don't block the response
-
-    const appToken = generateToken(user._id);
-    res.json({ message: 'Phone verified. Account created.', token: appToken, user: {
-      _id: user._id, fullName: user.fullName, email: user.email,
-    }});
+    res.json({ message: 'Password reset successfully.' });
   } catch (err) {
-    console.error('[FIREBASE-VERIFY ERROR]', JSON.stringify({
-      message: err.message,
-      code: err.code,
-      name: err.name,
-    }));
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+//when a user logs in with their phone number, it finds their account, masks their email (or vice versa)
+router.post('/login/phone', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ 'phone.number': phone });
+    if (!user) {
+      return res.status(404).json({ error: 'Phone number not registered.' });
+    }
+
+    // Mask the user's email to show only the last few characters (e.g., ab***@gmail.com)
+    let maskedEmail = '';
+    if (user.email) {
+      const [name, domain] = user.email.split('@');
+      const visiblePart = name.length > 2 ? name.slice(-2) : name;
+      maskedEmail = `***${visiblePart}@${domain}`;
+    }
+
+    // Mask the phone to show only the last 2 digits
+    const phoneNumber = user.phone.number;
+    const lastTwoDigits = phoneNumber.slice(-2);
+    const maskedPhone = `••••••••${lastTwoDigits}`;
+
+    // Send OTP code via email/SMS as needed...
+    const { plainCode } = await OtpVerification.generateOTP(
+      phone, 'phone', 'login', user._id
+    );
+
+    const e164 = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+    if (user.email) {
+      await sendOtpByEmail(user.email, plainCode, {
+        subject: 'AKRILI — Phone Login Code',
+        title: 'Phone login code',
+        description: `Use this code to log in to your AKRILI account (phone: ${e164}).`,
+      });
+    }
+
+    // Return the masked details back to the client app
+    res.json({
+      message: 'OTP sent.',
+      maskedEmail,
+      maskedPhone,
+      realPhone: user.phone.number,
+      realEmail: user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+//your app calls this endpoint so the server can search the MongoDB database
+router.post('/lookup-recovery', async (req, res) => {
+  try {
+    const { identifier } = req.body;
+    if (!identifier) {
+      return res.status(400).json({ error: 'Email or phone number is required.' });
+    }
+
+    // Check if identifier is an email or phone number
+    const isEmail = identifier.includes('@');
+    const query = isEmail ? { email: identifier } : { 'phone.number': identifier };
+
+    const user = await User.findOne(query);
+    if (!user) {
+      return res.status(404).json({ error: 'Account not found with this identifier.' });
+    }
+
+    // Mask email (e.g., m***@gmail.com)
+    let maskedEmail = '';
+    if (user.email) {
+      const [name, domain] = user.email.split('@');
+      const visiblePart = name.length > 2 ? name.slice(-2) : name;
+      maskedEmail = `***${visiblePart}@${domain}`;
+    }
+
+    // Mask phone to show only the last two digits (e.g., ••••••••89)
+    let maskedPhone = '';
+    let realPhone = '';
+    if (user.phone && user.phone.number) {
+      realPhone = user.phone.number;
+      const lastTwo = realPhone.slice(-2);
+      maskedPhone = `••••••••${lastTwo}`;
+    }
+
+    res.json({
+      realEmail: user.email || '',
+      realPhone: realPhone,
+      maskedEmail: maskedEmail,
+      maskedPhone: maskedPhone,
+    });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

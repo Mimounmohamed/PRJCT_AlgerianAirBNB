@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/app_bar.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/firebase_phone_auth_service.dart';
 import '../Mar7aban.dart';
 import 'verifCODE.dart';
 
@@ -62,20 +61,10 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
             );
           },
           onResend: () async {
-            if (method == OtpMethod.sms) {
-              await FirebasePhoneAuthService.sendCode(
-                phoneNumber: _fullPhoneE164,
-                onCodeSent: () {},
-                onError: (error) {
-                  throw Exception(error);
-                },
-              );
-            } else {
-              await AuthService.sendOtp(
-                token: widget.token,
-                channel: channel,
-              );
-            }
+            await AuthService.sendOtp(
+              token: widget.token,
+              channel: channel,
+            );
           },
         ),
       ),
@@ -86,32 +75,16 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (method == OtpMethod.sms) {
-        await FirebasePhoneAuthService.sendCode(
-          phoneNumber: _fullPhoneE164,
-          onCodeSent: () {
-            if (!mounted) return;
-            setState(() => _isLoading = false);
-            _goToVerifyCodeScreen(method);
-          },
-          onError: (error) {
-            if (!mounted) return;
-            setState(() => _isLoading = false);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(error)),
-            );
-          },
-        );
-      } else {
-        await AuthService.sendOtp(
-          token: widget.token,
-          channel: 'email',
-        );
+      final channel = method == OtpMethod.sms ? 'sms' : 'email';
 
-        if (!mounted) return;
-        setState(() => _isLoading = false);
-        _goToVerifyCodeScreen(method);
-      }
+      await AuthService.sendOtp(
+        token: widget.token,
+        channel: channel,
+      );
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      _goToVerifyCodeScreen(method);
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
@@ -190,7 +163,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
             ),
             if (_isLoading)
               Container(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 child: const Center(
                   child: CircularProgressIndicator(color: Color(0xFF006972)),
                 ),

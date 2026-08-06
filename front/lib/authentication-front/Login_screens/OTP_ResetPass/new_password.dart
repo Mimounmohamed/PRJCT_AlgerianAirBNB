@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../Login_email_or_phone.dart';
+import '../../../services/auth_service.dart';
 
-/// Final step of the password-recovery flow: set a new password after the
-/// OTP has been verified. Not present in the account-verification flow —
-/// added here because password reset needs this extra step before the user
-/// can actually log back in.
+
 class NewPasswordScreen extends StatefulWidget {
-  const NewPasswordScreen({super.key});
+  const NewPasswordScreen({super.key, required this.email});
+  final String email;
 
   @override
   State<NewPasswordScreen> createState() => _NewPasswordScreenState();
@@ -19,6 +18,8 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool _obscureNew = true;
   bool _obscureConfirm = true;
   String? _errorText;
+  bool _isLoading = false;
+  bool _rateLimited = false;
 
   @override
   void dispose() {
@@ -26,12 +27,12 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     _confirmPasswordController.dispose();
     super.dispose();
   }
-
+  
   void _onBack() {
     Navigator.of(context).maybePop();
   }
 
-  void _onResetPassword() {
+    void _onResetPassword() async {
     if (_newPasswordController.text.isEmpty ||
         _newPasswordController.text.length < 8) {
       setState(() => _errorText = 'Password must be at least 8 characters.');
@@ -41,16 +42,41 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       setState(() => _errorText = "Passwords don't match.");
       return;
     }
-    setState(() => _errorText = null);
+    setState(() { _errorText = null; _isLoading = true; });
 
-    // TODO: call the reset-password API with _newPasswordController.text,
-    // then navigate to the Login screen once reset succeeds.
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (context) => const LoginEmailOrPhoneScreen(),
-      ),
-      (route) => false,
-    );
+    try {
+      await AuthService.resetPassword(
+        email: widget.email,
+        newPassword: _newPasswordController.text,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password reset successfully!')),
+      );
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (context) => const LoginEmailOrPhoneScreen(),
+        ),
+        (route) => false,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      final msg = e.toString().replaceAll('Exception: ', '');
+
+      if (msg.contains('too many times')) {
+        setState(() {
+          _rateLimited = true;
+          _errorText = 'You cannot change your password more than 2 times in 24 hours.';
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorText = msg;
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Widget _passwordField({
@@ -179,22 +205,44 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _onResetPassword,
+                  onPressed: _isLoading
+                      ? null
+                      : _rateLimited
+                          ? () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginEmailOrPhoneScreen(),
+                                ),
+                                (route) => false,
+                              );
+                            }
+                          : _onResetPassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006972),
+                    backgroundColor: _rateLimited
+                        ? const Color(0xFF1A1A1A)
+                        : const Color(0xFF006972),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text(
-                    'Reset password',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          _rateLimited ? 'Back to login' : 'Reset password',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 24),

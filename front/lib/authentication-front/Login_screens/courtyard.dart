@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart'; // Import flutter_svg
 import 'signin_google.dart';
 import 'package:flutter/gestures.dart';
 import '../sign_in_screens/signUP_step1.dart';
 import 'Login_email_or_phone.dart';
-import 'Login_using_phone.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -52,7 +52,6 @@ class AuthScreen extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-
                 const Spacer(),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -69,8 +68,7 @@ class AuthScreen extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 24),
                       const Text(
                         'Discover the warmth of local \n hospitality in stays that tell a story.',
                         textAlign: TextAlign.center,
@@ -83,20 +81,17 @@ class AuthScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                      // Continue with phone
+                      // Continue with Google Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () {
                             Navigator.of(context).push(
                               PageRouteBuilder(
-                                transitionDuration:
-                                    const Duration(milliseconds: 350),
-                                pageBuilder: (context, animation,
-                                        secondaryAnimation) =>
-                                    const LoginUsingPhoneScreen(),
-                                transitionsBuilder: (context, animation,
-                                    secondaryAnimation, child) {
+                                transitionDuration: const Duration(milliseconds: 350),
+                                pageBuilder: (context, animation, secondaryAnimation) =>
+                                    const GoogleSignInScreen(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
                                   final offsetAnimation = Tween<Offset>(
                                     begin: const Offset(1, 0),
                                     end: Offset.zero,
@@ -104,6 +99,7 @@ class AuthScreen extends StatelessWidget {
                                     parent: animation,
                                     curve: Curves.easeOutCubic,
                                   ));
+
                                   return SlideTransition(
                                     position: offsetAnimation,
                                     child: child,
@@ -112,14 +108,19 @@ class AuthScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.phone, size: 18, color: Colors.white),
+                          // Render Google SVG vector icon here
+                          icon: SvgPicture.asset(
+                            'assets/icons/Google.svg',
+                            height: 20,
+                            width: 20,
+                          ),
                           label: const Text(
-                            'Continue with phone',
+                            'Continue with Google',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 15,
-                              fontFamily: 'HenkenGrotesk',
                               fontWeight: FontWeight.w400,
+                              fontFamily: 'HenkenGrotesk',
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -131,6 +132,7 @@ class AuthScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 14),
 
                       // OR divider
@@ -164,53 +166,7 @@ class AuthScreen extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 14),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              PageRouteBuilder(
-                                transitionDuration: const Duration(milliseconds: 350),
-                                pageBuilder: (context, animation, secondaryAnimation) =>
-                                    const GoogleSignInScreen(),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  final offsetAnimation = Tween<Offset>(
-                                    begin: const Offset(1, 0),
-                                    end: Offset.zero,
-                                  ).animate(CurvedAnimation(
-                                    parent: animation,
-                                    curve: Curves.easeOutCubic,
-                                  ));
 
-                                  return SlideTransition(
-                                    position: offsetAnimation,
-                                    child: child,
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.g_mobiledata, size: 20, color: Colors.white),
-                          label: const Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w400,
-                              fontFamily: 'HenkenGrotesk',
-                            ),
-                          ),
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: Colors.white.withOpacity(0.08),
-                            side: BorderSide(color: Colors.white.withOpacity(0.2)),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
                       // Log in
                       SizedBox(
                         width: double.infinity,
@@ -261,6 +217,7 @@ class AuthScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
+
                       // Sign up
                       RichText(
                         text: TextSpan(
@@ -309,6 +266,7 @@ class AuthScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 14),
+                      
                       // Browse as guest
                       const Text(
                         'Browse as guest',
@@ -322,6 +280,7 @@ class AuthScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
+                      
                       // Terms text
                       const Text(
                         "By continuing, you agree to Akrili's Terms of Service and \n Privacy Policy. Experience Algeria responsibly.",
