@@ -69,6 +69,55 @@ async function sendOtpByEmail(toEmail, code, { title = 'Your verification code',
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Branded alert email — same AKRILI design but with a warning
+// icon instead of the OTP code box. Used for password change
+// confirmations, security alerts, etc.
+// ─────────────────────────────────────────────────────────────
+async function sendAlertEmail(toEmail, { title = 'Security Alert', description = '', subject = 'AKRILI — Security Alert', alertType = 'warning' } = {}) {
+  const iconColor = alertType === 'success' ? '#006972' : '#D32F2F';
+  const iconSymbol = alertType === 'success' ? '✓' : '!';
+  const borderColor = alertType === 'success' ? '#006972' : '#D32F2F';
+
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 36px 24px 20px; text-align: center;">
+              <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+              <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 8px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: ${borderColor}; margin: 0 auto 20px;"></div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 18px;"><tr><td style="width: 56px; height: 56px; border-radius: 50%; background-color: ${iconColor}; text-align: center; vertical-align: middle;"><span style="color: #FFFFFF; font-size: 28px; font-weight: 900;">${iconSymbol}</span></td></tr></table>
+              <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">${title}</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                ${description}
+              </p>
+            </div>
+            <div style="padding: 0 32px 32px; text-align: center;">
+              <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                If you did not perform this action, please secure your account immediately.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[NODEMAILER] Alert email sent to ${toEmail}. Message ID: ${info.messageId}`);
+  } catch (err) {
+    console.error(`[NODEMAILER ERROR] Failed to send alert email to ${toEmail}:`, err.message);
+  }
+}
+
 function generatePendingToken(pendingId) {
   return jwt.sign({ id: pendingId, pending: true }, process.env.JWT_SECRET, {
     expiresIn: '24h',
@@ -517,8 +566,47 @@ router.post('/reset-password', async (req, res) => {
       return res.status(404).json({ error: 'User not found.' });
     }
 
-    user.passwordHash = newPassword;  // pre-save hook auto-hashes it
+    // ── Rate limit: max 2 resets per 24h ──
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Clean up old entries outside the 24h window
+    user.passwordResetHistory = (user.passwordResetHistory || []).filter(
+      (d) => new Date(d) > windowStart
+    );
+
+    if (user.passwordResetHistory.length >= 2) {
+      // Send warning email (fire-and-forget)
+      sendAlertEmail(user.email, {
+        subject: 'AKRILI — Security Alert: Too Many Password Changes',
+        title: 'Too many password changes!',
+        description:
+          'Someone has attempted to change your password too many times in the last 24 hours. ' +
+          'For your security, password changes are limited to <strong>2 per 24 hours</strong>. ' +
+          'If this wasn\'t you, please secure your account immediately.',
+        alertType: 'warning',
+      });
+
+      return res.status(429).json({
+        error: 'Password changed too many times. Please try again after 24 hours.',
+      });
+    }
+
+    // ── Save new password ──
+    user.passwordHash = newPassword; // pre-save hook auto-hashes it
+    user.passwordResetHistory.push(now);
     await user.save();
+
+    // ── Send confirmation email (fire-and-forget) ──
+    sendAlertEmail(user.email, {
+      subject: 'AKRILI — Password Changed Successfully',
+      title: 'Password changed successfully',
+      description:
+        'Your AKRILI account password was just changed. ' +
+        'If this was you, no action is needed. ' +
+        'If you did not make this change, please reset your password immediately.',
+      alertType: 'success',
+    });
 
     res.json({ message: 'Password reset successfully.' });
   } catch (err) {

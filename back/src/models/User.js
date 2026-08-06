@@ -76,6 +76,7 @@ const userSchema = new mongoose.Schema(
     },
 
     // ── Account Status ─────────────────────────────────────
+    passwordResetHistory: [{ type: Date }],
     accountStatus: {
       type: String,
       enum: ['active', 'deactivated', 'suspended'],

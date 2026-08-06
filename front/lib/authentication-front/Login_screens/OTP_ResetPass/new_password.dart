@@ -19,6 +19,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
   bool _obscureConfirm = true;
   String? _errorText;
   bool _isLoading = false;
+  bool _rateLimited = false;
 
   @override
   void dispose() {
@@ -61,10 +62,20 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _errorText = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
+      final msg = e.toString().replaceAll('Exception: ', '');
+
+      if (msg.contains('too many times')) {
+        setState(() {
+          _rateLimited = true;
+          _errorText = 'You cannot change your password more than 2 times in 24 hours.';
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _errorText = msg;
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -194,22 +205,44 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _onResetPassword,
+                  onPressed: _isLoading
+                      ? null
+                      : _rateLimited
+                          ? () {
+                              Navigator.of(context).pushAndRemoveUntil(
+                                MaterialPageRoute(
+                                  builder: (context) => const LoginEmailOrPhoneScreen(),
+                                ),
+                                (route) => false,
+                              );
+                            }
+                          : _onResetPassword,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF006972),
+                    backgroundColor: _rateLimited
+                        ? const Color(0xFF1A1A1A)
+                        : const Color(0xFF006972),
                     padding: const EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: const Text(
-                    'Reset password',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : Text(
+                          _rateLimited ? 'Back to login' : 'Reset password',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(height: 24),
