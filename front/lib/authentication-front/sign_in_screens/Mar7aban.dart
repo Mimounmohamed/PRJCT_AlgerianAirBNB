@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../home-front/landing_page.dart';
+
 class WelcomeHomeScreen extends StatelessWidget {
   final String userName;
   final String? token;
 
-  const WelcomeHomeScreen({super.key, this.userName = 'Anis', this.token});
+  const WelcomeHomeScreen({
+    super.key,
+    this.userName = 'Anis',
+    this.token,
+  });
 
   void _onStartExploring(BuildContext context) {
-    // TODO: navigate to the main explore/listings screen.
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const LandingPage(),
+      ),
+    );
   }
 
   @override
@@ -158,8 +169,7 @@ class WelcomeHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'From the winding alleys of the Casbah to the red sands of '
-            'the Tassili, find homes that celebrate our culture.',
+            'From the winding alleys of the Casbah to the red sands of the Tassili, find homes that celebrate our culture.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
@@ -190,13 +200,18 @@ class WelcomeHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _categoryCard({required String iconAsset, required String label}) {
+  Widget _categoryCard({
+    required String iconAsset,
+    required String label,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 18),
       decoration: BoxDecoration(
         color: const Color(0xFFFBF3E7),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFD9CDB5)),
+        border: Border.all(
+          color: const Color(0xFFD9CDB5),
+        ),
       ),
       child: Column(
         children: [
