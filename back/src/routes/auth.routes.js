@@ -20,6 +20,15 @@ const mailTransporter = nodemailer.createTransport({
 const LOGO_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290463/logo_yu3xmx.png';
 const WELCOME_IMAGE_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290452/marhaban_v7kstu.png';
 
+const MALE_AVATAR_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1786136906/user_thpvmo.png';
+const FEMALE_AVATAR_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1786136885/user_1_bmqnfp.png';
+
+function getDefaultAvatar(gender) {
+  if (gender === 'Male') return MALE_AVATAR_URL;
+  if (gender === 'Female') return FEMALE_AVATAR_URL;
+  return null; // no default for 'Other' / unspecified yet
+}
+
 // ─────────────────────────────────────────────────────────────
 // Reusable branded OTP email — works for phone OTP, email OTP,
 // password reset, etc. Just pass a title + description.
@@ -289,38 +298,6 @@ router.post('/login/email', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/auth/login/phone
-// ─────────────────────────────────────────────────────────────
-router.post('/login/phone', async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    const user = await User.findOne({ 'phone.number': phone });
-    if (!user) {
-      return res.status(404).json({ error: 'Phone number not registered.' });
-    }
-
-    const { plainCode } = await OtpVerification.generateOTP(
-      phone, 'phone', 'login', user._id
-    );
-
-    // Send the OTP code via email
-    const e164 = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
-    if (user.email) {
-      await sendOtpByEmail(user.email, plainCode, {
-        subject: 'AKRILI — Phone Login Code',
-        title: 'Phone login code',
-        description: `Use this code to log in to your AKRILI account (phone: ${e164}).`,
-      });
-    }
-
-    res.json({ message: 'OTP sent to your phone number.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
 // POST /api/auth/verify-otp
 // Verifies EMAIL OTP for signup — creates the REAL User here
 // ─────────────────────────────────────────────────────────────
@@ -358,7 +335,7 @@ router.post('/verify-otp', async (req, res) => {
         birthday:     pending.birthday,
         wilaya:       pending.wilaya,
         fullAddress:  pending.fullAddress,
-        profilePhoto: pending.profilePhoto,
+        profilePhoto: pending.profilePhoto || getDefaultAvatar(pending.gender),
         identityVerified: true,
       });
 
@@ -448,45 +425,11 @@ router.post('/send-otp', async (req, res) => {
       }
     } else {
       console.log(`[DEBUG] Sending email OTP to: "${target}"`);
-      const info = await mailTransporter.sendMail({
-        from: `"AKRILI" <${process.env.EMAIL_USER}>`,
-        to: target,
+      await sendOtpByEmail(target, plainCode, {
         subject: 'Your AKRILI verification code',
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
-            <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
-              <div style="padding: 36px 24px 20px; text-align: center;">
-                <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
-                <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
-              </div>
-              <div style="padding: 8px 32px 8px; text-align: center;">
-                <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
-                <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">Verify your account</h2>
-                <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-                  Enter the code below to verify your email and start exploring authentic Algerian stays.
-                </p>
-              </div>
-              <div style="padding: 0 32px;">
-                <div style="background-color: #FBF3E7; border: 1px solid #D9CDB5; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 28px;">
-                  <p style="color: #9A9188; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; text-transform: uppercase;">Your verification code</p>
-                  <span style="font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #006972;">${plainCode}</span>
-                </div>
-              </div>
-              <div style="padding: 0 32px 32px; text-align: center;">
-                <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
-                  This code expires in 10 minutes. Didn't request this? You can safely ignore this email.
-                </p>
-              </div>
-              <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
-                <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
-                <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
-              </div>
-            </div>
-          </div>
-        `,
+        title: 'Verify your account',
+        description: 'Enter the code below to verify your email and start exploring authentic Algerian stays.',
       });
-
-      console.log('[NODEMAILER] Email sent successfully. Message ID:', info.messageId);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
@@ -500,7 +443,9 @@ router.post('/send-otp', async (req, res) => {
   }
 });
 
-
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/send-reset-otp
+// ─────────────────────────────────────────────────────────────
 router.post('/send-reset-otp', async (req, res) => {
   try {
     const { phone, email, channel } = req.body;
@@ -534,7 +479,6 @@ router.post('/send-reset-otp', async (req, res) => {
         });
       }
     } else {
-      // FIX: Use the branded HTML template for email password resets too
       await sendOtpByEmail(target, plainCode, {
         subject: 'AKRILI — Password Reset Code',
         title: 'Reset your password',
@@ -549,7 +493,9 @@ router.post('/send-reset-otp', async (req, res) => {
   }
 });
 
-
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// ─────────────────────────────────────────────────────────────
 router.post('/reset-password', async (req, res) => {
   try {
     const { email, newPassword } = req.body;
@@ -570,13 +516,11 @@ router.post('/reset-password', async (req, res) => {
     const now = new Date();
     const windowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Clean up old entries outside the 24h window
     user.passwordResetHistory = (user.passwordResetHistory || []).filter(
       (d) => new Date(d) > windowStart
     );
 
     if (user.passwordResetHistory.length >= 2) {
-      // Send warning email (fire-and-forget)
       sendAlertEmail(user.email, {
         subject: 'AKRILI — Security Alert: Too Many Password Changes',
         title: 'Too many password changes!',
@@ -592,12 +536,10 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    // ── Save new password ──
     user.passwordHash = newPassword; // pre-save hook auto-hashes it
     user.passwordResetHistory.push(now);
     await user.save();
 
-    // ── Send confirmation email (fire-and-forget) ──
     sendAlertEmail(user.email, {
       subject: 'AKRILI — Password Changed Successfully',
       title: 'Password changed successfully',
@@ -614,8 +556,10 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
-
-//when a user logs in with their phone number, it finds their account, masks their email (or vice versa)
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/login/phone
+// Finds account by phone, returns masked contact details, sends OTP via email
+// ─────────────────────────────────────────────────────────────
 router.post('/login/phone', async (req, res) => {
   try {
     const { phone } = req.body;
@@ -625,7 +569,6 @@ router.post('/login/phone', async (req, res) => {
       return res.status(404).json({ error: 'Phone number not registered.' });
     }
 
-    // Mask the user's email to show only the last few characters (e.g., ab***@gmail.com)
     let maskedEmail = '';
     if (user.email) {
       const [name, domain] = user.email.split('@');
@@ -633,12 +576,10 @@ router.post('/login/phone', async (req, res) => {
       maskedEmail = `***${visiblePart}@${domain}`;
     }
 
-    // Mask the phone to show only the last 2 digits
     const phoneNumber = user.phone.number;
     const lastTwoDigits = phoneNumber.slice(-2);
     const maskedPhone = `••••••••${lastTwoDigits}`;
 
-    // Send OTP code via email/SMS as needed...
     const { plainCode } = await OtpVerification.generateOTP(
       phone, 'phone', 'login', user._id
     );
@@ -652,7 +593,6 @@ router.post('/login/phone', async (req, res) => {
       });
     }
 
-    // Return the masked details back to the client app
     res.json({
       message: 'OTP sent.',
       maskedEmail,
@@ -665,7 +605,9 @@ router.post('/login/phone', async (req, res) => {
   }
 });
 
-//your app calls this endpoint so the server can search the MongoDB database
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/lookup-recovery
+// ─────────────────────────────────────────────────────────────
 router.post('/lookup-recovery', async (req, res) => {
   try {
     const { identifier } = req.body;
@@ -673,7 +615,6 @@ router.post('/lookup-recovery', async (req, res) => {
       return res.status(400).json({ error: 'Email or phone number is required.' });
     }
 
-    // Check if identifier is an email or phone number
     const isEmail = identifier.includes('@');
     const query = isEmail ? { email: identifier } : { 'phone.number': identifier };
 
@@ -682,7 +623,6 @@ router.post('/lookup-recovery', async (req, res) => {
       return res.status(404).json({ error: 'Account not found with this identifier.' });
     }
 
-    // Mask email (e.g., m***@gmail.com)
     let maskedEmail = '';
     if (user.email) {
       const [name, domain] = user.email.split('@');
@@ -690,7 +630,6 @@ router.post('/lookup-recovery', async (req, res) => {
       maskedEmail = `***${visiblePart}@${domain}`;
     }
 
-    // Mask phone to show only the last two digits (e.g., ••••••••89)
     let maskedPhone = '';
     let realPhone = '';
     if (user.phone && user.phone.number) {
