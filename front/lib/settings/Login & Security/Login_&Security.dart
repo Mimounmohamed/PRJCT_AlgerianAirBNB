@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'Two_step_verif.dart';
+import 'Delete_acc.dart';
 
 class LoginSecurityScreen extends StatefulWidget {
-  const LoginSecurityScreen({super.key});
+  final String token;
+  const LoginSecurityScreen({super.key, required this.token});
 
   @override
   State<LoginSecurityScreen> createState() => _LoginSecurityScreenState();
@@ -319,7 +321,16 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                 Icons.chevron_right,
                 color: Color(0xFF9B8C7E),
               ),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DeleteAccountScreen(
+                      token: widget.token,
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 24),
 

@@ -57,4 +57,14 @@ router.delete('/me', protect, async (req, res) => {
   }
 });
 
+// DELETE /api/users/me/permanent — Permanently delete account
+router.delete('/me/permanent', protect, async (req, res) => {
+  try {
+    await User.findByIdAndDelete(req.user._id);
+    res.json({ message: 'Account permanently deleted.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

@@ -250,4 +250,16 @@ class AuthService {
       throw Exception(data['error'] ?? 'Failed to deactivate account');
     }
   }
+
+  static Future<void> deleteAccountPermanently({required String token}) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/users/me/permanent'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to delete account');
+    }
+  }
 }

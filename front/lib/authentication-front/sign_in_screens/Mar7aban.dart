@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import '../../personal_info.dart';
+import '../../settings/Login & Security/Login_&Security.dart';
+
 class WelcomeHomeScreen extends StatelessWidget {
   final String userName;
   final String? token;
@@ -8,12 +9,12 @@ class WelcomeHomeScreen extends StatelessWidget {
   const WelcomeHomeScreen({super.key, this.userName = 'Anis', this.token});
 
   void _onStartExploring(BuildContext context) {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) => PersonalInfoScreen(token: token ?? ''),
-    ),
-  );
-}
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LoginSecurityScreen(token: token ?? ''),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
