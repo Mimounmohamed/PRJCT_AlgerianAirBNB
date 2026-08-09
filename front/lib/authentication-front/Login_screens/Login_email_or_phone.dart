@@ -20,6 +20,10 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  String? _identifierError;
+  String? _passwordError;
+  String? _generalError;
+
   @override
   void dispose() {
     _identifierController.dispose();
@@ -35,10 +39,14 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
     final identifier = _identifierController.text.trim();
     final password = _passwordController.text.trim();
 
-    if (identifier.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+    setState(() {
+      _identifierError =
+          identifier.isEmpty ? 'Email or phone number is required' : null;
+      _passwordError = password.isEmpty ? 'Password is required' : null;
+      _generalError = null;
+    });
+
+    if (_identifierError != null || _passwordError != null) {
       return;
     }
 
@@ -64,23 +72,28 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      setState(() {
+        _isLoading = false;
+        _generalError = e.toString().replaceAll('Exception: ', '');
+      });
     }
   }
 
   void _onForgotPassword() async {
     final identifier = _identifierController.text.trim();
     if (identifier.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter your email or phone number first')),
-      );
+      setState(() {
+        _identifierError = 'Please enter your email or phone number first';
+        _generalError = null;
+      });
       return;
     }
 
-    setState(() => _isLoading = true);
+    setState(() {
+      _identifierError = null;
+      _generalError = null;
+      _isLoading = true;
+    });
 
     try {
       // Calls the database to lookup user data and fetch the exact masked elements
@@ -101,10 +114,10 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      setState(() {
+        _isLoading = false;
+        _generalError = e.toString().replaceAll('Exception: ', '');
+      });
     }
   }
 
@@ -121,7 +134,10 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixOverride,
+    String? errorText,
+    VoidCallback? onChanged,
   }) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -141,6 +157,7 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
           controller: controller,
           keyboardType: keyboardType,
           obscureText: obscureText,
+          onChanged: (_) => onChanged?.call(),
           decoration: InputDecoration(
             hintText: hint,
             hintStyle: const TextStyle(color: Color(0xFFB8AE9C)),
@@ -151,18 +168,35 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF0F4C4C)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFF0F4C4C),
+              ),
             ),
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 2),
+            child: Text(
+              errorText,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -194,11 +228,29 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  if (_generalError != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red),
+                      ),
+                      child: Text(
+                        _generalError!,
+                        style: const TextStyle(color: Colors.red, fontSize: 13),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   _labeledField(
                     label: 'Email or phone number',
                     hint: 'e.g. malek@andalus.com',
                     controller: _identifierController,
                     keyboardType: TextInputType.emailAddress,
+                    errorText: _identifierError,
+                    onChanged: () => setState(() => _identifierError = null),
                   ),
                   const SizedBox(height: 16),
                   _labeledField(
@@ -206,6 +258,8 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
                     hint: '••••••••',
                     controller: _passwordController,
                     obscureText: _obscurePassword,
+                    errorText: _passwordError,
+                    onChanged: () => setState(() => _passwordError = null),
                     suffixOverride: IconButton(
                       icon: Icon(
                         _obscurePassword
