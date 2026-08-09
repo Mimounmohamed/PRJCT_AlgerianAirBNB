@@ -364,9 +364,20 @@ router.post('/google', async (req, res) => {
   try {
     const { googleId, email, fullName, profilePhoto } = req.body;
 
+    // 1. Check if user already linked this Google account
     let user = await User.findOne({ 'socialAccounts.google.id': googleId });
 
     if (!user) {
+      // 2. Check if a user with this email already exists (registered via email/password)
+      const existing = await User.findOne({ email });
+
+      if (existing) {
+        return res.status(409).json({
+          error: 'An account with this email already exists. Please log in with your email and password instead.',
+        });
+      }
+
+      // 3. Brand new user — create account
       user = await User.create({
         fullName,
         email,
