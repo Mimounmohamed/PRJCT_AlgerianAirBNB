@@ -318,6 +318,54 @@ router.post('/google', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+// POST /api/auth/disconnect-google
+// ─────────────────────────────────────────────────────────────
+router.post('/disconnect-google', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ error: 'Password and confirmation are required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match.' });
+    }
+
+    const user = await User.findById(decoded.id).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (!user.socialAccounts?.google?.id) {
+      return res.status(400).json({ error: 'No Google account linked.' });
+    }
+
+    // Set the new password (hashed automatically by pre-save hook)
+    user.passwordHash = password;
+    user.socialAccounts.google = undefined;
+    await user.save();
+
+    res.json({ message: 'Google account disconnected. You can now log in with your email and password.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ─────────────────────────────────────────────────────────────
 // POST /api/auth/send-otp
 // ─────────────────────────────────────────────────────────────
 router.post('/send-otp', async (req, res) => {

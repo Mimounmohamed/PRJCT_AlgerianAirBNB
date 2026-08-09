@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'Two_step_verif.dart';
 import 'Delete_acc.dart';
-
+import '../../services/auth_service.dart';
 class LoginSecurityScreen extends StatefulWidget {
   final String token;
   const LoginSecurityScreen({super.key, required this.token});
@@ -211,7 +211,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                       ),
                       const SizedBox(width: 12),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () => _showDisconnectGoogleSheet(context),
                         child: const Text(
                           'DISCONNECT',
                           style: TextStyle(
@@ -367,6 +367,191 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
       ),
     );
   }
+
+  void _showDisconnectGoogleSheet(BuildContext context) {
+  final passwordController = TextEditingController();
+  final confirmController = TextEditingController();
+  bool isLoading = false;
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (ctx) {
+      return StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFFFFFCF6),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              24, 32, 24,
+              24 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD3C3BD),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const Text(
+                  'Create a password',
+                  style: TextStyle(
+                    color: Color(0xFF23130A),
+                    fontSize: 24,
+                    fontFamily: 'CormorantGaramond',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You need a password to log in after\ndisconnecting Google.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Color(0xFF4F4540),
+                    fontSize: 14,
+                    fontFamily: 'HankenGrotesk',
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'New password',
+                    labelStyle: const TextStyle(color: Color(0xFF9B8C7E)),
+                    filled: true,
+                    fillColor: const Color(0xFFFBF7EF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF006972)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: confirmController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Confirm password',
+                    labelStyle: const TextStyle(color: Color(0xFF9B8C7E)),
+                    filled: true,
+                    fillColor: const Color(0xFFFBF7EF),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Color(0xFF006972)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: isLoading
+                        ? null
+                        : () async {
+                            setSheetState(() => isLoading = true);
+                            try {
+                              await AuthService.disconnectGoogle(
+                                token: widget.token,
+                                password: passwordController.text,
+                                confirmPassword: confirmController.text,
+                              );
+                              if (!mounted) return;
+                              Navigator.of(ctx).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Google disconnected. Use your email and password to log in.'),
+                                ),
+                              );
+                              setState(() {});
+                            } catch (e) {
+                              setSheetState(() => isLoading = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(e.toString().replaceAll('Exception: ', '')),
+                                ),
+                              );
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB85C3A),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: isLoading
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Text(
+                            'Disconnect Google',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontFamily: 'HankenGrotesk',
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFD3C3BD)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(
+                        color: Color(0xFF23130A),
+                        fontSize: 15,
+                        fontFamily: 'HankenGrotesk',
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
 }
 
 class _SecurityCard extends StatelessWidget {

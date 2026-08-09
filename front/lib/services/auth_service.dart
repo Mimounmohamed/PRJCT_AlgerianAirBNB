@@ -262,4 +262,27 @@ class AuthService {
       throw Exception(data['error'] ?? 'Failed to delete account');
     }
   }
+
+  static Future<void> disconnectGoogle({
+  required String token,
+  required String password,
+  required String confirmPassword,
+}) async {
+  final response = await http.post(
+    Uri.parse('${ApiConfig.baseUrl}/auth/disconnect-google'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'password': password,
+      'confirmPassword': confirmPassword,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    final data = jsonDecode(response.body);
+    throw Exception(data['error'] ?? 'Failed to disconnect Google');
+  }
+}
 }
