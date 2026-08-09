@@ -22,6 +22,12 @@ class _SignUpStep1State extends State<SignUpStep1> {
   bool _obscurePassword = true;
   bool _isLoading = false;
 
+  String? _fullNameError;
+  String? _emailError;
+  String? _phoneError;
+  String? _passwordError;
+  String? _generalError;
+
   @override
   void dispose() {
     _fullNameController.dispose();
@@ -56,28 +62,24 @@ class _SignUpStep1State extends State<SignUpStep1> {
     final phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (fullName.isEmpty || email.isEmpty || phone.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
-      return;
-    }
+    setState(() {
+      _fullNameError = fullName.isEmpty ? 'Full name is required' : null;
+      _emailError = email.isEmpty
+          ? 'Email is required'
+          : (!_isValidEmail(email) ? 'Please enter a valid email address' : null);
+      _phoneError = phone.isEmpty ? 'Phone number is required' : null;
+      _passwordError = password.isEmpty
+          ? 'Password is required'
+          : (!_isStrongPassword(password)
+              ? 'Must be 8+ characters with uppercase, lowercase, a number, and a special character'
+              : null);
+      _generalError = null;
+    });
 
-    if (!_isValidEmail(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
-      );
-      return;
-    }
-
-    if (!_isStrongPassword(password)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Password must be at least 8 characters and include uppercase, lowercase, a number, and a special character.',
-          ),
-        ),
-      );
+    if (_fullNameError != null ||
+        _emailError != null ||
+        _phoneError != null ||
+        _passwordError != null) {
       return;
     }
 
@@ -109,9 +111,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      setState(() => _generalError = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -131,7 +131,9 @@ class _SignUpStep1State extends State<SignUpStep1> {
     TextInputType? keyboardType,
     bool obscureText = false,
     Widget? suffixOverride,
+    String? errorText,
   }) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -162,18 +164,35 @@ class _SignUpStep1State extends State<SignUpStep1> {
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: Color(0xFF006972)),
+              borderSide: BorderSide(
+                color: hasError ? Colors.red : const Color(0xFF006972),
+              ),
             ),
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 2),
+            child: Text(
+              errorText,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -221,11 +240,28 @@ class _SignUpStep1State extends State<SignUpStep1> {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    if (_generalError != null) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.red),
+                        ),
+                        child: Text(
+                          _generalError!,
+                          style: const TextStyle(color: Colors.red, fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     _labeledField(
                       label: 'Full name',
                       hint: 'Yasmine Amara',
                       icon: Icons.person_outline,
                       controller: _fullNameController,
+                      errorText: _fullNameError,
                     ),
                     const SizedBox(height: 16),
                     _labeledField(
@@ -234,6 +270,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                       icon: Icons.mail_outline,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
+                      errorText: _emailError,
                     ),
                     const SizedBox(height: 16),
                     _labeledField(
@@ -242,6 +279,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                       icon: Icons.phone_outlined,
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      errorText: _phoneError,
                     ),
                     const SizedBox(height: 16),
                     _labeledField(
@@ -250,6 +288,7 @@ class _SignUpStep1State extends State<SignUpStep1> {
                       icon: Icons.visibility_outlined,
                       controller: _passwordController,
                       obscureText: _obscurePassword,
+                      errorText: _passwordError,
                       suffixOverride: IconButton(
                         icon: Icon(
                           _obscurePassword

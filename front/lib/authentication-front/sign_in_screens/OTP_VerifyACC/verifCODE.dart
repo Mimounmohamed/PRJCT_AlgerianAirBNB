@@ -32,13 +32,19 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   String _code = '';
   bool _isLoading = false;
 
+  String? _otpError;
+  bool _markAllRed = false;
+  String? _resendMessage;
+  bool _resendFailed = false;
+
   bool get _isEmail => widget.method == OtpMethod.email;
 
   void _onVerifyAndContinue() async {
     if (_code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the complete 6-digit code')),
-      );
+      setState(() {
+        _otpError = 'Please enter the complete 6-digit code';
+        _markAllRed = false;
+      });
       return;
     }
 
@@ -62,9 +68,10 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      setState(() {
+        _otpError = msg;
+        _markAllRed = true;
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -75,14 +82,16 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       try {
         await widget.onResend!();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Code resent successfully')),
-        );
+        setState(() {
+          _resendMessage = 'Code resent successfully';
+          _resendFailed = false;
+        });
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to resend code')),
-        );
+        setState(() {
+          _resendMessage = 'Failed to resend code';
+          _resendFailed = true;
+        });
       }
     }
   }
@@ -150,7 +159,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               OtpCodeInput(
                 length: 6,
                 fillColor: const Color(0xFFFFFCF5),
-                onChanged: (code) => setState(() => _code = code),
+                errorText: _otpError,
+                markAllRed: _markAllRed,
+                onChanged: (code) => setState(() {
+                  _code = code;
+                  _otpError = null;
+                  _markAllRed = false;
+                }),
                 onCompleted: (code) => setState(() => _code = code),
               ),
               const SizedBox(height: 28),
@@ -197,6 +212,17 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   ),
                 ),
               ),
+              if (_resendMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _resendMessage!,
+                  style: TextStyle(
+                    color: _resendFailed ? Colors.red : const Color(0xFF006972),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
               const SizedBox(height: 40),
               const Text(
                 'AKRILI',
