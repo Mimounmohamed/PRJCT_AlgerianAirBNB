@@ -617,47 +617,52 @@ router.post('/login/phone', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/auth/lookup-recovery
+// POST /api/auth/disconnect-google
 // ─────────────────────────────────────────────────────────────
-router.post('/lookup-recovery', async (req, res) => {
+router.post('/disconnect-google', async (req, res) => {
   try {
-    const { identifier } = req.body;
-    if (!identifier) {
-      return res.status(400).json({ error: 'Email or phone number is required.' });
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided.' });
     }
 
-    const isEmail = identifier.includes('@');
-    const query = isEmail ? { email: identifier } : { 'phone.number': identifier };
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findOne(query);
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ error: 'Password and confirmation are required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match.' });
+    }
+
+    const user = await User.findById(decoded.id).select('+passwordHash');
     if (!user) {
-      return res.status(404).json({ error: 'Account not found with this identifier.' });
+      return res.status(404).json({ error: 'User not found.' });
     }
 
-    let maskedEmail = '';
-    if (user.email) {
-      const [name, domain] = user.email.split('@');
-      const visiblePart = name.length > 2 ? name.slice(-2) : name;
-      maskedEmail = `***${visiblePart}@${domain}`;
+    if (!user.socialAccounts?.google?.id) {
+      return res.status(400).json({ error: 'No Google account linked.' });
     }
 
-    let maskedPhone = '';
-    let realPhone = '';
-    if (user.phone && user.phone.number) {
-      realPhone = user.phone.number;
-      const lastTwo = realPhone.slice(-2);
-      maskedPhone = `••••••••${lastTwo}`;
-    }
+    // Set the new password (hashed automatically by pre-save hook)
+    user.passwordHash = password;
+    user.socialAccounts.google = undefined;
+    await user.save();
 
-    res.json({
-      realEmail: user.email || '',
-      realPhone: realPhone,
-      maskedEmail: maskedEmail,
-      maskedPhone: maskedPhone,
-    });
+    res.json({ message: 'Google account disconnected. You can now log in with your email and password.' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 module.exports = router;
