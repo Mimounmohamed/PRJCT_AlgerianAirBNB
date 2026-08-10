@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../home-front/landing_page.dart';
+import '../../home-front/explore_page/landing_page.dart';
 
 class WelcomeHomeScreen extends StatelessWidget {
   final String userName;
