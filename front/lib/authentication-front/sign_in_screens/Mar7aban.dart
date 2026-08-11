@@ -17,7 +17,8 @@ class WelcomeHomeScreen extends StatelessWidget {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => const LandingPage(),
+        // CHANGED — was const LandingPage(); now flags this as a fresh signup
+        builder: (_) => const LandingPage(showCompleteProfileDialog: true),
       ),
     );
   }

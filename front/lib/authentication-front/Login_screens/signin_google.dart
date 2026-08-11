@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../sign_in_screens/Mar7aban.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
+import '../../home-front/explore_page/landing_page.dart'; // NEW
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
@@ -29,15 +30,35 @@ class GoogleSignInScreen extends StatelessWidget {
         UserSession.instance.setUser(AppUser.fromJson(userJson));
       }
 
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(
-          builder: (context) => WelcomeHomeScreen(
-            userName: data['user']?['fullName'] ?? 'there',
-            token: data['token'] ?? '',
+      // NEW — requires your backend's POST /auth/google response to include
+      // `isNewUser: true/false`. Checks both top-level and nested under
+      // `user` in case you add it either place. Defaults to false (treated
+      // as an existing login) if the backend doesn't send it yet.
+      final isNewUser =
+          (data['isNewUser'] ?? userJson?['isNewUser']) == true;
+
+      if (isNewUser) {
+        // Fresh signup — show Marhaban, which will then show the
+        // complete-profile dialog once the user taps "Start Exploring".
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => WelcomeHomeScreen(
+              userName: data['user']?['fullName'] ?? 'there',
+              token: data['token'] ?? '',
+            ),
           ),
-        ),
-        (route) => false,
-      );
+          (route) => false,
+        );
+      } else {
+        // Existing account — go straight to LandingPage, no Marhaban,
+        // no complete-profile dialog.
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => const LandingPage(),
+          ),
+          (route) => false,
+        );
+      }
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -51,14 +72,12 @@ class GoogleSignInScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background image
           Positioned.fill(
             child: Image.asset(
               'assets/images/google.png',
               fit: BoxFit.cover,
             ),
           ),
-          // Top bar
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -86,7 +105,6 @@ class GoogleSignInScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Bottom card
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
@@ -109,7 +127,6 @@ class GoogleSignInScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      // Icon
                       Container(
                         width: 60,
                         height: 60,
@@ -124,7 +141,6 @@ class GoogleSignInScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Title
                       const Text(
                         'Sign in with Google',
                         style: TextStyle(
@@ -135,7 +151,6 @@ class GoogleSignInScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      // Subtitle
                       const Text(
                         'Use your Google account to securely\n access your AKRILI journeys and\n authentic stays.',
                         textAlign: TextAlign.center,
@@ -147,7 +162,6 @@ class GoogleSignInScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      // Continue with Google button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
@@ -187,7 +201,6 @@ class GoogleSignInScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      // Terms
                       RichText(
                         textAlign: TextAlign.center,
                         text: const TextSpan(

@@ -366,6 +366,7 @@ router.post('/google', async (req, res) => {
 
     // 1. Check if user already linked this Google account
     let user = await User.findOne({ 'socialAccounts.google.id': googleId });
+    let isNewUser = false; // NEW
 
     if (!user) {
       // 2. Check if a user with this email already exists (registered via email/password)
@@ -384,10 +385,23 @@ router.post('/google', async (req, res) => {
         profilePhoto,
         socialAccounts: { google: { id: googleId, email } },
       });
+      isNewUser = true; // NEW
+
+      sendWelcomeEmail(user); // NEW — same welcome email your email-signup flow sends, fire-and-forget
     }
 
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto } });
+    res.json({
+      token,
+      isNewUser, // NEW — top-level
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        isNewUser, // NEW — also nested under user, as a fallback
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

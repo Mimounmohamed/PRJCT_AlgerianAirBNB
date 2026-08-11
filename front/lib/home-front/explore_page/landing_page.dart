@@ -6,8 +6,16 @@ import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
 import '../../settings/Profile_&_Settings.dart';
 
+
 class LandingPage extends StatefulWidget {
-  const LandingPage({super.key});
+  const LandingPage({
+    super.key,
+    this.showCompleteProfileDialog = false, // NEW
+  });
+
+  /// Set to true only when arriving right after signup — shows the
+  /// "Complete Your Profile" nudge once. Login flows should leave this false.
+  final bool showCompleteProfileDialog;
 
   @override
   State<LandingPage> createState() => _LandingPageState();
@@ -20,9 +28,11 @@ class _LandingPageState extends State<LandingPage> {
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showCompleteProfileDialog();
-    });
+    if (widget.showCompleteProfileDialog) { // CHANGED — was unconditional
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showCompleteProfileDialog();
+      });
+    }
   }
 
   void _showCompleteProfileDialog() {
@@ -54,8 +64,6 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
-    // NEW — the Profile tab renders its own header, so the shared
-    // LandingAppBar only shows on the other tabs.
     final showLandingAppBar = _currentIndex != 4;
 
     return Scaffold(
@@ -64,7 +72,7 @@ class _LandingPageState extends State<LandingPage> {
       body: SafeArea(
         child: Column(
           children: [
-            if (showLandingAppBar) // CHANGED — was always shown
+            if (showLandingAppBar)
               ListenableBuilder(
                 listenable: UserSession.instance,
                 builder: (context, _) {
