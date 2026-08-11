@@ -285,4 +285,29 @@ class AuthService {
     throw Exception(data['error'] ?? 'Failed to disconnect Google');
   }
 }
+
+static Future<void> updatePassword({
+  required String token,
+  required String currentPassword,
+  required String newPassword,
+  required String confirmPassword,
+}) async {
+  final response = await http.put(
+    Uri.parse('${ApiConfig.baseUrl}/auth/update-password'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+      'confirmPassword': confirmPassword,
+    }),
+  );
+
+  if (response.statusCode != 200) {
+    final data = jsonDecode(response.body);
+    throw Exception(data['error'] ?? 'Failed to update password');
+  }
+}
 }

@@ -3,6 +3,8 @@ import 'package:flutter_svg/svg.dart';
 import 'Two_step_verif.dart';
 import 'Delete_acc.dart';
 import '../../services/auth_service.dart';
+import 'Update_password.dart';
+
 class LoginSecurityScreen extends StatefulWidget {
   final String token;
   const LoginSecurityScreen({super.key, required this.token});
@@ -33,30 +35,6 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
             fontSize: 24,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        color: const Color(0xFFFBF6EF),
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2A1B12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          child: const Text(
-            'UPDATE SECURITY SETTINGS',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-              fontFamily: 'HankenGrotesk',
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.54,
-            ),
           ),
         ),
       ),
@@ -130,17 +108,26 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
             const SizedBox(height: 12),
 
             // Password card
-            _SecurityCard(
-              icon: Icons.key_outlined,
-              iconColor: const Color(0xFF2A1B12),
-              title: 'Password',
-              subtitle: 'Last updated 2 months ago',
-              trailing: const Icon(
-                Icons.chevron_right,
-                color: Color(0xFF23130A),
+              _SecurityCard(
+                icon: Icons.key_outlined,
+                iconColor: const Color(0xFF2A1B12),
+                title: 'Password',
+                subtitle: 'Last updated 2 months ago',
+                trailing: const Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFF23130A),
+                ),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => UpdatePasswordScreen(
+                        token: widget.token,
+                      ),
+                    ),
+                  );
+                },
               ),
-              onTap: () {},
-            ),
             const SizedBox(height: 12),
 
             // Social accounts card
