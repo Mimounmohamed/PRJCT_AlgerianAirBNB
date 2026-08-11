@@ -17,21 +17,17 @@ class LandingAppBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 4),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: const Color(0xFF2A1B12),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.auto_awesome,
-                color: Color(0xFFD9A441), size: 16),
+          Image.asset(
+            'assets/images/logo.png',
+            width: 39,
+            height: 39,
           ),
           const SizedBox(width: 10),
           const Text(
             'AKRILI',
             style: TextStyle(
               fontFamily: 'CormorantGaramond',
-              fontSize: 20,
+              fontSize: 26,
               fontWeight: FontWeight.w700,
               letterSpacing: 2,
               color: Color(0xFF1A1A1A),
@@ -47,18 +43,19 @@ class LandingAppBar extends StatelessWidget {
               );
             },
             icon: const Icon(Icons.notifications_none_rounded,
-                color: Color(0xFF1A1A1A)),
+                color: Color(0xFF1A1A1A), size: 29),
+              
           ),
           GestureDetector(
             onTap: () => Scaffold.of(context).openEndDrawer(),
             child: CircleAvatar(
-              radius: 16,
+              radius: 22,
               backgroundColor: const Color(0xFFEFE6D6),
               backgroundImage: profilePhotoUrl != null
                   ? NetworkImage(profilePhotoUrl!)
                   : null,
               child: profilePhotoUrl == null
-                  ? const Icon(Icons.person, size: 18, color: Color(0xFF9A9188))
+                  ? const Icon(Icons.person, size: 20, color: Color(0xFF9A9188))
                   : null,
             ),
           ),

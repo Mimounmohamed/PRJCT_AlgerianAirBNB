@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/complete_profile_dialog.dart';
+import '../../services/user_session.dart'; // NEW
 import '../widgets/landing_app_bar.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
@@ -44,9 +45,15 @@ class _LandingPageState extends State<LandingPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // TODO: pass the logged-in user's real profilePhotoUrl once
-            // session/auth state is wired up.
-            const LandingAppBar(profilePhotoUrl: null),
+            // CHANGED — now reads the real logged-in user's photo, reactively
+            ListenableBuilder(
+              listenable: UserSession.instance,
+              builder: (context, _) {
+                return LandingAppBar(
+                  profilePhotoUrl: UserSession.instance.currentUser?.profilePhotoUrl,
+                );
+              },
+            ),
             // TODO: fill this in per tab once the real screens exist.
             const Expanded(child: SizedBox.shrink()),
           ],

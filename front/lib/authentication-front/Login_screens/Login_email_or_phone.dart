@@ -4,6 +4,7 @@ import '../widgets/app_bar.dart';
 import '../sign_in_screens/signUP_step1.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_session.dart';
 import '../sign_in_screens/Mar7aban.dart';
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
@@ -60,6 +61,12 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
 
       if (!mounted) return;
       setState(() => _isLoading = false);
+
+      // Populate the app-wide session with the logged-in user
+      final userJson = data['user'] as Map<String, dynamic>?;
+      if (userJson != null) {
+        UserSession.instance.setUser(AppUser.fromJson(userJson));
+      }
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(

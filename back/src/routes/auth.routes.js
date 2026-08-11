@@ -291,7 +291,7 @@ router.post('/login/email', async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -345,13 +345,13 @@ router.post('/verify-otp', async (req, res) => {
 
       const appToken = generateToken(user._id);
       return res.json({ message: 'Account created and verified.', token: appToken, user: {
-        _id: user._id, fullName: user.fullName, email: user.email,
+        _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto,
       }});
     }
 
     let user = await User.findById(otpRecord.userId);
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName } });
+    res.json({ token, user: { _id: user._id, fullName: user.fullName, profilePhoto: user.profilePhoto } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -387,7 +387,7 @@ router.post('/google', async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

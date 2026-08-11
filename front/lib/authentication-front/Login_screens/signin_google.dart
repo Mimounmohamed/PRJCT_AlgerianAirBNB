@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../sign_in_screens/Mar7aban.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_session.dart';
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
@@ -21,6 +22,12 @@ class GoogleSignInScreen extends StatelessWidget {
       );
 
       if (!context.mounted) return;
+
+      // Populate the app-wide session with the logged-in user
+      final userJson = data['user'] as Map<String, dynamic>?;
+      if (userJson != null) {
+        UserSession.instance.setUser(AppUser.fromJson(userJson));
+      }
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
