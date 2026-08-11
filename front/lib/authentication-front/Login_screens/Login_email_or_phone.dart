@@ -4,7 +4,8 @@ import '../widgets/app_bar.dart';
 import '../sign_in_screens/signUP_step1.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
 import '../../services/auth_service.dart';
-import '../sign_in_screens/Mar7aban.dart';
+import '../../services/user_session.dart';
+import '../../home-front/explore_page/landing_page.dart'; // NEW
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
   const LoginEmailOrPhoneScreen({super.key});
@@ -61,12 +62,17 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
+      // Populate the app-wide session with the logged-in user
+      final userJson = data['user'] as Map<String, dynamic>?;
+      if (userJson != null) {
+        UserSession.instance.setUser(AppUser.fromJson(userJson));
+      }
+
+      // CHANGED — login goes straight to LandingPage, no Mar7aban,
+      // no complete-profile dialog (showCompleteProfileDialog defaults false).
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (context) => WelcomeHomeScreen(
-            userName: data['user']?['fullName'] ?? 'there',
-            token: data['token'] ?? '',
-          ),
+          builder: (context) => const LandingPage(),
         ),
         (route) => false,
       );

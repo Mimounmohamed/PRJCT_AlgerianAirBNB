@@ -3,6 +3,7 @@ import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/user_session.dart'; // NEW — adjust path if needed
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
@@ -62,7 +63,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       if (!mounted) return;
 
       final finalToken = result['token'] as String? ?? '';
-      final userName = (result['user'] != null ? result['user']['fullName'] : null) as String? ?? '';
+      final userJson = result['user'] as Map<String, dynamic>?;
+      final userName = userJson?['fullName'] as String? ?? '';
+
+      // NEW — populate the app-wide session as soon as we have the user object
+      if (userJson != null) {
+        UserSession.instance.setUser(AppUser.fromJson(userJson));
+      }
 
       widget.onVerified(finalToken, userName);
     } catch (e) {
