@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/complete_profile_dialog.dart';
-import '../../services/user_session.dart'; // NEW
+import '../../services/user_session.dart';
 import '../widgets/landing_app_bar.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
+import '../../settings/Profile_&_Settings.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -37,25 +38,42 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  Widget _buildTabBody() {
+    switch (_currentIndex) {
+      case 4:
+        return const ProfileSettingsScreen();
+      case 0:
+      case 1:
+      case 3:
+      default:
+        // TODO: swap in the real Explore / Saved / Messages screens
+        // once they exist.
+        return const SizedBox.shrink();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // NEW — the Profile tab renders its own header, so the shared
+    // LandingAppBar only shows on the other tabs.
+    final showLandingAppBar = _currentIndex != 4;
+
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
       endDrawer: const ProfileSidePanel(),
       body: SafeArea(
         child: Column(
           children: [
-            // CHANGED — now reads the real logged-in user's photo, reactively
-            ListenableBuilder(
-              listenable: UserSession.instance,
-              builder: (context, _) {
-                return LandingAppBar(
-                  profilePhotoUrl: UserSession.instance.currentUser?.profilePhotoUrl,
-                );
-              },
-            ),
-            // TODO: fill this in per tab once the real screens exist.
-            const Expanded(child: SizedBox.shrink()),
+            if (showLandingAppBar) // CHANGED — was always shown
+              ListenableBuilder(
+                listenable: UserSession.instance,
+                builder: (context, _) {
+                  return LandingAppBar(
+                    profilePhotoUrl: UserSession.instance.currentUser?.profilePhotoUrl,
+                  );
+                },
+              ),
+            Expanded(child: _buildTabBody()),
           ],
         ),
       ),
