@@ -3,7 +3,7 @@ import '../../widgets/app_bar.dart';
 import '../../widgets/otp_method_selector.dart';
 import '../../widgets/otp_code_input.dart';
 import '../../../services/auth_service.dart';
-import '../../../services/firebase_phone_auth_service.dart';
+import '../../../services/user_session.dart'; // NEW — adjust path if needed
 
 class VerifyCodeScreen extends StatefulWidget {
   const VerifyCodeScreen({
@@ -33,48 +33,52 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
   String _code = '';
   bool _isLoading = false;
 
+  String? _otpError;
+  bool _markAllRed = false;
+  String? _resendMessage;
+  bool _resendFailed = false;
+
   bool get _isEmail => widget.method == OtpMethod.email;
 
   void _onVerifyAndContinue() async {
     if (_code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the complete 6-digit code')),
-      );
+      setState(() {
+        _otpError = 'Please enter the complete 6-digit code';
+        _markAllRed = false;
+      });
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      Map<String, dynamic> result;
-
-      if (widget.method == OtpMethod.sms) {
-        final idToken = await FirebasePhoneAuthService.verifyCode(_code);
-
-        result = await AuthService.verifyFirebasePhone(
-          token: widget.token ?? '',
-          idToken: idToken,
-        );
-      } else {
-        result = await AuthService.verifyOtp(
-          token: widget.token ?? '',
-          target: widget.target,
-          code: _code,
-        );
-      }
+      // Both SMS and Email now use the same backend verify-otp endpoint
+      final result = await AuthService.verifyOtp(
+        token: widget.token ?? '',
+        target: widget.target,
+        code: _code,
+        purpose: widget.purpose,
+      );
 
       if (!mounted) return;
 
       final finalToken = result['token'] as String? ?? '';
-      final userName = (result['user'] != null ? result['user']['fullName'] : null) as String? ?? '';
+      final userJson = result['user'] as Map<String, dynamic>?;
+      final userName = userJson?['fullName'] as String? ?? '';
+
+      // NEW — populate the app-wide session as soon as we have the user object
+      if (userJson != null) {
+        UserSession.instance.setUser(AppUser.fromJson(userJson));
+      }
 
       widget.onVerified(finalToken, userName);
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      setState(() {
+        _otpError = msg;
+        _markAllRed = true;
+      });
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -85,14 +89,16 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       try {
         await widget.onResend!();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Code resent successfully')),
-        );
+        setState(() {
+          _resendMessage = 'Code resent successfully';
+          _resendFailed = false;
+        });
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to resend code')),
-        );
+        setState(() {
+          _resendMessage = 'Failed to resend code';
+          _resendFailed = true;
+        });
       }
     }
   }
@@ -160,7 +166,13 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
               OtpCodeInput(
                 length: 6,
                 fillColor: const Color(0xFFFFFCF5),
-                onChanged: (code) => setState(() => _code = code),
+                errorText: _otpError,
+                markAllRed: _markAllRed,
+                onChanged: (code) => setState(() {
+                  _code = code;
+                  _otpError = null;
+                  _markAllRed = false;
+                }),
                 onCompleted: (code) => setState(() => _code = code),
               ),
               const SizedBox(height: 28),
@@ -207,6 +219,17 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
                   ),
                 ),
               ),
+              if (_resendMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _resendMessage!,
+                  style: TextStyle(
+                    color: _resendFailed ? Colors.red : const Color(0xFF006972),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
               const SizedBox(height: 40),
               const Text(
                 'AKRILI',

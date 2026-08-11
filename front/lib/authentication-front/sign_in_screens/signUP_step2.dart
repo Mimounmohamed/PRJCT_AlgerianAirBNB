@@ -33,6 +33,11 @@ class _SignUpStep2State extends State<SignUpStep2> {
   final _fullAddressController = TextEditingController();
   bool _isLoading = false;
 
+  String? _birthdayError;
+  String? _locationError;
+  String? _fullAddressError;
+  String? _generalError;
+
   @override
   void dispose() {
     _fullAddressController.dispose();
@@ -44,13 +49,20 @@ class _SignUpStep2State extends State<SignUpStep2> {
   }
 
   void _onContinue() async {
-    if (_birthday == null ||
-        _wilayaCode == null ||
-        _baladiya == null ||
-        _fullAddressController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all personal information fields')),
-      );
+    setState(() {
+      _birthdayError = _birthday == null ? 'Please select your birthday' : null;
+      _locationError = (_wilayaCode == null || _baladiya == null)
+          ? 'Please select your wilaya and baladiya'
+          : null;
+      _fullAddressError = _fullAddressController.text.trim().isEmpty
+          ? 'Please enter your full address'
+          : null;
+      _generalError = null;
+    });
+
+    if (_birthdayError != null ||
+        _locationError != null ||
+        _fullAddressError != null) {
       return;
     }
 
@@ -87,9 +99,7 @@ class _SignUpStep2State extends State<SignUpStep2> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      setState(() => _generalError = msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -159,6 +169,22 @@ class _SignUpStep2State extends State<SignUpStep2> {
                 ),
               ),
               const SizedBox(height: 24),
+              if (_generalError != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red),
+                  ),
+                  child: Text(
+                    _generalError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 13),
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 2),
                 child: Text(
@@ -189,18 +215,26 @@ class _SignUpStep2State extends State<SignUpStep2> {
               const SizedBox(height: 16),
               BirthdayField(
                 selectedDate: _birthday,
-                onDateSelected: (date) => setState(() => _birthday = date),
+                errorText: _birthdayError,
+                onDateSelected: (date) => setState(() {
+                  _birthday = date;
+                  _birthdayError = null;
+                }),
               ),
               const SizedBox(height: 16),
               WilayaBaladiyaSelector(
                 selectedWilayaCode: _wilayaCode,
                 selectedBaladiya: _baladiya,
+                errorText: _locationError,
                 onWilayaChanged: (code) => setState(() {
                   _wilayaCode = code;
                   _baladiya = null;
+                  _locationError = null;
                 }),
-                onBaladiyaChanged: (baladiya) =>
-                    setState(() => _baladiya = baladiya),
+                onBaladiyaChanged: (baladiya) => setState(() {
+                  _baladiya = baladiya;
+                  _locationError = null;
+                }),
               ),
               const SizedBox(height: 16),
               Column(
@@ -237,14 +271,38 @@ class _SignUpStep2State extends State<SignUpStep2> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+                        borderSide: BorderSide(
+                          color: _fullAddressError != null
+                              ? Colors.red
+                              : const Color(0xFFD9CDB5),
+                        ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+                        borderSide: BorderSide(
+                          color: _fullAddressError != null
+                              ? Colors.red
+                              : const Color(0xFFD9CDB5),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: _fullAddressError != null
+                              ? Colors.red
+                              : const Color(0xFF006972),
+                        ),
                       ),
                     ),
                   ),
+                  if (_fullAddressError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 2),
+                      child: Text(
+                        _fullAddressError!,
+                        style: const TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
                 ],
               ),
               const SizedBox(height: 28),

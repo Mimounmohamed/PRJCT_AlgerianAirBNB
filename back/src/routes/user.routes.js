@@ -17,9 +17,9 @@ router.get('/me', protect, async (req, res) => {
 router.put('/me', protect, async (req, res) => {
   try {
     const allowed = [
-        'fullName', 'gender', 'birthday', 'country', 'city',
-        'wilaya', 'fullAddress', 'profilePhoto', 'phone' ,'email'
-      ];
+      'fullName', 'gender', 'birthday', 'country', 'city',
+      'wilaya', 'fullAddress', 'profilePhoto', 'phone', 'email'
+    ];
     const updates = {};
     allowed.forEach((field) => {
       if (req.body[field] !== undefined) updates[field] = req.body[field];

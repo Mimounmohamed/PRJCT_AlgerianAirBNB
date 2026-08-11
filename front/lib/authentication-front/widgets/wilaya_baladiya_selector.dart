@@ -10,6 +10,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
     required this.onBaladiyaChanged,
     this.wilayaLabel = 'Wilaya',
     this.baladiyaLabel = 'Baladiya',
+    this.errorText,
   });
 
   final String? selectedWilayaCode;
@@ -18,6 +19,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
   final ValueChanged<String> onBaladiyaChanged;
   final String wilayaLabel;
   final String baladiyaLabel;
+  final String? errorText;
 
   Future<void> _openPicker({
     required BuildContext context,
@@ -150,6 +152,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
     required String placeholder,
     required VoidCallback onTap,
     bool enabled = true,
+    bool hasError = false,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,7 +179,9 @@ class WilayaBaladiyaSelector extends StatelessWidget {
                   ? const Color(0xFFFBF3E7)
                   : const Color(0xFFF3EEE1),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFD9CDB5)),
+              border: Border.all(
+                color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+              ),
             ),
             child: Row(
               children: [
@@ -211,6 +216,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
         ? algeriaWilayas[selectedWilayaCode]
         : null;
     final baladiyas = selectedWilaya?.baladiyas ?? const <String>[];
+    final hasError = errorText != null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,6 +226,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
           label: wilayaLabel,
           value: selectedWilaya?.name,
           placeholder: 'Select your wilaya',
+          hasError: hasError,
           onTap: () => _openPicker(
             context: context,
             title: wilayaLabel,
@@ -239,6 +246,7 @@ class WilayaBaladiyaSelector extends StatelessWidget {
               ? 'Select a wilaya first'
               : 'Select your baladiya',
           enabled: selectedWilaya != null,
+          hasError: hasError,
           onTap: () => _openPicker(
             context: context,
             title: baladiyaLabel,
@@ -248,6 +256,17 @@ class WilayaBaladiyaSelector extends StatelessWidget {
             onSelected: onBaladiyaChanged,
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 2),
+            child: Text(
+              errorText!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }

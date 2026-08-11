@@ -1,18 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const twilio = require('twilio');
 const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const PendingSignup = require('../models/PendingSignup');
 const OtpVerification = require('../models/OtpVerification');
 const { generateToken } = require('../middleware/auth.middleware');
-const { auth: firebaseAuth } = require('../config/firebaseAdmin');
-
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID,
-  process.env.TWILIO_AUTH_TOKEN
-);
 
 const mailTransporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
@@ -26,6 +19,113 @@ const mailTransporter = nodemailer.createTransport({
 
 const LOGO_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290463/logo_yu3xmx.png';
 const WELCOME_IMAGE_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1785290452/marhaban_v7kstu.png';
+
+const MALE_AVATAR_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1786136906/user_thpvmo.png';
+const FEMALE_AVATAR_URL = 'https://res.cloudinary.com/bcaeahkm/image/upload/v1786136885/user_1_bmqnfp.png';
+
+function getDefaultAvatar(gender) {
+  if (gender === 'Male') return MALE_AVATAR_URL;
+  if (gender === 'Female') return FEMALE_AVATAR_URL;
+  return null; // no default for 'Other' / unspecified yet
+}
+
+// ─────────────────────────────────────────────────────────────
+// Reusable branded OTP email — works for phone OTP, email OTP,
+// password reset, etc. Just pass a title + description.
+// ─────────────────────────────────────────────────────────────
+async function sendOtpByEmail(toEmail, code, { title = 'Your verification code', description = 'Enter the code below to continue.', subject = 'Your AKRILI code' } = {}) {
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 36px 24px 20px; text-align: center;">
+              <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+              <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 8px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
+              <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">${title}</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                ${description}
+              </p>
+            </div>
+            <div style="padding: 0 32px;">
+              <div style="background-color: #FBF3E7; border: 1px solid #D9CDB5; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 28px;">
+                <p style="color: #9A9188; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; text-transform: uppercase;">Your verification code</p>
+                <span style="font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #006972;">${code}</span>
+              </div>
+            </div>
+            <div style="padding: 0 32px 32px; text-align: center;">
+              <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                This code expires in 10 minutes. Didn't request this? You can safely ignore this email.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[NODEMAILER] OTP email sent to ${toEmail}. Message ID: ${info.messageId}`);
+  } catch (err) {
+    console.error(`[NODEMAILER ERROR] Failed to send OTP email to ${toEmail}:`, err.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Branded alert email — same AKRILI design but with a warning
+// icon instead of the OTP code box. Used for password change
+// confirmations, security alerts, etc.
+// ─────────────────────────────────────────────────────────────
+async function sendAlertEmail(toEmail, { title = 'Security Alert', description = '', subject = 'AKRILI — Security Alert', alertType = 'warning' } = {}) {
+  const iconColor = alertType === 'success' ? '#006972' : '#D32F2F';
+  const iconSymbol = alertType === 'success' ? '✓' : '!';
+  const borderColor = alertType === 'success' ? '#006972' : '#D32F2F';
+
+  try {
+    const info = await mailTransporter.sendMail({
+      from: `"AKRILI" <${process.env.EMAIL_USER}>`,
+      to: toEmail,
+      subject,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
+          <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
+            <div style="padding: 36px 24px 20px; text-align: center;">
+              <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
+              <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
+            </div>
+            <div style="padding: 8px 32px 8px; text-align: center;">
+              <div style="width: 48px; height: 2px; background-color: ${borderColor}; margin: 0 auto 20px;"></div>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 18px;"><tr><td style="width: 56px; height: 56px; border-radius: 50%; background-color: ${iconColor}; text-align: center; vertical-align: middle;"><span style="color: #FFFFFF; font-size: 28px; font-weight: 900;">${iconSymbol}</span></td></tr></table>
+              <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">${title}</h2>
+              <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+                ${description}
+              </p>
+            </div>
+            <div style="padding: 0 32px 32px; text-align: center;">
+              <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
+                If you did not perform this action, please secure your account immediately.
+              </p>
+            </div>
+            <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
+              <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
+              <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
+            </div>
+          </div>
+        </div>
+      `,
+    });
+    console.log(`[NODEMAILER] Alert email sent to ${toEmail}. Message ID: ${info.messageId}`);
+  } catch (err) {
+    console.error(`[NODEMAILER ERROR] Failed to send alert email to ${toEmail}:`, err.message);
+  }
+}
 
 function generatePendingToken(pendingId) {
   return jwt.sign({ id: pendingId, pending: true }, process.env.JWT_SECRET, {
@@ -191,31 +291,7 @@ router.post('/login/email', async (req, res) => {
     }
 
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email } });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ─────────────────────────────────────────────────────────────
-// POST /api/auth/login/phone
-// ─────────────────────────────────────────────────────────────
-router.post('/login/phone', async (req, res) => {
-  try {
-    const { phone } = req.body;
-
-    const user = await User.findOne({ 'phone.number': phone });
-    if (!user) {
-      return res.status(404).json({ error: 'Phone number not registered.' });
-    }
-
-    const { plainCode } = await OtpVerification.generateOTP(
-      phone, 'phone', 'login', user._id
-    );
-
-    console.log(`[DEV] OTP for ${phone}: ${plainCode}`);
-
-    res.json({ message: 'OTP sent to your phone number.' });
+    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -259,7 +335,7 @@ router.post('/verify-otp', async (req, res) => {
         birthday:     pending.birthday,
         wilaya:       pending.wilaya,
         fullAddress:  pending.fullAddress,
-        profilePhoto: pending.profilePhoto,
+        profilePhoto: pending.profilePhoto || getDefaultAvatar(pending.gender),
         identityVerified: true,
       });
 
@@ -269,13 +345,13 @@ router.post('/verify-otp', async (req, res) => {
 
       const appToken = generateToken(user._id);
       return res.json({ message: 'Account created and verified.', token: appToken, user: {
-        _id: user._id, fullName: user.fullName, email: user.email,
+        _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto,
       }});
     }
 
     let user = await User.findById(otpRecord.userId);
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName } });
+    res.json({ token, user: { _id: user._id, fullName: user.fullName, profilePhoto: user.profilePhoto } });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -290,6 +366,7 @@ router.post('/google', async (req, res) => {
 
     // 1. Check if user already linked this Google account
     let user = await User.findOne({ 'socialAccounts.google.id': googleId });
+    let isNewUser = false; // NEW
 
     if (!user) {
       // 2. Check if a user with this email already exists (registered via email/password)
@@ -308,10 +385,23 @@ router.post('/google', async (req, res) => {
         profilePhoto,
         socialAccounts: { google: { id: googleId, email } },
       });
+      isNewUser = true; // NEW
+
+      sendWelcomeEmail(user); // NEW — same welcome email your email-signup flow sends, fire-and-forget
     }
 
     const token = generateToken(user._id);
-    res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email } });
+    res.json({
+      token,
+      isNewUser, // NEW — top-level
+      user: {
+        _id: user._id,
+        fullName: user.fullName,
+        email: user.email,
+        profilePhoto: user.profilePhoto,
+        isNewUser, // NEW — also nested under user, as a fallback
+      },
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -398,53 +488,21 @@ router.post('/send-otp', async (req, res) => {
     );
 
     if (channel === 'sms') {
-      console.log(`[DEBUG] Sending SMS to: "${target}"`);
-      await twilioClient.messages.create({
-        body: `Your AKRILI verification code is: ${plainCode}`,
-        from: process.env.TWILIO_PHONE_NUMBER,
-        to: target,
-      });
+      // Send the phone OTP via email
+      if (pending.email) {
+        await sendOtpByEmail(pending.email, plainCode, {
+          subject: 'AKRILI — Phone Verification Code',
+          title: 'Verify your phone number',
+          description: `Use this code to verify your phone number (${target}) and complete your AKRILI account.`,
+        });
+      }
     } else {
       console.log(`[DEBUG] Sending email OTP to: "${target}"`);
-      const info = await mailTransporter.sendMail({
-        from: `"AKRILI" <${process.env.EMAIL_USER}>`,
-        to: target,
+      await sendOtpByEmail(target, plainCode, {
         subject: 'Your AKRILI verification code',
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: #EDE4D3; padding: 32px 20px;">
-            <div style="max-width: 460px; margin: 0 auto; background-color: #FFFCF5; border-radius: 20px; overflow: hidden; border: 1px solid #E3D8C0;">
-              <div style="padding: 36px 24px 20px; text-align: center;">
-                <img src="${LOGO_URL}" alt="AKRILI" width="64" height="64" style="display: block; margin: 0 auto 16px; border-radius: 16px;" />
-                <h1 style="color: #1A1A1A; font-size: 20px; font-weight: 700; letter-spacing: 3px; margin: 0;">AKRILI</h1>
-              </div>
-              <div style="padding: 8px 32px 8px; text-align: center;">
-                <div style="width: 48px; height: 2px; background-color: #006972; margin: 0 auto 20px;"></div>
-                <h2 style="color: #1A1A1A; font-size: 22px; font-weight: 700; margin: 0 0 10px;">Verify your account</h2>
-                <p style="color: #6B6B6B; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
-                  Enter the code below to verify your email and start exploring authentic Algerian stays.
-                </p>
-              </div>
-              <div style="padding: 0 32px;">
-                <div style="background-color: #FBF3E7; border: 1px solid #D9CDB5; border-radius: 14px; padding: 22px; text-align: center; margin-bottom: 28px;">
-                  <p style="color: #9A9188; font-size: 11px; letter-spacing: 1px; margin: 0 0 8px; text-transform: uppercase;">Your verification code</p>
-                  <span style="font-size: 34px; font-weight: 700; letter-spacing: 10px; color: #006972;">${plainCode}</span>
-                </div>
-              </div>
-              <div style="padding: 0 32px 32px; text-align: center;">
-                <p style="color: #9A9188; font-size: 12px; line-height: 1.5; margin: 0;">
-                  This code expires in 10 minutes. Didn't request this? You can safely ignore this email.
-                </p>
-              </div>
-              <div style="background-color: #FBF3E7; padding: 22px 32px; text-align: center; border-top: 1px solid #E3D8C0;">
-                <p style="color: #1A1A1A; font-size: 13px; font-weight: 700; letter-spacing: 2px; margin: 0 0 4px;">AKRILI</p>
-                <p style="color: #9A9188; font-size: 11px; margin: 0;">Discover Algeria's hidden architectural gems</p>
-              </div>
-            </div>
-          </div>
-        `,
+        title: 'Verify your account',
+        description: 'Enter the code below to verify your email and start exploring authentic Algerian stays.',
       });
-
-      console.log('[NODEMAILER] Email sent successfully. Message ID:', info.messageId);
     }
 
     res.json({ message: `OTP sent to your ${channel}.` });
@@ -459,69 +517,214 @@ router.post('/send-otp', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// POST /api/auth/verify-firebase-phone
-// Verifies Firebase SMS auth for signup — creates the REAL User here
+// POST /api/auth/send-reset-otp
 // ─────────────────────────────────────────────────────────────
-router.post('/verify-firebase-phone', async (req, res) => {
+router.post('/send-reset-otp', async (req, res) => {
   try {
-    if (!firebaseAuth) {
-      console.error('[FIREBASE-VERIFY] Firebase Auth SDK is not initialized on the server.');
-      return res.status(500).json({
-        error: 'Firebase Admin SDK is not configured on the server. Please verify environment variables in Azure.'
+    const { phone, email, channel } = req.body;
+    let user, target, otpType;
+
+    if (channel === 'sms' && phone) {
+      user = await User.findOne({ 'phone.number': phone });
+      if (!user) return res.status(404).json({ error: 'Phone number not registered.' });
+      target = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+      otpType = 'phone';
+    } else if (channel === 'email' && email) {
+      user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ error: 'Email not registered.' });
+      target = email;
+      otpType = 'email';
+    } else {
+      return res.status(400).json({ error: 'Provide phone or email with channel.' });
+    }
+
+    const { plainCode } = await OtpVerification.generateOTP(
+      target, otpType, 'password_reset', user._id
+    );
+
+    if (channel === 'sms') {
+      // Send the reset OTP via email
+      if (user.email) {
+        await sendOtpByEmail(user.email, plainCode, {
+          subject: 'AKRILI — Password Reset Code',
+          title: 'Reset your password',
+          description: `Use this code to reset your password for your AKRILI account.`,
+        });
+      }
+    } else {
+      await sendOtpByEmail(target, plainCode, {
+        subject: 'AKRILI — Password Reset Code',
+        title: 'Reset your password',
+        description: `Enter the code below to reset your password and secure your account.`,
       });
     }
 
-    const { idToken } = req.body;
-    console.log('[FIREBASE-VERIFY] Received idToken (length):', idToken?.length);
-
-    const decodedFirebase = await firebaseAuth.verifyIdToken(idToken);
-    console.log('[FIREBASE-VERIFY] Token verified. Phone:', decodedFirebase.phone_number, '| UID:', decodedFirebase.uid);
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('[FIREBASE-VERIFY] Missing app JWT in Authorization header.');
-      return res.status(401).json({ error: 'No token provided.' });
-    }
-    const jwtToken = authHeader.split(' ')[1];
-    const jwtDecoded = jwt.verify(jwtToken, process.env.JWT_SECRET);
-    console.log('[FIREBASE-VERIFY] Pending token decoded. ID:', jwtDecoded.id);
-
-    const pending = await PendingSignup.findById(jwtDecoded.id).select('+passwordHash');
-    if (!pending) {
-      console.log('[FIREBASE-VERIFY] Pending signup not found for ID:', jwtDecoded.id);
-      return res.status(404).json({ error: 'Pending signup not found. Please register again.' });
-    }
-
-    const user = await User.create({
-      fullName:     pending.fullName,
-      email:        pending.email,
-      phone:        pending.phone,
-      passwordHash: pending.passwordHash,
-      gender:       pending.gender,
-      birthday:     pending.birthday,
-      wilaya:       pending.wilaya,
-      fullAddress:  pending.fullAddress,
-      profilePhoto: pending.profilePhoto,
-      identityVerified: true,
-    });
-
-    await PendingSignup.deleteOne({ _id: pending._id });
-    console.log('[FIREBASE-VERIFY] Real User created:', user._id);
-
-    sendWelcomeEmail(user); // fire-and-forget, don't block the response
-
-    const appToken = generateToken(user._id);
-    res.json({ message: 'Phone verified. Account created.', token: appToken, user: {
-      _id: user._id, fullName: user.fullName, email: user.email,
-    }});
+    res.json({ message: `Reset code sent to your ${channel}.` });
   } catch (err) {
-    console.error('[FIREBASE-VERIFY ERROR]', JSON.stringify({
-      message: err.message,
-      code: err.code,
-      name: err.name,
-    }));
+    console.error('[SEND-RESET-OTP ERROR]', err.message);
     res.status(500).json({ error: err.message });
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/reset-password
+// ─────────────────────────────────────────────────────────────
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and new password are required.' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+
+    const user = await User.findOne({ email }).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // ── Rate limit: max 2 resets per 24h ──
+    const now = new Date();
+    const windowStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    user.passwordResetHistory = (user.passwordResetHistory || []).filter(
+      (d) => new Date(d) > windowStart
+    );
+
+    if (user.passwordResetHistory.length >= 2) {
+      sendAlertEmail(user.email, {
+        subject: 'AKRILI — Security Alert: Too Many Password Changes',
+        title: 'Too many password changes!',
+        description:
+          'Someone has attempted to change your password too many times in the last 24 hours. ' +
+          'For your security, password changes are limited to <strong>2 per 24 hours</strong>. ' +
+          'If this wasn\'t you, please secure your account immediately.',
+        alertType: 'warning',
+      });
+
+      return res.status(429).json({
+        error: 'Password changed too many times. Please try again after 24 hours.',
+      });
+    }
+
+    user.passwordHash = newPassword; // pre-save hook auto-hashes it
+    user.passwordResetHistory.push(now);
+    await user.save();
+
+    sendAlertEmail(user.email, {
+      subject: 'AKRILI — Password Changed Successfully',
+      title: 'Password changed successfully',
+      description:
+        'Your AKRILI account password was just changed. ' +
+        'If this was you, no action is needed. ' +
+        'If you did not make this change, please reset your password immediately.',
+      alertType: 'success',
+    });
+
+    res.json({ message: 'Password reset successfully.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/login/phone
+// Finds account by phone, returns masked contact details, sends OTP via email
+// ─────────────────────────────────────────────────────────────
+router.post('/login/phone', async (req, res) => {
+  try {
+    const { phone } = req.body;
+
+    const user = await User.findOne({ 'phone.number': phone });
+    if (!user) {
+      return res.status(404).json({ error: 'Phone number not registered.' });
+    }
+
+    let maskedEmail = '';
+    if (user.email) {
+      const [name, domain] = user.email.split('@');
+      const visiblePart = name.length > 2 ? name.slice(-2) : name;
+      maskedEmail = `***${visiblePart}@${domain}`;
+    }
+
+    const phoneNumber = user.phone.number;
+    const lastTwoDigits = phoneNumber.slice(-2);
+    const maskedPhone = `••••••••${lastTwoDigits}`;
+
+    const { plainCode } = await OtpVerification.generateOTP(
+      phone, 'phone', 'login', user._id
+    );
+
+    const e164 = `${user.phone.countryCode}${phone.replace(/^0/, '')}`;
+    if (user.email) {
+      await sendOtpByEmail(user.email, plainCode, {
+        subject: 'AKRILI — Phone Login Code',
+        title: 'Phone login code',
+        description: `Use this code to log in to your AKRILI account (phone: ${e164}).`,
+      });
+    }
+
+    res.json({
+      message: 'OTP sent.',
+      maskedEmail,
+      maskedPhone,
+      realPhone: user.phone.number,
+      realEmail: user.email,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/disconnect-google
+// ─────────────────────────────────────────────────────────────
+router.post('/disconnect-google', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No token provided.' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).json({ error: 'Password and confirmation are required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({ error: 'Passwords do not match.' });
+    }
+
+    const user = await User.findById(decoded.id).select('+passwordHash');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (!user.socialAccounts?.google?.id) {
+      return res.status(400).json({ error: 'No Google account linked.' });
+    }
+
+    // Set the new password (hashed automatically by pre-save hook)
+    user.passwordHash = password;
+    user.socialAccounts.google = undefined;
+    await user.save();
+
+    res.json({ message: 'Google account disconnected. You can now log in with your email and password.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 
 module.exports = router;

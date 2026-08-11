@@ -7,12 +7,14 @@ class BirthdayField extends StatelessWidget {
     required this.onDateSelected,
     this.label = 'Birthday',
     this.hint = 'mm/dd/yyyy',
+    this.errorText,
   });
 
   final String label;
   final String hint;
   final DateTime? selectedDate;
   final ValueChanged<DateTime> onDateSelected;
+  final String? errorText;
 
   String _format(DateTime date) {
     final mm = date.month.toString().padLeft(2, '0');
@@ -52,6 +54,7 @@ class BirthdayField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasError = errorText != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -90,16 +93,31 @@ class BirthdayField extends StatelessWidget {
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+                  borderSide: BorderSide(
+                    color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFFD9CDB5)),
+                  borderSide: BorderSide(
+                    color: hasError ? Colors.red : const Color(0xFFD9CDB5),
+                  ),
                 ),
               ),
             ),
           ),
         ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 2),
+            child: Text(
+              errorText!,
+              style: const TextStyle(
+                color: Colors.red,
+                fontSize: 12,
+              ),
+            ),
+          ),
       ],
     );
   }

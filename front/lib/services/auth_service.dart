@@ -82,9 +82,7 @@ class AuthService {
     const cloudName = 'bcaeahkm';
     const uploadPreset = 'akrili_unsigned';
 
-    final uri = Uri.parse(
-      'https://api.cloudinary.com/v1_1/$cloudName/image/upload',
-    );
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
 
     final request = http.MultipartRequest('POST', uri)
       ..fields['upload_preset'] = uploadPreset
@@ -102,6 +100,7 @@ class AuthService {
     }
   }
 
+  // ── OTP: Send code (requires auth token — used during signup) ──
   static Future<void> sendOtp({
     required String token,
     required String channel,
@@ -121,19 +120,28 @@ class AuthService {
     }
   }
 
-  // CHANGED: now returns Map<String, dynamic> instead of void
+  // ── OTP: Verify code ──
   static Future<Map<String, dynamic>> verifyOtp({
-    required String token,
+    String token = '',
     required String target,
     required String code,
+    String purpose = 'signup',
   }) async {
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (token.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/verify-otp'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-      body: jsonEncode({'target': target, 'code': code, 'purpose': 'signup'}),
+      headers: headers,
+      body: jsonEncode({
+        'target': target,
+        'code': code,
+        'purpose': purpose,
+      }),
     );
 
     final data = jsonDecode(response.body);
@@ -143,6 +151,48 @@ class AuthService {
     return data;
   }
 
+  // ── Phone Login: Step 1 — send OTP to phone (no auth needed) ──
+  static Future<void> loginWithPhone({
+    required String phone,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/login/phone'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone}),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send login OTP');
+    }
+  }
+
+  // ── Password Reset: Send OTP (no auth needed) ──
+  static Future<void> sendResetOtp({
+    String phone = '',
+    String email = '',
+    required String channel,
+  }) async {
+    final body = <String, String>{'channel': channel};
+    if (channel == 'sms' && phone.isNotEmpty) {
+      body['phone'] = phone;
+    } else if (channel == 'email' && email.isNotEmpty) {
+      body['email'] = email;
+    }
+
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/send-reset-otp'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to send reset code');
+    }
+  }
+
+  // ── Firebase Phone Verify (kept for backwards compat) ──
   static Future<Map<String, dynamic>> verifyFirebasePhone({
     required String token,
     required String idToken,
@@ -163,6 +213,7 @@ class AuthService {
     return data;
   }
 
+  // ── Email + Password Login ──
   static Future<Map<String, dynamic>> loginWithEmail({
     required String email,
     required String password,
@@ -170,7 +221,10 @@ class AuthService {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/auth/login/email'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
     );
 
     final data = jsonDecode(response.body);
@@ -180,6 +234,7 @@ class AuthService {
     return data;
   }
 
+  // ── Google Login ──
   static Future<Map<String, dynamic>> loginWithGoogle({
     required String googleId,
     required String email,
@@ -204,12 +259,44 @@ class AuthService {
     return data;
   }
 
+    static Future<void> resetPassword({
+    required String email,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/reset-password'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'newPassword': newPassword,
+      }),
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Password reset failed');
+    }
+  }
+
+  static Future<Map<String, dynamic>> lookupRecovery(String identifier) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/lookup-recovery'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'identifier': identifier}),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to look up account.');
+    }
+    return data;
+  }
+
   static Future<Map<String, dynamic>> getProfile({
     required String token,
   }) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': '******'},
     );
 
     final data = jsonDecode(response.body);
@@ -227,7 +314,7 @@ class AuthService {
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': '******',
       },
       body: jsonEncode(fields),
     );
@@ -242,7 +329,7 @@ class AuthService {
   static Future<void> deactivateAccount({required String token}) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': '******'},
     );
 
     if (response.statusCode != 200) {
@@ -254,7 +341,7 @@ class AuthService {
   static Future<void> deleteAccountPermanently({required String token}) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/users/me/permanent'),
-      headers: {'Authorization': 'Bearer $token'},
+      headers: {'Authorization': '******'},
     );
 
     if (response.statusCode != 200) {
@@ -264,50 +351,50 @@ class AuthService {
   }
 
   static Future<void> disconnectGoogle({
-  required String token,
-  required String password,
-  required String confirmPassword,
-}) async {
-  final response = await http.post(
-    Uri.parse('${ApiConfig.baseUrl}/auth/disconnect-google'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'password': password,
-      'confirmPassword': confirmPassword,
-    }),
-  );
+    required String token,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/disconnect-google'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': '******',
+      },
+      body: jsonEncode({
+        'password': password,
+        'confirmPassword': confirmPassword,
+      }),
+    );
 
-  if (response.statusCode != 200) {
-    final data = jsonDecode(response.body);
-    throw Exception(data['error'] ?? 'Failed to disconnect Google');
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to disconnect Google');
+    }
   }
-}
 
-static Future<void> updatePassword({
-  required String token,
-  required String currentPassword,
-  required String newPassword,
-  required String confirmPassword,
-}) async {
-  final response = await http.put(
-    Uri.parse('${ApiConfig.baseUrl}/auth/update-password'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({
-      'currentPassword': currentPassword,
-      'newPassword': newPassword,
-      'confirmPassword': confirmPassword,
-    }),
-  );
+  static Future<void> updatePassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/auth/update-password'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': '******',
+      },
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
+    );
 
-  if (response.statusCode != 200) {
-    final data = jsonDecode(response.body);
-    throw Exception(data['error'] ?? 'Failed to update password');
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to update password');
+    }
   }
-}
 }
