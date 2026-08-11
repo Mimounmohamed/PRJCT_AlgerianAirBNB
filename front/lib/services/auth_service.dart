@@ -290,4 +290,111 @@ class AuthService {
     }
     return data;
   }
+
+  static Future<Map<String, dynamic>> getProfile({
+    required String token,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {'Authorization': '******'},
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to load profile');
+    }
+    return data;
+  }
+
+  static Future<Map<String, dynamic>> updateProfile({
+    required String token,
+    required Map<String, dynamic> fields,
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': '******',
+      },
+      body: jsonEncode(fields),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Failed to update profile');
+    }
+    return data;
+  }
+
+  static Future<void> deactivateAccount({required String token}) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {'Authorization': '******'},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to deactivate account');
+    }
+  }
+
+  static Future<void> deleteAccountPermanently({required String token}) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/users/me/permanent'),
+      headers: {'Authorization': '******'},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to delete account');
+    }
+  }
+
+  static Future<void> disconnectGoogle({
+    required String token,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/disconnect-google'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': '******',
+      },
+      body: jsonEncode({
+        'password': password,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to disconnect Google');
+    }
+  }
+
+  static Future<void> updatePassword({
+    required String token,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/auth/update-password'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': '******',
+      },
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to update password');
+    }
+  }
 }

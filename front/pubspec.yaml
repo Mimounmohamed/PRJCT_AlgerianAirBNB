@@ -47,3 +47,6 @@ flutter:
         - asset: assets/fonts/HankenGrotesk-VariableFont_wght.ttf
         - asset: assets/fonts/HankenGrotesk-Italic-VariableFont_wght.ttf
           style: italic
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono-Thin.ttf
