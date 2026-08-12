@@ -40,10 +40,13 @@ class UserSession extends ChangeNotifier {
   static final UserSession instance = UserSession._();
 
   AppUser? _currentUser;
+  String? _token;
   AppUser? get currentUser => _currentUser;
+  String? get token => _token;
 
-  void setUser(AppUser user) {
+  void setUser(AppUser user, {String? token}) {
     _currentUser = user;
+    if (token != null) _token = token;
     notifyListeners();
   }
 
@@ -56,6 +59,7 @@ class UserSession extends ChangeNotifier {
 
   void clear() {
     _currentUser = null;
+    _token = null;
     notifyListeners();
   }
 }

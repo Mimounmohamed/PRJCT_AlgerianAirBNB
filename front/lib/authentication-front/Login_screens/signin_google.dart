@@ -26,8 +26,9 @@ class GoogleSignInScreen extends StatelessWidget {
 
       // Populate the app-wide session with the logged-in user
       final userJson = data['user'] as Map<String, dynamic>?;
+      final jwt = data['token'] as String? ?? '';
       if (userJson != null) {
-        UserSession.instance.setUser(AppUser.fromJson(userJson));
+        UserSession.instance.setUser(AppUser.fromJson(userJson), token: jwt);
       }
 
       // NEW — requires your backend's POST /auth/google response to include

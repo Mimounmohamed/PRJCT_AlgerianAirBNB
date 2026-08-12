@@ -15,6 +15,24 @@ class LoginSecurityScreen extends StatefulWidget {
 
 class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
   bool _twoStepEnabled = false;
+  bool _isGoogleLinked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final data = await AuthService.getProfile(token: widget.token);
+      if (!mounted) return;
+      setState(() {
+        final google = data['socialAccounts']?['google'];
+        _isGoogleLinked = google != null && google['id'] != null;
+      });
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,22 +128,70 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
             // Password card
               _SecurityCard(
                 icon: Icons.key_outlined,
-                iconColor: const Color(0xFF2A1B12),
+                iconColor: _isGoogleLinked
+                    ? const Color(0xFF9B8C7E)
+                    : const Color(0xFF2A1B12),
                 title: 'Password',
-                subtitle: 'Last updated 2 months ago',
-                trailing: const Icon(
+                subtitle: _isGoogleLinked
+                    ? 'Disconnect Google to manage password'
+                    : 'Last updated 2 months ago',
+                trailing: Icon(
                   Icons.chevron_right,
-                  color: Color(0xFF23130A),
+                  color: _isGoogleLinked
+                      ? const Color(0xFF9B8C7E)
+                      : const Color(0xFF23130A),
                 ),
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => UpdatePasswordScreen(
-                        token: widget.token,
+                  if (_isGoogleLinked) {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: const Color(0xFFFFFCF6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text(
+                          'Google account linked',
+                          style: TextStyle(
+                            fontFamily: 'CormorantGaramond',
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF23130A),
+                          ),
+                        ),
+                        content: const Text(
+                          'You\'re signed in with Google. To set or change your password, disconnect your Google account first.',
+                          style: TextStyle(
+                            fontFamily: 'HankenGrotesk',
+                            fontSize: 14,
+                            color: Color(0xFF4F4540),
+                            height: 1.5,
+                          ),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(ctx).pop(),
+                            child: const Text(
+                              'Got it',
+                              style: TextStyle(
+                                color: Color(0xFF006972),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  );
+                    );
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UpdatePasswordScreen(
+                          token: widget.token,
+                        ),
+                      ),
+                    );
+                  }
                 },
               ),
             const SizedBox(height: 12),

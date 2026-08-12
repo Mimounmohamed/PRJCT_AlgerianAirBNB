@@ -296,7 +296,7 @@ class AuthService {
   }) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {'Authorization': '******'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     final data = jsonDecode(response.body);
@@ -314,7 +314,7 @@ class AuthService {
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': '******',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(fields),
     );
@@ -329,7 +329,7 @@ class AuthService {
   static Future<void> deactivateAccount({required String token}) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/users/me'),
-      headers: {'Authorization': '******'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode != 200) {
@@ -341,7 +341,7 @@ class AuthService {
   static Future<void> deleteAccountPermanently({required String token}) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/users/me/permanent'),
-      headers: {'Authorization': '******'},
+      headers: {'Authorization': 'Bearer $token'},
     );
 
     if (response.statusCode != 200) {
@@ -359,7 +359,7 @@ class AuthService {
       Uri.parse('${ApiConfig.baseUrl}/auth/disconnect-google'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': '******',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'password': password,
@@ -383,7 +383,7 @@ class AuthService {
       Uri.parse('${ApiConfig.baseUrl}/auth/update-password'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': '******',
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'currentPassword': currentPassword,
