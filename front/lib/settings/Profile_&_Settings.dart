@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../services/user_session.dart'; // adjust path to match your actual location
-
+import 'personal_info.dart';
+import 'Login & Security/Login_&Security.dart';
+import '../authentication-front/Login_screens/courtyard.dart';
+import 'Notification_settings.dart';
+import 'how_works.dart';
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({
     super.key,
@@ -27,30 +31,115 @@ class ProfileSettingsScreen extends StatelessWidget {
   void _handleLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
+      barrierDismissible: true,
+      builder: (dialogContext) => Dialog(
         backgroundColor: _cardFill,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log out?'),
-        content: const Text('You\'ll need to log back in to access your account.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Cancel', style: TextStyle(color: _muted)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF2A1B12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Log out of AKRILI?',
+                style: TextStyle(
+                  fontFamily: 'CormorantGaramond',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF23130A),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Description
+              const Text(
+                'Are you sure you want to log out? You\'ll need to sign back in to manage your stays and messages.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontFamily: 'HankenGrotesk',
+                  fontSize: 14,
+                  color: Color(0xFF4F4540),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Log Out button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    UserSession.instance.clear();
+                    if (onLogout != null) {
+                      onLogout!();
+                    } else {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const AuthScreen()),
+                        (route) => false,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF006972),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontFamily: 'HankenGrotesk',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Stay Logged In button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFD3C3BD)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text(
+                    'Stay Logged In',
+                    style: TextStyle(
+                      color: Color(0xFF23130A),
+                      fontSize: 15,
+                      fontFamily: 'HankenGrotesk',
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop();
-              UserSession.instance.clear();
-              if (onLogout != null) {
-                onLogout!();
-              } else {
-                // TODO: replace with your actual route back to login.
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
-            child: const Text('Log out', style: TextStyle(color: _logoutRed)),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -141,17 +230,42 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.person_outline,
                         label: 'Personal info',
-                        onTap: () {}, // TODO: navigate to personal info screen
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PersonalInfoScreen(
+                                token: UserSession.instance.token ?? '',
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.shield_outlined,
                         label: 'Login & security',
-                        onTap: () {}, // TODO: navigate to login & security screen
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => LoginSecurityScreen(
+                                token: UserSession.instance.token ?? '',
+                              ),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.notifications_none_rounded,
                         label: 'Notification settings',
-                        onTap: () {}, // TODO: navigate to notification settings
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -178,7 +292,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.menu_book_outlined,
                         label: 'How AKRILI works',
-                        onTap: () {}, // TODO: navigate to how it works
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HowItWorksScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.support_agent_outlined,

@@ -64,8 +64,9 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
 
       // Populate the app-wide session with the logged-in user
       final userJson = data['user'] as Map<String, dynamic>?;
+      final jwt = data['token'] as String? ?? '';
       if (userJson != null) {
-        UserSession.instance.setUser(AppUser.fromJson(userJson));
+        UserSession.instance.setUser(AppUser.fromJson(userJson), token: jwt);
       }
 
       // CHANGED — login goes straight to LandingPage, no Mar7aban,

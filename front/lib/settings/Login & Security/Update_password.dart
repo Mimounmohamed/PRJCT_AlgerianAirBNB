@@ -286,9 +286,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-          setState(() => _isLoading = true);
+        setState(() => _isLoading = true);
     try {
       await AuthService.updatePassword(
         token: widget.token,
@@ -296,15 +294,6 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
         newPassword: _newController.text,
         confirmPassword: _confirmController.text,
       );
-      if (!mounted) return;
-      _showMessage('Password updated successfully.');
-      Navigator.of(context).pop();
-    } catch (e) {
-      _showMessage(e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-      await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
       _showMessage('Password updated successfully.');
       Navigator.of(context).pop();

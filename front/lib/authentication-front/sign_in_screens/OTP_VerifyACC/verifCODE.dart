@@ -68,7 +68,7 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
 
       // NEW — populate the app-wide session as soon as we have the user object
       if (userJson != null) {
-        UserSession.instance.setUser(AppUser.fromJson(userJson));
+        UserSession.instance.setUser(AppUser.fromJson(userJson), token: finalToken);
       }
 
       widget.onVerified(finalToken, userName);
