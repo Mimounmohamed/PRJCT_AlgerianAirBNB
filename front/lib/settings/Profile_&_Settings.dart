@@ -3,7 +3,8 @@ import '../../../services/user_session.dart'; // adjust path to match your actua
 import '../personal_info.dart';
 import 'Login & Security/Login_&Security.dart';
 import '../authentication-front/Login_screens/courtyard.dart';
-
+import 'Notification_settings.dart';
+import '../how_works.dart';
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({
     super.key,
@@ -257,7 +258,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.notifications_none_rounded,
                         label: 'Notification settings',
-                        onTap: () {}, // TODO: navigate to notification settings
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
@@ -284,7 +292,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.menu_book_outlined,
                         label: 'How AKRILI works',
-                        onTap: () {}, // TODO: navigate to how it works
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HowItWorksScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.support_agent_outlined,
