@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';
-import 'authentication-front/Login_screens/courtyard.dart';
+import '../services/auth_service.dart';
+import '../authentication-front/Login_screens/courtyard.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final String token;
