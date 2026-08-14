@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../sign_in_screens/Mar7aban.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
@@ -167,22 +168,10 @@ class GoogleSignInScreen extends StatelessWidget {
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           onPressed: () => _onContinueWithGoogle(context),
-                          icon: Container(
-                            width: 22,
-                            height: 22,
-                            decoration: const BoxDecoration(
-                              color: Colors.white,
-                              shape: BoxShape.circle,
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text(
-                              'G',
-                              style: TextStyle(
-                                color: Color(0xFF006972),
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
+                          icon: SvgPicture.asset(
+                            'assets/icons/google.svg',
+                            height: 20,
+                            width: 20,
                           ),
                           label: const Text(
                             'Continue with Google',

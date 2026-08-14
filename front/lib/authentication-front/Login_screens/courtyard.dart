@@ -110,7 +110,7 @@ class AuthScreen extends StatelessWidget {
                           },
                           // Render Google SVG vector icon here
                           icon: SvgPicture.asset(
-                            'assets/icons/Google.svg',
+                            'assets/icons/google.svg',
                             height: 20,
                             width: 20,
                           ),
