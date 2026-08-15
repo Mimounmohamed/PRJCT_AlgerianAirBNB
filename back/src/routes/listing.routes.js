@@ -6,8 +6,20 @@ const Listing = require('../models/Listing');
 // GET /api/listings — Browse all active listings (public)
 router.get('/', async (req, res) => {
   try {
-    const { category, propertyType, wilaya, minPrice, maxPrice, guests, page = 1, limit = 20 } = req.query;
-    const filter = { status: 'active', visibility: 'listed' };
+    const {
+      category,
+      propertyType,
+      wilaya,
+      minPrice,
+      maxPrice,
+      guests,
+      search,
+      sort = 'rating',
+      page = 1,
+      limit = 20,
+    } = req.query;
+
+    const filter = { status: 'active', visibility: 'listed', isDeleted: { $ne: true } };
 
     if (category)     filter.categories = category;
     if (propertyType) filter.propertyType = propertyType;
@@ -18,10 +30,21 @@ router.get('/', async (req, res) => {
       if (minPrice) filter['price.perNight'].$gte = parseInt(minPrice);
       if (maxPrice) filter['price.perNight'].$lte = parseInt(maxPrice);
     }
+    // Uses the text index on title/description/location.city/location.wilaya
+    // defined in the Listing schema (listing_text_search).
+    if (search) filter.$text = { $search: search };
+
+    const sortOptions = {
+      rating:      { 'rating.overall': -1 },
+      price_asc:   { 'price.perNight': 1 },
+      price_desc:  { 'price.perNight': -1 },
+      newest:      { publishedAt: -1 },
+    };
+    const sortBy = sortOptions[sort] || sortOptions.rating;
 
     const listings = await Listing.find(filter)
       .populate('hostId', 'fullName profilePhoto isSuperhost')
-      .sort({ 'rating.overall': -1 })
+      .sort(sortBy)
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
@@ -36,7 +59,7 @@ router.get('/', async (req, res) => {
 // GET /api/listings/:id — Listing detail (public)
 router.get('/:id', async (req, res) => {
   try {
-    const listing = await Listing.findById(req.params.id)
+    const listing = await Listing.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate('hostId', 'fullName profilePhoto isSuperhost hostSince');
 
     if (!listing) return res.status(404).json({ error: 'Listing not found.' });
