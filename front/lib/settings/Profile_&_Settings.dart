@@ -4,6 +4,7 @@ import 'personal_info.dart';
 import 'Login & Security/Login_&Security.dart';
 import '../authentication-front/Login_screens/courtyard.dart';
 import 'Notification_settings.dart';
+import 'terms_of_service.dart';
 import 'how_works.dart';
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({
@@ -315,7 +316,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.gavel_outlined,
                         label: 'Terms of Service',
-                        onTap: () {}, // TODO: navigate to terms
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TermsOfServiceScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.privacy_tip_outlined,
