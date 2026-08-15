@@ -35,10 +35,12 @@ const listingSchema = new mongoose.Schema(
 
     // ── Pricing ────────────────────────────────────────────
     price: {
-      perNight:          { type: Number, required: true },
-      currency:          { type: String, default: 'DZD' },
-      touristTaxPercent: { type: Number, default: 5.5 },
-      serviceFeePercent: { type: Number, default: 8 },
+      perNight:              { type: Number, required: true },
+      currency:              { type: String, default: 'DZD' },
+      touristTaxPercent:     { type: Number, default: 5.5 },
+      serviceFeePercent:     { type: Number, default: 8 },
+      weeklyDiscountPercent:  { type: Number, default: 0 },
+      monthlyDiscountPercent: { type: Number, default: 0 },
     },
 
     // ── Capacity ───────────────────────────────────────────
@@ -50,6 +52,7 @@ const listingSchema = new mongoose.Schema(
 
     // ── Media ──────────────────────────────────────────────
     photos: [photoSchema],
+    coverPhotoIndex: { type: Number, default: 0 }, // index into photos[] used as the card's hero image
 
     // ── Amenities ──────────────────────────────────────────
     amenities: [{ type: String }],
@@ -79,6 +82,19 @@ const listingSchema = new mongoose.Schema(
       checkOutTime:       { type: String, default: '11:00' },
     },
 
+    // ── Availability ────────────────────────────────────────
+    // Lightweight manual blocking until a full Booking/Calendar collection
+    // exists. Used to compute the "next available" date range shown on
+    // Explore cards — check this against today + confirmed bookings.
+    availability: {
+      blockedDates: [
+        {
+          from: { type: Date, required: true },
+          to:   { type: Date, required: true },
+        },
+      ],
+    },
+
     cancellationPolicy: {
       type: String,
       enum: ['Flexible', 'Moderate', 'Strict'],
@@ -98,6 +114,8 @@ const listingSchema = new mongoose.Schema(
       default: 'draft',
     },
     rejectionReason: { type: String },
+    publishedAt:     { type: Date }, // set when status first transitions to 'active'
+    isDeleted:       { type: Boolean, default: false }, // soft delete — keep bookings/reviews intact
 
     // ── Aggregated Ratings (updated after each review) ─────
     rating: {
@@ -109,6 +127,9 @@ const listingSchema = new mongoose.Schema(
       value:         { type: Number, default: 0 },
       totalReviews:  { type: Number, default: 0 },
     },
+
+    // ── Guest Favorite ──────────────────────────────────────
+    isGuestFavorite: { type: Boolean, default: false },
 
     // ── Performance Stats ──────────────────────────────────
     stats: {
@@ -130,5 +151,10 @@ listingSchema.index({ categories: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ 'price.perNight': 1 });
 listingSchema.index({ 'rating.overall': -1 });
+listingSchema.index({ isDeleted: 1 });
+listingSchema.index(
+  { title: 'text', description: 'text', 'location.city': 'text', 'location.wilaya': 'text' },
+  { name: 'listing_text_search' }
+);
 
 module.exports = mongoose.model('Listing', listingSchema);

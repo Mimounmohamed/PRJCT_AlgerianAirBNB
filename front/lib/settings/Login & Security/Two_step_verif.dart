@@ -56,7 +56,7 @@ class _TwoStepVerificationScreenState
                     const Text(
                       'Two-step verification',
                       style: TextStyle(
-                        color: const Color(0xFF23130A),
+                        color: Color(0xFF23130A),
                         fontSize: 28,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w600,
@@ -71,7 +71,7 @@ class _TwoStepVerificationScreenState
                       "asked for a second piece of information to verify "
                       "your identity.",
                       style: TextStyle(
-                        color: const Color(0xFF4F4540),
+                        color: Color(0xFF4F4540),
                         fontSize: 15,
                         fontFamily: 'HankenGrotesk',
                         height: 1.5,
