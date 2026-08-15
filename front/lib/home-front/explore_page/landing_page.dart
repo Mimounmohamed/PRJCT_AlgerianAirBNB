@@ -5,7 +5,8 @@ import '../widgets/landing_app_bar.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
 import '../../settings/Profile_&_Settings.dart';
-
+import '../widgets/explore_search_bar.dart';
+import  '../widgets/explore_filter_bar.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -48,16 +49,38 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  Widget _buildExploreTab() {
+    return Column(
+      children: [
+        const SizedBox(height: 12),
+        ExploreSearchBar(
+          onFilterTap: () {
+            // TODO: push full filter sheet
+          },
+        ),
+        const SizedBox(height: 16),
+        ExploreFilterBar(
+          onCategorySelected: (category) {
+            // TODO: trigger GET /api/listings?category=... here later
+          },
+        ),
+        const SizedBox(height: 16),
+        // TODO: listings list/grid goes here once ListingCard is built
+        const Expanded(child: SizedBox.shrink()),
+      ],
+    );
+  }
+
   Widget _buildTabBody() {
     switch (_currentIndex) {
       case 4:
         return const ProfileSettingsScreen();
       case 0:
+        return _buildExploreTab();
       case 1:
       case 3:
       default:
-        // TODO: swap in the real Explore / Saved / Messages screens
-        // once they exist.
+        // TODO: swap in the real Saved / Messages screens once they exist.
         return const SizedBox.shrink();
     }
   }
