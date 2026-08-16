@@ -267,7 +267,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Full refund for cancellations made within 48\nhours of booking, provided the check-in date is\nat least 14 days away.',
+                    'Full refund for cancellations made within 48\nhours of booking, provided the check-in date is at least 14 days away.',
                     style: TextStyle(
                       color: Color(0xFF4F4540),
                       fontSize: 15,
@@ -319,7 +319,7 @@ class TermsOfServiceScreen extends StatelessWidget {
 
             // Special circumstances
             const Text(
-              'Special circumstances, such as documentation of\ntravel restrictions or emergencies, will be reviewed\non a case-by-case basis by our support team.',
+              'Special circumstances, such as documentation of travel restrictions or emergencies, will be reviewed on a case-by-case basis by our support team.',
               style: _bodyStyle,
             ),
             const SizedBox(height: 40),
