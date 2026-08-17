@@ -5,6 +5,7 @@ import 'Login & Security/Login_&Security.dart';
 import '../authentication-front/Login_screens/courtyard.dart';
 import 'Notification_settings.dart';
 import 'terms_of_service.dart';
+import 'privacy_policy.dart';
 import 'how_works.dart';
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({
@@ -328,7 +329,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.privacy_tip_outlined,
                         label: 'Privacy Policy',
-                        onTap: () {}, // TODO: navigate to privacy policy
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const PrivacyPolicyScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
