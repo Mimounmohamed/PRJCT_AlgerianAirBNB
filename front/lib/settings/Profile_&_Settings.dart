@@ -6,6 +6,7 @@ import '../authentication-front/Login_screens/courtyard.dart';
 import 'Notification_settings.dart';
 import 'terms_of_service.dart';
 import 'privacy_policy.dart';
+import 'help_center.dart';
 import 'how_works.dart';
 class ProfileSettingsScreen extends StatelessWidget {
   const ProfileSettingsScreen({
@@ -289,7 +290,14 @@ class ProfileSettingsScreen extends StatelessWidget {
                       _SettingsTile(
                         icon: Icons.help_outline_rounded,
                         label: 'Help Center',
-                        onTap: () {}, // TODO: navigate to help center
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HelpCenterScreen(),
+                            ),
+                          );
+                        },
                       ),
                       _SettingsTile(
                         icon: Icons.menu_book_outlined,
