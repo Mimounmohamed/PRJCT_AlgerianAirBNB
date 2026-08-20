@@ -24,76 +24,21 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
         backgroundColor: const Color(0xFFFBF6EF),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF23130A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Safety & Trust',
           style: TextStyle(
-            color: Color(0xFF2A1B12),
-            fontSize: 16,
-            fontFamily: 'HankenGrotesk',
+            color: Color(0xFF23130A),
+            fontSize: 28,
+            fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFFBF6EF),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Message Safety Specialist button
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () {},
-                icon: const Icon(
-                  Icons.message_outlined,
-                  color: Color(0xFF006972),
-                  size: 18,
-                ),
-                label: const Text(
-                  'MESSAGE SAFETY SPECIALIST',
-                  style: TextStyle(
-                    color: Color(0xFF006972),
-                    fontSize: 11,
-                    fontFamily: 'HankenGrotesk',
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Color(0xFF006972)),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Typical response time: Under 15 minutes',
-              style: TextStyle(
-                color: Color(0xFF9B8C7E),
-                fontSize: 12,
-                fontFamily: 'HankenGrotesk',
-              ),
-            ),
-          ],
-        ),
-      ),
+
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: Column(
@@ -102,20 +47,18 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
             // Emergency Support section
             Row(
               children: const [
-                Text(
-                  '✳',
-                  style: TextStyle(
-                    color: Color(0xFFB5451B),
-                    fontSize: 20,
-                  ),
+                Icon(
+                  Icons.emergency_outlined,
+                  color: Color(0xFFB23A3A),
+                  size: 20,
                 ),
                 SizedBox(width: 8),
                 Text(
                   'Emergency Support',
                   style: TextStyle(
-                    color: Color(0xFF2A1B12),
-                    fontSize: 22,
-                    fontFamily: 'CormorantGaramond',
+                    color: Color(0xFF23130A),
+                    fontSize: 20,
+                    fontFamily: 'HankenGrotesk',
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -136,10 +79,10 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'If you are in immediate danger or require urgent medical assistance, please contact local authorities first.',
+                    'If you are in immediate danger or require\nurgent medical assistance, please contact\nlocal authorities first.',
                     style: TextStyle(
                       color: Color(0xFF4F4540),
-                      fontSize: 14,
+                      fontSize: 15,
                       fontFamily: 'HankenGrotesk',
                       height: 1.6,
                     ),
@@ -207,9 +150,9 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
             const Text(
               'Safety Guides',
               style: TextStyle(
-                color: Color(0xFF2A1B12),
-                fontSize: 22,
-                fontFamily: 'CormorantGaramond',
+                color: Color(0xFF23130A),
+                fontSize: 20,
+                fontFamily: 'HankenGrotesk',
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -252,9 +195,9 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
             const Text(
               'Report a problem',
               style: TextStyle(
-                color: Color(0xFF2A1B12),
-                fontSize: 22,
-                fontFamily: 'CormorantGaramond',
+                color: Color(0xFF23130A),
+                fontSize: 20,
+                fontFamily: 'HankenGrotesk',
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -344,7 +287,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                     'Maximum 5 photos. Supported formats: JPG, PNG.',
                     style: TextStyle(
                       color: Color(0xFFB5A89E),
-                      fontSize: 11,
+                      fontSize: 13,
                       fontFamily: 'HankenGrotesk',
                     ),
                   ),
@@ -376,7 +319,48 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 32),
+            // Message Safety Specialist button
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {},
+                icon: const Icon(
+                  Icons.message_outlined,
+                  color: Color(0xFF006972),
+                  size: 18,
+                ),
+                label: const Text(
+                  'MESSAGE SAFETY SPECIALIST',
+                  style: TextStyle(
+                    color: Color(0xFF006972),
+                    fontSize: 11,
+                    fontFamily: 'HankenGrotesk',
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Color(0xFF006972)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Center(
+              child: Text(
+                'Typical response time: Under 15 minutes',
+                style: TextStyle(
+                  color: Color(0xFF81756F),
+                  fontSize: 13,
+                  fontFamily: 'HankenGrotesk',
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
           ],
         ),
       ),

@@ -50,10 +50,15 @@ class UserSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfilePhoto(String url) {
+  void updateProfilePhoto(String? url) {
     final user = _currentUser;
     if (user == null) return;
-    _currentUser = user.copyWith(profilePhotoUrl: url);
+    _currentUser = AppUser(
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      profilePhotoUrl: url,
+    );
     notifyListeners();
   }
 
