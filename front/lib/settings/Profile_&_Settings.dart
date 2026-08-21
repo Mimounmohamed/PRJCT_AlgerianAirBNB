@@ -8,6 +8,7 @@ import 'terms_of_service.dart';
 import 'privacy_policy.dart';
 import 'help_center.dart';
 import 'how_works.dart';
+import 'Get help with sfety issues/safety_guide.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
@@ -59,7 +60,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     try {
       final url = await AuthService.uploadToCloudinary(File(picked.path));
       final token = UserSession.instance.token ?? '';
-      await AuthService.updateProfilePhoto(token: token, profilePhotoUrl: url);
+      // Use PUT /users/me — the correct endpoint for logged-in users
+      await AuthService.updateProfile(token: token, fields: {'profilePhoto': url});
       UserSession.instance.updateProfilePhoto(url);
     } catch (e) {
       if (mounted) {
@@ -77,7 +79,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     setState(() => _uploadingPhoto = true);
     try {
       final token = UserSession.instance.token ?? '';
-      await AuthService.updateProfilePhoto(token: token, profilePhotoUrl: '');
+      // Clear the photo via PUT /users/me
+      await AuthService.updateProfile(token: token, fields: {'profilePhoto': null});
       UserSession.instance.updateProfilePhoto(null);
     } catch (e) {
       if (mounted) {
@@ -458,7 +461,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       _SettingsTile(
                         icon: Icons.support_agent_outlined,
                         label: 'Get help with a safety issue',
-                        onTap: () {}, // TODO: navigate to safety help
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SafetyGuideScreen(),
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
