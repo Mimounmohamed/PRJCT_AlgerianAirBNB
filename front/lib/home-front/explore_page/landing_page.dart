@@ -10,6 +10,7 @@ import '../../settings/Profile_&_Settings.dart';
 import '../widgets/explore_search_bar.dart';
 import '../widgets/explore_filter_bar.dart';
 import 'listing_card.dart';
+import 'listing_detail_page.dart'; // adjust path to match your project structure
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -127,7 +128,15 @@ class _LandingPageState extends State<LandingPage> {
       padding: const EdgeInsets.only(top: 8, bottom: 24),
       itemCount: _listings.length,
       itemBuilder: (context, index) {
-        return ListingCard(listing: _listings[index]);
+        final listing = _listings[index];
+        return ListingCard(
+          listing: listing,
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ListingDetailPage(listingId: listing.id),
+            ),
+          ),
+        );
       },
     );
   }

@@ -149,7 +149,7 @@ class _ListingCardState extends State<ListingCard> {
             Text(
               '${listing.city}, Algeria',
               style: const TextStyle(
-                color: Color.fromARGB(255, 97, 86, 77),
+                color: Color(0xFF61564D),
                 fontSize: 18,
                 fontFamily: 'HenkenGrotesk',
               ),
