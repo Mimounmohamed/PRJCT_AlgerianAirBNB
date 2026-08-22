@@ -139,7 +139,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             ),
                             const SizedBox(height: 16),
                             const Divider(height: 1, color: Color(0xFFE7DCCB)),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 20),
                           ],
 
                           HostSection(
@@ -155,10 +155,28 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                           const SizedBox(height: 20),
 
                           if (listing.description.isNotEmpty) ...[
+                            // Optional description title
+                            if (listing.descriptionTitle.isNotEmpty) ...[
+                              Text(
+                                listing.descriptionTitle,
+                                style: const TextStyle(
+                                  color: Color(0xFF2A1B12),
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w600,
+                                  fontFamily: 'CormorantGaramond',
+                                  height: 1.3,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+
+                            // Description body
                             Text(
                               listing.description,
                               maxLines: _descriptionExpanded ? null : 3,
-                              overflow: _descriptionExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                              overflow: _descriptionExpanded
+                                  ? TextOverflow.visible
+                                  : TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: Color(0xFF2A1B12),
                                 fontSize: 16,
@@ -166,22 +184,36 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                                 fontFamily: 'HenkenGrotesk',
                               ),
                             ),
-                            if (!_descriptionExpanded)
-                              GestureDetector(
-                                onTap: () => setState(() => _descriptionExpanded = true),
-                                child: const Padding(
-                                  padding: EdgeInsets.only(top: 4),
-                                  child: Text(
-                                    'Read more >',
-                                    style: TextStyle(
-                                      color: Color(0xFF006972),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      fontFamily: 'HenkenGrotesk',
+
+                            // "Read more >" / "See less"
+                            GestureDetector(
+                              onTap: () => setState(
+                                () => _descriptionExpanded = !_descriptionExpanded,
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      _descriptionExpanded ? 'See less' : 'Read more >',
+                                      style: const TextStyle(
+                                        color: Color(0xFF2A1B12),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'HenkenGrotesk',
+                                      ),
                                     ),
-                                  ),
+                                    const SizedBox(height: 6),
+                                    Container(
+                                      width: _descriptionExpanded ? 60 : 80,
+                                      height: 2,
+                                      color: const Color(0xFF006972),
+                                    ),
+                                  ],
                                 ),
                               ),
+                            ),
                             const SizedBox(height: 24),
                           ],
 

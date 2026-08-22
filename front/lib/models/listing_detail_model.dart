@@ -1,8 +1,8 @@
-
 class ListingDetailModel {
   final String id;
   final String title;
   final String description;
+  final String descriptionTitle;
   final String propertyType;
   final List<String> categories;
 
@@ -37,6 +37,7 @@ class ListingDetailModel {
     required this.id,
     required this.title,
     required this.description,
+    required this.descriptionTitle,
     required this.propertyType,
     required this.categories,
     required this.city,
@@ -81,6 +82,7 @@ class ListingDetailModel {
       id: json['_id'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      descriptionTitle: json['descriptionTitle'] as String? ?? '',
       propertyType: json['propertyType'] as String? ?? '',
       categories: categoriesRaw.map((c) => c.toString()).toList(),
       city: location['city'] as String? ?? '',
@@ -114,13 +116,15 @@ class ListingDetailModel {
 
   /// "Superhost since 2019" when the real hostSince date exists, falling
   /// back to "Member since 2026" using the host's account creation date
-  /// otherwise. Returns null if neither is available.
-  String? get hostSinceLabel {
+  /// otherwise. Always returns a non-null String — falls back to a plain
+  /// "Host" label if neither date is available, so this is safe to pass
+  /// directly into widgets that expect a non-nullable String.
+  String get hostSinceLabel {
     final source = hostSince ?? hostCreatedAt;
-    if (source == null) return null;
+    if (source == null) return hostName;
 
     final year = DateTime.tryParse(source)?.year;
-    if (year == null) return null;
+    if (year == null) return hostName;
 
     return hostSince != null ? 'Superhost since $year' : 'Member since $year';
   }

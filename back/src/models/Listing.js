@@ -13,6 +13,7 @@ const listingSchema = new mongoose.Schema(
     // ── Basics ─────────────────────────────────────────────
     title:       { type: String, required: true, trim: true },
     description: { type: String, required: true },
+    descriptionTitle: { type: String, default: '' },
     propertyType: {
       type: String,
       required: true,
