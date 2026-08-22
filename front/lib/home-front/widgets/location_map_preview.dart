@@ -24,9 +24,9 @@ class LocationMapPreview extends StatelessWidget {
           "Where you'll be",
           style: TextStyle(
             color: Color(0xFF2A1B12),
-            fontSize: 18,
+            fontSize: 24,
             fontFamily: 'CormorantGaramond',
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 4),

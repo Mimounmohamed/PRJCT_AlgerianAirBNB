@@ -127,13 +127,30 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                               children: [
                                 const Icon(Icons.star, size: 22, color: Color.fromARGB(255, 29, 28, 21)),
                                 const SizedBox(width: 6),
-                                Text(
-                                  '${listing.ratingOverall.toStringAsFixed(2)} · ${listing.reviewCount} reviews',
-                                  style: const TextStyle(
-                                    color: Color(0xFF2A1B12),
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'HenkenGrotesk',
+                                // TODO: wrap in GestureDetector/InkWell later to
+                                // navigate to the reviews & comments screen.
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: listing.ratingOverall.toStringAsFixed(2),
+                                        style: const TextStyle(
+                                          color: Color(0xFF2A1B12),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: 'HenkenGrotesk',
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: ' · ${listing.reviewCount} reviews',
+                                        style: const TextStyle(
+                                          color: Color(0xFF61564D),
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w400,
+                                          fontFamily: 'HenkenGrotesk',
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],

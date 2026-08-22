@@ -10,6 +10,8 @@ class BookingBottomBar extends StatelessWidget {
   final String? dateRangeLabel;
   final VoidCallback? onBookNowTap;
 
+  static const Color _teal = Color(0xFF006972);
+
   const BookingBottomBar({
     super.key,
     required this.formattedPrice,
@@ -19,6 +21,11 @@ class BookingBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Falls back to "Flexible dates" — same wording used on the listing
+    // cards — when this specific listing has no fixed availability window.
+    final hasDates = dateRangeLabel != null && dateRangeLabel!.trim().isNotEmpty;
+    final displayLabel = hasDates ? dateRangeLabel! : 'Flexible dates';
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
@@ -47,7 +54,7 @@ class BookingBottomBar extends StatelessWidget {
                           text: formattedPrice,
                           style: const TextStyle(
                             color: Color(0xFF2A1B12),
-                            fontSize: 16,
+                            fontSize: 20,
                             fontWeight: FontWeight.w700,
                             fontFamily: 'HenkenGrotesk',
                           ),
@@ -64,17 +71,33 @@ class BookingBottomBar extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (dateRangeLabel != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      dateRangeLabel!,
-                      style: const TextStyle(
-                        color: Color(0xFF8A7B6E),
-                        fontSize: 12,
-                        fontFamily: 'HenkenGrotesk',
-                      ),
+                  const SizedBox(height: 4),
+                  // IntrinsicWidth so the underline below matches the text's
+                  // own width, same treatment as the "Read more" underline
+                  // in the description section — not a fixed guessed size,
+                  // since "Oct 12 – 17" and "Flexible dates" differ in length.
+                  IntrinsicWidth(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayLabel,
+                          style: const TextStyle(
+                            color: Color(0xFF2A1B12),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'HenkenGrotesk',
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Container(
+                          width: double.infinity,
+                          height: 2,
+                          color: _teal,
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ],
               ),
             ),
@@ -82,7 +105,7 @@ class BookingBottomBar extends StatelessWidget {
             ElevatedButton(
               onPressed: onBookNowTap,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF006972),
+                backgroundColor: _teal,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                 padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
               ),

@@ -47,12 +47,12 @@ class _DetailImageCarouselState extends State<DetailImageCarousel> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.35),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 18, color: iconColor ?? Colors.white),
+        child: Icon(icon, size: 22, color: iconColor ?? Colors.white),
       ),
     );
   }
@@ -101,7 +101,7 @@ class _DetailImageCarouselState extends State<DetailImageCarousel> {
                   _circleButton(icon: Icons.arrow_back, onTap: widget.onBackTap),
                   Row(
                     children: [
-                      _circleButton(icon: Icons.ios_share, onTap: widget.onShareTap),
+                      _circleButton(icon: Icons.share, onTap: widget.onShareTap),
                       const SizedBox(width: 8),
                       _circleButton(
                         icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
