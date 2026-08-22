@@ -9,6 +9,7 @@ import 'privacy_policy.dart';
 import 'help_center.dart';
 import 'how_works.dart';
 import 'Get help with sfety issues/safety_guide.dart';
+import 'Settings.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
@@ -287,7 +288,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         ),
                       ),
                       IconButton(
-                        onPressed: widget.onSettingsTap,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const SettingsScreen(),
+                            ),
+                          );
+                        },
                         icon: const Icon(Icons.settings_outlined, color: _dark),
                       ),
                     ],
