@@ -15,17 +15,35 @@ class _TwoStepVerificationScreenState
   bool _smsEnabled = false;
   bool _emailEnabled = false;
   bool _saving = false;
+  bool _loading = true; // fetching current state from server
 
   @override
   void initState() {
     super.initState();
-    // Load current 2FA setting from the logged-in user
-    final user = UserSession.instance.currentUser;
-    if (user != null) {
-      // UserSession stores the raw user map — check security field
-      final security = UserSession.instance.rawUser?['security'];
-      _emailEnabled = security?['twoFactorEnabled'] == true &&
-          security?['twoFactorMethod'] == 'email';
+    _loadFromServer();
+  }
+
+  /// Fetch the full user from the server to read the real security state.
+  Future<void> _loadFromServer() async {
+    try {
+      final token = UserSession.instance.token ?? '';
+      final fullUser = await AuthService.getMe(token: token);
+      // Cache the raw user so other screens can read it too
+      UserSession.instance.setUser(
+        AppUser.fromJson(fullUser),
+        token: token,
+        raw: fullUser,
+      );
+      final security = fullUser['security'] as Map<String, dynamic>?;
+      if (mounted) {
+        setState(() {
+          _emailEnabled = security?['twoFactorEnabled'] == true &&
+              security?['twoFactorMethod'] == 'email';
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -34,6 +52,20 @@ class _TwoStepVerificationScreenState
     try {
       final token = UserSession.instance.token ?? '';
       await AuthService.toggle2FA(token: token, enabled: _emailEnabled);
+
+      // Update the cached rawUser so the toggle stays correct
+      final current = Map<String, dynamic>.from(
+        UserSession.instance.rawUser ?? {},
+      );
+      current['security'] = {
+        'twoFactorEnabled': _emailEnabled,
+        'twoFactorMethod': _emailEnabled ? 'email' : null,
+      };
+      UserSession.instance.setUser(
+        UserSession.instance.currentUser!,
+        raw: current,
+      );
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -55,8 +87,17 @@ class _TwoStepVerificationScreenState
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFFFF9EE),
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF006972)),
+        ),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFFFF9EE),
       body: SafeArea(

@@ -52,13 +52,23 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Both SMS and Email now use the same backend verify-otp endpoint
-      final result = await AuthService.verifyOtp(
-        token: widget.token ?? '',
-        target: widget.target,
-        code: _code,
-        purpose: widget.purpose,
-      );
+      Map<String, dynamic> result;
+
+      if (widget.purpose == 'two_factor') {
+        // 2FA login verification — uses its own endpoint
+        result = await AuthService.verify2FA(
+          email: widget.target,
+          code: _code,
+        );
+      } else {
+        // Signup / other OTP purposes
+        result = await AuthService.verifyOtp(
+          token: widget.token ?? '',
+          target: widget.target,
+          code: _code,
+          purpose: widget.purpose,
+        );
+      }
 
       if (!mounted) return;
 
@@ -66,9 +76,12 @@ class _VerifyCodeScreenState extends State<VerifyCodeScreen> {
       final userJson = result['user'] as Map<String, dynamic>?;
       final userName = userJson?['fullName'] as String? ?? '';
 
-      // NEW — populate the app-wide session as soon as we have the user object
       if (userJson != null) {
-        UserSession.instance.setUser(AppUser.fromJson(userJson), token: finalToken);
+        UserSession.instance.setUser(
+          AppUser.fromJson(userJson),
+          token: finalToken,
+          raw: userJson,
+        );
       }
 
       widget.onVerified(finalToken, userName);

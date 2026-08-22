@@ -398,6 +398,20 @@ class AuthService {
     }
   }
 
+  // ── GET /api/users/me ───────────────────────────────────────
+  /// Returns the full user document including security, settings, etc.
+  static Future<Map<String, dynamic>> getMe({required String token}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to fetch user');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   // ── POST /api/incidents ─────────────────────────────────────
   /// Submit a safety incident report. Returns { caseNumber, incidentId, status }.
   static Future<Map<String, dynamic>> submitIncident({

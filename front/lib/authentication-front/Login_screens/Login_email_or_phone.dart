@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import '../widgets/app_bar.dart';
 import '../sign_in_screens/signUP_step1.dart';
+import '../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
+import '../widgets/otp_method_selector.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
-import '../../home-front/explore_page/landing_page.dart'; // NEW
+import '../../home-front/explore_page/landing_page.dart';
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
   const LoginEmailOrPhoneScreen({super.key});
@@ -62,15 +64,42 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       if (!mounted) return;
       setState(() => _isLoading = false);
 
-      // Populate the app-wide session with the logged-in user
+      // ── 2FA required: show OTP screen ──────────────────────
+      if (data['requiresTwoFactor'] == true) {
+        final maskedEmail = data['maskedEmail'] as String? ?? identifier;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => VerifyCodeScreen(
+              method: OtpMethod.email,
+              maskedContact: maskedEmail,
+              target: identifier,
+              purpose: 'two_factor',
+              onVerified: (finalToken, userName) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LandingPage()),
+                  (route) => false,
+                );
+              },
+              onResend: () async {
+                // Re-trigger login to resend OTP
+                await AuthService.loginWithEmail(
+                  email: identifier,
+                  password: password,
+                );
+              },
+            ),
+          ),
+        );
+        return;
+      }
+
+      // ── Normal login (no 2FA) ──────────────────────────────
       final userJson = data['user'] as Map<String, dynamic>?;
       final jwt = data['token'] as String? ?? '';
       if (userJson != null) {
-        UserSession.instance.setUser(AppUser.fromJson(userJson), token: jwt);
+        UserSession.instance.setUser(AppUser.fromJson(userJson), token: jwt, raw: userJson);
       }
 
-      // CHANGED — login goes straight to LandingPage, no Mar7aban,
-      // no complete-profile dialog (showCompleteProfileDialog defaults false).
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => const LandingPage(),
