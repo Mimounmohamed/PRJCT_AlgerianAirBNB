@@ -99,7 +99,7 @@ class _ListingCardState extends State<ListingCard> {
                     listing.title,
                     style: const TextStyle(
                       color: Color(0xFF2A1B12),
-                      fontSize: 22,
+                      fontSize: 28,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w600,
                     ),
@@ -107,7 +107,7 @@ class _ListingCardState extends State<ListingCard> {
                 ),
                 if (listing.ratingOverall > 0)
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: 12),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -143,18 +143,18 @@ class _ListingCardState extends State<ListingCard> {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 6),
 
             // ── Location ────────────────────────────────────────────────
             Text(
               '${listing.city}, Algeria',
               style: const TextStyle(
-                color: Color(0xFF8A7B6E),
-                fontSize: 14,
+                color: Color.fromARGB(255, 97, 86, 77),
+                fontSize: 18,
                 fontFamily: 'HenkenGrotesk',
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
 
             // ── Date range ──────────────────────────────────────────────
             // TODO: replace with a real "next available" range once the
@@ -163,7 +163,7 @@ class _ListingCardState extends State<ListingCard> {
               'Flexible dates',
               style: TextStyle(
                 color: Color(0xFF8A7B6E),
-                fontSize: 14,
+                fontSize: 18,
                 fontFamily: 'HenkenGrotesk',
               ),
             ),
@@ -177,8 +177,8 @@ class _ListingCardState extends State<ListingCard> {
                     text: listing.formattedPrice,
                     style: const TextStyle(
                       color: Color(0xFF2A1B12),
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
                       fontFamily: 'HenkenGrotesk',
                     ),
                   ),
