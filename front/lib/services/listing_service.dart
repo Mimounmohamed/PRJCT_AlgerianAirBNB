@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'base_client.dart'; // ApiConfig — same folder (lib/services/)
 import '../models/listing_model.dart'; // adjust path to match your project structure
+import '../models/listing_detail_model.dart'; // adjust path to match your project structure
 
 /// Standalone fetch for GET /api/listings — no shared HTTP client yet,
 /// swap in base_client.dart later if you want auth headers / interceptors
@@ -30,5 +31,20 @@ class ListingService {
     return listingsJson
         .map((item) => ListingModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  /// GET /api/listings/:id — used by the Listing Detail page.
+  /// Note: unlike fetchListings, this route returns the listing object
+  /// directly (not wrapped in { listings: [...] }) — see listing.routes.js.
+  static Future<ListingDetailModel> fetchListingById(String id) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$id');
+    final response = await http.get(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load listing (${response.statusCode}).');
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return ListingDetailModel.fromJson(body);
   }
 }
