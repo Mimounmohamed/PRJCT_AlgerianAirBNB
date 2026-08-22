@@ -290,8 +290,97 @@ router.post('/login/email', async (req, res) => {
       return res.status(403).json({ error: 'Account is deactivated.' });
     }
 
+    // ── 2FA check ──────────────────────────────────────────
+    if (user.security?.twoFactorEnabled && user.security?.twoFactorMethod === 'email') {
+      const { plainCode } = await OtpVerification.generateOTP(email, 'email', 'two_factor', user._id);
+      await sendOtpByEmail(email, plainCode, {
+        subject: 'Your AKRILI login code',
+        title: 'Login verification code',
+        description: 'Enter this code to complete your sign-in. It expires in 10 minutes.',
+      });
+      return res.json({
+        requiresTwoFactor: true,
+        method: 'email',
+        maskedEmail: email.replace(/(.{2})(.*)(@.*)/, '$1***$3'),
+        userId: user._id,
+      });
+    }
+
     const token = generateToken(user._id);
     res.json({ token, user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto } });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// POST /api/auth/verify-2fa
+// Step 2 of login when 2FA is enabled — verifies the OTP and
+// issues the real JWT token.
+// Body: { email, code }
+// ─────────────────────────────────────────────────────────────
+router.post('/verify-2fa', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required.' });
+    }
+
+    const otpRecord = await OtpVerification.findOne({
+      target: email,
+      purpose: 'two_factor',
+      used: false,
+    }).select('+codeHash');
+
+    if (!otpRecord) {
+      return res.status(404).json({ error: 'No active 2FA code found. Please log in again.' });
+    }
+
+    const result = await otpRecord.verify(code);
+    if (!result.valid) {
+      return res.status(400).json({ error: result.reason });
+    }
+
+    const user = await User.findById(otpRecord.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const token = generateToken(user._id);
+    res.json({
+      token,
+      user: { _id: user._id, fullName: user.fullName, email: user.email, profilePhoto: user.profilePhoto },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// PUT /api/auth/toggle-2fa
+// Enable or disable email 2FA for the logged-in user.
+// Body: { enabled: true | false }
+// Protected: requires Bearer token
+// ─────────────────────────────────────────────────────────────
+const { protect } = require('../middleware/auth.middleware');
+
+router.put('/toggle-2fa', protect, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'enabled must be true or false.' });
+    }
+
+    const update = enabled
+      ? { 'security.twoFactorEnabled': true, 'security.twoFactorMethod': 'email' }
+      : { 'security.twoFactorEnabled': false, 'security.twoFactorMethod': null };
+
+    await User.findByIdAndUpdate(req.user._id, update);
+
+    res.json({
+      message: enabled ? '2FA enabled via email.' : '2FA disabled.',
+      twoFactorEnabled: enabled,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
