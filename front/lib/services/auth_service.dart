@@ -397,4 +397,49 @@ class AuthService {
       throw Exception(data['error'] ?? 'Failed to update password');
     }
   }
+
+  // ── POST /api/incidents ─────────────────────────────────────
+  /// Submit a safety incident report. Returns { caseNumber, incidentId, status }.
+  static Future<Map<String, dynamic>> submitIncident({
+    required String token,
+    required String description,
+    String type = 'safety',
+    List<String> photoUrls = const [],
+    List<String> messageScreenshots = const [],
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/incidents'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'type': type,
+        'description': description,
+        'photoUrls': photoUrls,
+        'messageScreenshots': messageScreenshots,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 201) {
+      throw Exception(data['error'] ?? 'Failed to submit incident report');
+    }
+    return data;
+  }
+
+  // ── GET /api/incidents/mine ─────────────────────────────────
+  /// Fetch all incidents submitted by the current user.
+  static Future<List<dynamic>> getMyIncidents({required String token}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/incidents/mine'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to fetch incidents');
+    }
+    return jsonDecode(response.body) as List<dynamic>;
+  }
 }

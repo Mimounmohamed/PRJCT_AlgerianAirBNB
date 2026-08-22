@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'reporting_an_incident.dart';
 
 class SafetyTrustScreen extends StatefulWidget {
   const SafetyTrustScreen({super.key});
@@ -176,7 +177,14 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                     icon: Icons.report_outlined,
                     iconColor: const Color(0xFFB5451B),
                     title: 'Reporting an incident',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ReportingIncidentScreen(),
+                        ),
+                      );
+                    },
                     showDivider: true,
                   ),
                   _SafetyGuideItem(
