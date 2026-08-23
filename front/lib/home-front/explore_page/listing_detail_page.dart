@@ -3,8 +3,9 @@ import '../../services/listing_service.dart'; // adjust path to match your proje
 import '../../models/listing_detail_model.dart'; // adjust path to match your project structure
 import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
+import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/amenities_section.dart';
-import 'amenities_page.dart'; // adjust path if you placed this elsewhere
+import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
 import '../widgets/booking_bottom_bar.dart';
 
@@ -167,6 +168,15 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             onMessageTap: () {
                               // TODO: wire messaging flow
                             },
+                            onHostTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => HostProfilePage(
+                                  hostName: listing.hostName,
+                                  hostProfilePhotoUrl: listing.hostProfilePhotoUrl,
+                                  hostSinceLabel: listing.hostSinceLabel,
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(height: 20),
                           const Divider(height: 1, color: Color(0xFFE7DCCB)),

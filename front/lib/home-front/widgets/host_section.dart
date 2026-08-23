@@ -7,6 +7,7 @@ class HostSection extends StatelessWidget {
   final String? hostProfilePhotoUrl;
   final String? hostSinceLabel;
   final VoidCallback? onMessageTap;
+  final VoidCallback? onHostTap;
 
   const HostSection({
     super.key,
@@ -14,6 +15,7 @@ class HostSection extends StatelessWidget {
     required this.hostProfilePhotoUrl,
     required this.hostSinceLabel,
     this.onMessageTap,
+    this.onHostTap,
   });
 
   String get _initials {
@@ -28,47 +30,57 @@ class HostSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: const Color(0xFFE7DCCB),
-          backgroundImage: hostProfilePhotoUrl != null ? NetworkImage(hostProfilePhotoUrl!) : null,
-          child: hostProfilePhotoUrl == null
-              ? Text(
-                  _initials,
-                  style: const TextStyle(
-                    color: Color(0xFF2A1B12),
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                )
-              : null,
-        ),
-        const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Hosted by $hostName',
-                style: const TextStyle(
-                  color: Color(0xFF2A1B12),
-                  fontSize: 19,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: 'HenkenGrotesk',
+          child: GestureDetector(
+            onTap: onHostTap,
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: const Color(0xFFE7DCCB),
+                  backgroundImage: hostProfilePhotoUrl != null ? NetworkImage(hostProfilePhotoUrl!) : null,
+                  child: hostProfilePhotoUrl == null
+                      ? Text(
+                          _initials,
+                          style: const TextStyle(
+                            color: Color(0xFF2A1B12),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        )
+                      : null,
                 ),
-              ),
-              if (hostSinceLabel != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  hostSinceLabel!,
-                  style: const TextStyle(
-                    color: Color(0xFF8A7B6E),
-                    fontSize: 13,
-                    fontFamily: 'HenkenGrotesk',
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Hosted by $hostName',
+                        style: const TextStyle(
+                          color: Color(0xFF2A1B12),
+                          fontSize: 19,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'HenkenGrotesk',
+                        ),
+                      ),
+                      if (hostSinceLabel != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          hostSinceLabel!,
+                          style: const TextStyle(
+                            color: Color(0xFF8A7B6E),
+                            fontSize: 13,
+                            fontFamily: 'HenkenGrotesk',
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
         IconButton(
