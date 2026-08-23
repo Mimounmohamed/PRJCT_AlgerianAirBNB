@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'reporting_an_incident.dart';
+import 'privacy_&_security.dart';
 
 class SafetyTrustScreen extends StatefulWidget {
   const SafetyTrustScreen({super.key});
@@ -191,7 +192,14 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                     icon: Icons.lock_outline,
                     iconColor: const Color(0xFF2A1B12),
                     title: 'Privacy and security',
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const PrivacySecurityScreen(),
+                        ),
+                      );
+                    },
                     showDivider: false,
                   ),
                 ],
