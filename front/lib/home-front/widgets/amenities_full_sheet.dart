@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'amenities_section.dart'; // AmenityCatalog, AmenityDef
+import '../../models/amenity_model.dart';
 
 /// Opens the "What this place offers" full-list bottom sheet — every
 /// amenity on the listing, each with its icon, label, and a description.
@@ -9,7 +9,7 @@ import 'amenities_section.dart'; // AmenityCatalog, AmenityDef
 /// description for a listing, swap the `def?.description` lookup below
 /// for whatever the host actually wrote, falling back to the catalog
 /// default when a host hasn't customized it.
-Future<void> showAmenitiesFullSheet(BuildContext context, List<String> amenities) {
+Future<void> showAmenitiesFullSheet(BuildContext context, List<AmenityModel> amenities) {
   return showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -22,7 +22,7 @@ Future<void> showAmenitiesFullSheet(BuildContext context, List<String> amenities
 }
 
 class _AmenitiesFullSheet extends StatelessWidget {
-  final List<String> amenities;
+  final List<AmenityModel> amenities;
 
   const _AmenitiesFullSheet({required this.amenities});
 
@@ -74,11 +74,10 @@ class _AmenitiesFullSheet extends StatelessWidget {
                 itemCount: amenities.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 24),
                 itemBuilder: (context, index) {
-                  final raw = amenities[index];
-                  final def = AmenityCatalog.find(raw);
-                  final icon = def?.icon ?? Icons.check_circle_outline;
-                  final label = def?.label ?? raw;
-                  final description = def?.description ?? '';
+                  final amenity = amenities[index];
+                  final icon = amenity.icon;
+                  final label = amenity.name;
+                  final description = amenity.description;
 
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.start,

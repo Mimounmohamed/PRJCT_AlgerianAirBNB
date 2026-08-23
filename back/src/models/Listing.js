@@ -13,7 +13,7 @@ const listingSchema = new mongoose.Schema(
     // ── Basics ─────────────────────────────────────────────
     title:       { type: String, required: true, trim: true },
     description: { type: String, required: true },
-    descriptionTitle: { type: String, default: '' },
+    descriptionTitle: { type: String, default: '' }, // optional short headline above the description, host-written
     propertyType: {
       type: String,
       required: true,
@@ -56,10 +56,22 @@ const listingSchema = new mongoose.Schema(
     coverPhotoIndex: { type: Number, default: 0 }, // index into photos[] used as the card's hero image
 
     // ── Amenities ──────────────────────────────────────────
-    amenities: [{ type: String }],
-    // Examples: 'Fiber WiFi', 'Breakfast included', 'Full kitchen',
-    // 'Air conditioning', 'Sea View Terrace', '24/7 Security',
-    // 'Smoke alarm', 'Parking', 'In-unit washer', 'Espresso machine'
+    // Each entry is either picked from AmenityCatalog (catalogKey set,
+    // name/category/iconName copied over at selection time so this
+    // listing's amenities are stable even if the catalog changes later)
+    // or a one-off custom amenity the host typed in (catalogKey null,
+    // isCustom true — host also picks a category from the same fixed
+    // AMENITY_CATEGORIES list used by AmenityCatalog).
+    amenities: [
+      {
+        catalogKey:  { type: String, default: null }, // null when isCustom is true
+        name:        { type: String, required: true },
+        category:    { type: String, required: true },
+        iconName:    { type: String, required: true },
+        description: { type: String, default: '' }, // host-written, optional
+        isCustom:    { type: Boolean, default: false },
+      },
+    ],
 
     // ── House Rules ────────────────────────────────────────
     houseRules: {
@@ -81,19 +93,6 @@ const listingSchema = new mongoose.Schema(
       checkInTimeFrom:    { type: String, default: '14:00' },
       checkInTimeTo:      { type: String, default: '22:00' },
       checkOutTime:       { type: String, default: '11:00' },
-    },
-
-    // ── Availability ────────────────────────────────────────
-    // Lightweight manual blocking until a full Booking/Calendar collection
-    // exists. Used to compute the "next available" date range shown on
-    // Explore cards — check this against today + confirmed bookings.
-    availability: {
-      blockedDates: [
-        {
-          from: { type: Date, required: true },
-          to:   { type: Date, required: true },
-        },
-      ],
     },
 
     cancellationPolicy: {

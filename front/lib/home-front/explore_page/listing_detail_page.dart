@@ -4,7 +4,7 @@ import '../../models/listing_detail_model.dart'; // adjust path to match your pr
 import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
 import '../widgets/amenities_section.dart';
-import '../widgets/amenities_full_sheet.dart';
+import 'amenities_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/location_map_preview.dart';
 import '../widgets/booking_bottom_bar.dart';
 
@@ -238,7 +238,18 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                           if (listing.amenities.isNotEmpty) ...[
                             AmenitiesSection(
                               amenities: listing.amenities,
-                              onShowAllTap: () => showAmenitiesFullSheet(context, listing.amenities),
+                              onShowAllTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => AmenitiesPage(
+                                    listingTitle: listing.title,
+                                    amenities: listing.amenities,
+                                    footerPhotoUrl: listing.photoUrls.isNotEmpty
+                                        ? listing.photoUrls.first
+                                        : null,
+                                    footerBlurb: listing.description,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 24),
                           ],

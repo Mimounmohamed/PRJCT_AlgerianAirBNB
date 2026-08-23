@@ -1,3 +1,11 @@
+import 'amenity_model.dart'; // adjust path to match your project structure
+
+/// Fuller listing model for the Listing Detail page — parses the full
+/// document returned by GET /api/listings/:id (see listing.routes.js),
+/// including description, all photos, amenities, capacity, and the
+/// populated host info. Kept separate from ListingModel (used for the
+/// Explore cards) since the card only needs a handful of summary fields
+/// and shouldn't carry this much data on every list fetch.
 class ListingDetailModel {
   final String id;
   final String title;
@@ -22,7 +30,7 @@ class ListingDetailModel {
   final List<String> photoUrls;
   final int coverPhotoIndex;
 
-  final List<String> amenities;
+  final List<AmenityModel> amenities;
 
   final double ratingOverall;
   final int reviewCount;
@@ -100,7 +108,9 @@ class ListingDetailModel {
           .where((url) => url.isNotEmpty)
           .toList(),
       coverPhotoIndex: (json['coverPhotoIndex'] as num?)?.toInt() ?? 0,
-      amenities: amenitiesRaw.map((a) => a.toString()).toList(),
+      amenities: amenitiesRaw
+          .map((a) => AmenityModel.fromJson(a as Map<String, dynamic>))
+          .toList(),
       ratingOverall: (rating['overall'] as num?)?.toDouble() ?? 0,
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
       hostName: host['fullName'] as String? ?? 'Host',
@@ -116,15 +126,13 @@ class ListingDetailModel {
 
   /// "Superhost since 2019" when the real hostSince date exists, falling
   /// back to "Member since 2026" using the host's account creation date
-  /// otherwise. Always returns a non-null String — falls back to a plain
-  /// "Host" label if neither date is available, so this is safe to pass
-  /// directly into widgets that expect a non-nullable String.
-  String get hostSinceLabel {
+  /// otherwise. Returns null if neither is available.
+  String? get hostSinceLabel {
     final source = hostSince ?? hostCreatedAt;
-    if (source == null) return hostName;
+    if (source == null) return null;
 
     final year = DateTime.tryParse(source)?.year;
-    if (year == null) return hostName;
+    if (year == null) return null;
 
     return hostSince != null ? 'Superhost since $year' : 'Member since $year';
   }
