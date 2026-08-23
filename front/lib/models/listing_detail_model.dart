@@ -22,6 +22,8 @@ class ListingDetailModel {
 
   final double pricePerNight;
   final String currency;
+  final double serviceFeePercent;
+  final double touristTaxPercent;
 
   final int guests;
   final int bedrooms;
@@ -55,6 +57,8 @@ class ListingDetailModel {
     required this.longitude,
     required this.pricePerNight,
     required this.currency,
+    required this.serviceFeePercent,
+    required this.touristTaxPercent,
     required this.guests,
     required this.bedrooms,
     required this.bathrooms,
@@ -100,6 +104,8 @@ class ListingDetailModel {
       longitude: coordsList.isNotEmpty ? (coordsList[0] as num?)?.toDouble() : null,
       pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
       currency: price['currency'] as String? ?? 'DZD',
+      serviceFeePercent: (price['serviceFeePercent'] as num?)?.toDouble() ?? 0,
+      touristTaxPercent: (price['touristTaxPercent'] as num?)?.toDouble() ?? 0,
       guests: (capacity['guests'] as num?)?.toInt() ?? 1,
       bedrooms: (capacity['bedrooms'] as num?)?.toInt() ?? 0,
       bathrooms: (capacity['bathrooms'] as num?)?.toInt() ?? 0,

@@ -4,6 +4,7 @@ import '../../models/listing_detail_model.dart'; // adjust path to match your pr
 import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
 import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
+import 'booking_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
@@ -282,9 +283,25 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                 bottom: 0,
                 child: BookingBottomBar(
                   formattedPrice: listing.formattedPrice,
-                  onBookNowTap: () {
-                    // TODO: wire booking flow
-                  },
+                  onBookNowTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => BookingPage(
+                        listingId: listing.id,
+                        title: listing.title,
+                        coverPhotoUrl: listing.photoUrls.isNotEmpty ? listing.photoUrls.first : null,
+                        locationLabel: listing.neighborhood != null && listing.neighborhood!.isNotEmpty
+                            ? '${listing.city}, ${listing.neighborhood}'
+                            : listing.city,
+                        ratingOverall: listing.ratingOverall,
+                        reviewCount: listing.reviewCount,
+                        pricePerNight: listing.pricePerNight,
+                        currency: listing.currency,
+                        serviceFeePercent: listing.serviceFeePercent,
+                        touristTaxPercent: listing.touristTaxPercent,
+                        maxGuests: listing.guests,
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
