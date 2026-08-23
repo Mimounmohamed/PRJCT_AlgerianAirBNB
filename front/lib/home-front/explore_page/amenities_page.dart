@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/amenity_model.dart';
-
-// adjust path to match your project structure
+import '../../models/amenity_model.dart'; // adjust path to match your project structure
 
 /// Full "Amenities" page — replaces the old popup sheet. Groups the
 /// listing's amenities by category with a header per section, and each
@@ -50,7 +48,7 @@ class AmenitiesPage extends StatelessWidget {
           'Amenities - $listingTitle',
           style: const TextStyle(
             color: Color(0xFF2A1B12),
-            fontSize: 15,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
             fontFamily: 'HenkenGrotesk',
           ),
@@ -80,18 +78,20 @@ class AmenitiesPage extends StatelessWidget {
                   category,
                   style: const TextStyle(
                     color: Color(0xFF2A1B12),
-                    fontSize: 20,
+                    fontSize: 24,
                     fontFamily: 'CormorantGaramond',
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                const SizedBox(height: 8),
+                const Divider(height: 1, color: Color(0xFFE7DCCB)),
                 const SizedBox(height: 16),
                 ...items.map((amenity) => Padding(
                       padding: const EdgeInsets.only(bottom: 18),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(amenity.icon, size: 22, color: const Color(0xFF2A1B12)),
+                          Icon(amenity.icon, size: 22, color: const Color(0xFF006972)),
                           const SizedBox(width: 14),
                           Expanded(
                             child: Column(
@@ -101,7 +101,7 @@ class AmenitiesPage extends StatelessWidget {
                                   amenity.name,
                                   style: const TextStyle(
                                     color: Color(0xFF2A1B12),
-                                    fontSize: 15,
+                                    fontSize: 17,
                                     fontWeight: FontWeight.w700,
                                     fontFamily: 'HenkenGrotesk',
                                   ),
@@ -112,7 +112,7 @@ class AmenitiesPage extends StatelessWidget {
                                     amenity.description,
                                     style: const TextStyle(
                                       color: Color(0xFF8A7B6E),
-                                      fontSize: 13,
+                                      fontSize: 15,
                                       fontFamily: 'HenkenGrotesk',
                                       height: 1.4,
                                     ),
@@ -150,7 +150,7 @@ class _FooterCard extends StatelessWidget {
           children: [
             if (photoUrl != null)
               AspectRatio(
-                aspectRatio: 1.6,
+                aspectRatio: 1.8,
                 child: Image.network(
                   photoUrl!,
                   fit: BoxFit.cover,
@@ -167,7 +167,7 @@ class _FooterCard extends StatelessWidget {
                     'Authentic Hospitality',
                     style: TextStyle(
                       color: Color(0xFF2A1B12),
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'HenkenGrotesk',
                     ),
@@ -178,7 +178,7 @@ class _FooterCard extends StatelessWidget {
                       blurb,
                       style: const TextStyle(
                         color: Color(0xFF8A7B6E),
-                        fontSize: 13,
+                        fontSize: 15,
                         fontFamily: 'HenkenGrotesk',
                         height: 1.4,
                       ),
