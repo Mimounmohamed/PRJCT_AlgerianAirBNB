@@ -397,4 +397,101 @@ class AuthService {
       throw Exception(data['error'] ?? 'Failed to update password');
     }
   }
+
+  // ── GET /api/users/me ───────────────────────────────────────
+  /// Returns the full user document including security, settings, etc.
+  static Future<Map<String, dynamic>> getMe({required String token}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/users/me'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to fetch user');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  // ── POST /api/incidents ─────────────────────────────────────
+  /// Submit a safety incident report. Returns { caseNumber, incidentId, status }.
+  static Future<Map<String, dynamic>> submitIncident({
+    required String token,
+    required String description,
+    String type = 'safety',
+    List<String> photoUrls = const [],
+    List<String> messageScreenshots = const [],
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/incidents'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'type': type,
+        'description': description,
+        'photoUrls': photoUrls,
+        'messageScreenshots': messageScreenshots,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 201) {
+      throw Exception(data['error'] ?? 'Failed to submit incident report');
+    }
+    return data;
+  }
+
+  // ── GET /api/incidents/mine ─────────────────────────────────
+  /// Fetch all incidents submitted by the current user.
+  static Future<List<dynamic>> getMyIncidents({required String token}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/incidents/mine'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to fetch incidents');
+    }
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  // ── PUT /api/auth/toggle-2fa ────────────────────────────────
+  /// Enable or disable email 2FA. Pass enabled=true to turn on.
+  static Future<void> toggle2FA({
+    required String token,
+    required bool enabled,
+  }) async {
+    final response = await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/auth/toggle-2fa'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'enabled': enabled}),
+    );
+    if (response.statusCode != 200) {
+      final data = jsonDecode(response.body);
+      throw Exception(data['error'] ?? 'Failed to update 2FA setting');
+    }
+  }
+
+  // ── POST /api/auth/verify-2fa ───────────────────────────────
+  /// Step 2 of login: submit the OTP code. Returns token + user.
+  static Future<Map<String, dynamic>> verify2FA({
+    required String email,
+    required String code,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/auth/verify-2fa'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'code': code}),
+    );
+    final data = jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception(data['error'] ?? 'Invalid or expired code');
+    }
+    return data;
+  }
 }

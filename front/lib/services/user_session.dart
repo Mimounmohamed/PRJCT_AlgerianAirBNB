@@ -13,7 +13,6 @@ class AppUser {
     this.profilePhotoUrl,
   });
 
-  // Adjust these keys once you confirm your Mongo document's field names.
   factory AppUser.fromJson(Map<String, dynamic> json) {
     return AppUser(
       id: json['_id'] as String? ?? '',
@@ -41,25 +40,35 @@ class UserSession extends ChangeNotifier {
 
   AppUser? _currentUser;
   String? _token;
+  Map<String, dynamic>? _rawUser; // full JSON from backend
+
   AppUser? get currentUser => _currentUser;
   String? get token => _token;
+  Map<String, dynamic>? get rawUser => _rawUser;
 
-  void setUser(AppUser user, {String? token}) {
+  void setUser(AppUser user, {String? token, Map<String, dynamic>? raw}) {
     _currentUser = user;
     if (token != null) _token = token;
+    if (raw != null) _rawUser = raw;
     notifyListeners();
   }
 
-  void updateProfilePhoto(String url) {
+  void updateProfilePhoto(String? url) {
     final user = _currentUser;
     if (user == null) return;
-    _currentUser = user.copyWith(profilePhotoUrl: url);
+    _currentUser = AppUser(
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      profilePhotoUrl: url,
+    );
     notifyListeners();
   }
 
   void clear() {
     _currentUser = null;
     _token = null;
+    _rawUser = null;
     notifyListeners();
   }
 }
