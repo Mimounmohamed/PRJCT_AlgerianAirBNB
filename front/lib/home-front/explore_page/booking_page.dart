@@ -116,25 +116,89 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   void _openCalendarSheet() {
+    DateTime? tempStart = _rangeStart;
+    DateTime? tempEnd = _rangeEnd;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: AvailabilityCalendar(
-            initialMonth: _rangeStart ?? DateTime.now(),
-            initialStart: _rangeStart,
-            initialEnd: _rangeEnd,
-            availabilityForMonth: _generateFakeMonth,
-            onRangeSelected: (start, end) {
-              setState(() {
-                _rangeStart = start;
-                _rangeEnd = end;
-              });
-            },
-          ),
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFFBF3E7),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Color(0xFF2A1B12)),
+                          onPressed: () => Navigator.of(context).pop(),
+                          splashRadius: 20,
+                        ),
+                        const Text(
+                          'Select dates',
+                          style: TextStyle(
+                            color: Color(0xFF2A1B12),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            fontFamily: 'HenkenGrotesk',
+                          ),
+                        ),
+                        const SizedBox(width: 48), // balances the close button
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    AvailabilityCalendar(
+                      initialMonth: tempStart ?? DateTime.now(),
+                      initialStart: tempStart,
+                      initialEnd: tempEnd,
+                      availabilityForMonth: _generateFakeMonth,
+                      onRangeSelected: (start, end) {
+                        setSheetState(() {
+                          tempStart = start;
+                          tempEnd = end;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            _rangeStart = tempStart;
+                            _rangeEnd = tempEnd;
+                          });
+                          Navigator.of(context).pop();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _teal,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text(
+                          'Confirm dates',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
