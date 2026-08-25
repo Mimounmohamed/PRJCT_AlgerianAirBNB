@@ -11,7 +11,8 @@ import '../widgets/availability_calendar.dart';
 /// TODO: [_generateFakeMonth] stands in for real availability data until
 /// the GET /api/availability/:listingId?month=... contract is confirmed —
 /// only the DATA SOURCE needs swapping, not the selection/price logic.
-/// TODO: the "Call" button and guest-count edit are not wired to anything yet.
+/// TODO: the "Text" button isn't wired to anything yet — pending the
+/// messaging system.
 class BookingPage extends StatefulWidget {
   final String listingId;
   final String title;
@@ -24,6 +25,8 @@ class BookingPage extends StatefulWidget {
   final double serviceFeePercent;
   final double touristTaxPercent;
   final int maxGuests;
+  final String? hostPhoneCountryCode;
+  final String? hostPhoneNumber;
 
   const BookingPage({
     super.key,
@@ -38,6 +41,8 @@ class BookingPage extends StatefulWidget {
     required this.serviceFeePercent,
     required this.touristTaxPercent,
     required this.maxGuests,
+    this.hostPhoneCountryCode,
+    this.hostPhoneNumber,
   });
 
   @override
@@ -60,6 +65,12 @@ class _BookingPageState extends State<BookingPage> {
   double get _serviceFee => _subtotal * widget.serviceFeePercent / 100;
   double get _touristTax => _subtotal * widget.touristTaxPercent / 100;
   double get _total => _subtotal + _serviceFee + _touristTax;
+
+  String? get _hostPhoneFormatted {
+    if (widget.hostPhoneNumber == null || widget.hostPhoneNumber!.isEmpty) return null;
+    final code = widget.hostPhoneCountryCode ?? '';
+    return '$code ${widget.hostPhoneNumber}'.trim();
+  }
 
   String _formatMoney(double value) {
     final rounded = value.round().toString();
@@ -248,6 +259,58 @@ class _BookingPageState extends State<BookingPage> {
     );
   }
 
+  void _showCallDialog() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFFFBF3E7),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Contact Host',
+            style: TextStyle(
+              color: Color(0xFF2A1B12),
+              fontFamily: 'CormorantGaramond',
+              fontSize: 22,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_hostPhoneFormatted != null) ...[
+                const Text(
+                  'Call to confirm your stay',
+                  style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 13),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _hostPhoneFormatted!,
+                  style: const TextStyle(
+                    color: Color(0xFF006972),
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ] else
+                const Text(
+                  'This host hasn\'t added a phone number yet.',
+                  style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 14),
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Close', style: TextStyle(color: Color(0xFF006972))),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _priceRow(String label, String value, {bool isTotal = false}) {
     final style = TextStyle(
       color: const Color(0xFF2A1B12),
@@ -283,7 +346,7 @@ class _BookingPageState extends State<BookingPage> {
           'Booking',
           style: TextStyle(
             color: Color(0xFF2A1B12),
-            fontSize: 20,
+            fontSize: 29,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
           ),
@@ -297,7 +360,7 @@ class _BookingPageState extends State<BookingPage> {
             'REVIEW YOUR STAY',
             style: TextStyle(
               color: Color(0xFF8A7B6E),
-              fontSize: 11,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
             ),
@@ -307,7 +370,7 @@ class _BookingPageState extends State<BookingPage> {
             'Confirm Details',
             style: TextStyle(
               color: Color(0xFF2A1B12),
-              fontSize: 26,
+              fontSize: 28,
               fontFamily: 'CormorantGaramond',
               fontWeight: FontWeight.w600,
             ),
@@ -342,7 +405,7 @@ class _BookingPageState extends State<BookingPage> {
                         widget.title,
                         style: const TextStyle(
                           color: Color(0xFF2A1B12),
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w700,
                           fontFamily: 'HenkenGrotesk',
                         ),
@@ -355,11 +418,11 @@ class _BookingPageState extends State<BookingPage> {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 14, color: Color(0xFFB8860B)),
+                          const Icon(Icons.star, size: 16, color: Color(0xFFB8860B)),
                           const SizedBox(width: 4),
                           Text(
                             '${widget.ratingOverall.toStringAsFixed(2)} (${widget.reviewCount} reviews)',
-                            style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 12, fontWeight: FontWeight.w600),
+                            style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 14, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
@@ -380,10 +443,10 @@ class _BookingPageState extends State<BookingPage> {
             child: Column(
               children: [
                 ListTile(
-                  title: const Text('DATES', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+                  title: const Text('DATES', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(_datesLabel, style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 15, fontWeight: FontWeight.w600)),
+                    child: Text(_datesLabel, style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                   trailing: TextButton(
                     onPressed: _openCalendarSheet,
@@ -392,10 +455,10 @@ class _BookingPageState extends State<BookingPage> {
                 ),
                 const Divider(height: 1, color: Color(0xFFE7DCCB), indent: 16, endIndent: 16),
                 ListTile(
-                  title: const Text('GUESTS', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+                  title: const Text('GUESTS', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text('$_guests Guests', style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 15, fontWeight: FontWeight.w600)),
+                    child: Text('$_guests Guests', style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                   trailing: TextButton(
                     onPressed: _openGuestsDialog,
@@ -439,7 +502,7 @@ class _BookingPageState extends State<BookingPage> {
                 Expanded(
                   child: Text(
                     'Free cancellation before check-in. After that, cancellation policy applies.',
-                    style: TextStyle(color: Color(0xFF2A1B12), fontSize: 13, height: 1.4),
+                    style: TextStyle(color: Color(0xFF2A1B12), fontSize: 14, height: 1.4),
                   ),
                 ),
               ],
@@ -447,23 +510,42 @@ class _BookingPageState extends State<BookingPage> {
           ),
           const SizedBox(height: 28),
 
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: _nights > 0
-                  ? () {
-                      // TODO: wire real call/booking-confirmation action
-                    }
-                  : null,
-              icon: const Icon(Icons.call, color: Colors.white, size: 18),
-              label: const Text('Call', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _teal,
-                disabledBackgroundColor: _teal.withOpacity(0.4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          Row(
+            children: [
+              // Small secondary "Text" button — static for now, wired once
+              // the messaging system exists.
+              Expanded(
+                flex: 6,
+                child: ElevatedButton.icon(
+                  onPressed: _nights > 0 ? _showCallDialog : null,
+                  icon: const Icon(Icons.call, color: Colors.white, size: 26),
+                  label: const Text('Call', style: TextStyle(color: Colors.white,fontSize: 16, fontWeight: FontWeight.w700)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _teal,
+                    disabledBackgroundColor: _teal.withOpacity(0.4),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
               ),
-            ),
+              
+              const SizedBox(width: 12),
+             Expanded(
+                flex: 2,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: wire to messaging system once it exists
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline, size: 26, color: _teal),
+                  label: const Text('Text', style: TextStyle(color: _teal,fontSize: 16, fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: _teal),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 12),
           Center(

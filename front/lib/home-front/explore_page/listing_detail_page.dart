@@ -299,6 +299,8 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                         serviceFeePercent: listing.serviceFeePercent,
                         touristTaxPercent: listing.touristTaxPercent,
                         maxGuests: listing.guests,
+                        hostPhoneCountryCode: listing.hostPhoneCountryCode,
+                        hostPhoneNumber: listing.hostPhoneNumber,
                       ),
                     ),
                   ),
