@@ -5,7 +5,7 @@ import '../widgets/landing_app_bar.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
 import '../../settings/Profile_&_Settings.dart';
-
+import '../../chat/msg_center.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -50,14 +50,15 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _buildTabBody() {
     switch (_currentIndex) {
+      case 3:
+        return const MessagesScreen();
       case 4:
         return const ProfileSettingsScreen();
       case 0:
       case 1:
-      case 3:
+      case 2:
       default:
-        // TODO: swap in the real Explore / Saved / Messages screens
-        // once they exist.
+        // TODO: swap in the real Explore / Saved screens once they exist.
         return const SizedBox.shrink();
     }
   }
