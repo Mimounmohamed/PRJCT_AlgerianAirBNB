@@ -14,7 +14,7 @@ class DayAvailability {
 /// not selectable. Selecting a range calls [onRangeSelected] with the
 /// chosen (start, end) dates so the parent can compute nights/price.
 ///
-/// TODO: [availabilityByMonth] is currently fake/generated data (see
+/// TODO: [availabilityForMonth] is currently fake/generated data (see
 /// _generateFakeMonth in booking_page.dart) standing in until the real
 /// GET /api/availability/:listingId?month=... contract is confirmed —
 /// swap the data source, not this widget's selection logic.
@@ -44,7 +44,6 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
   DateTime? _rangeEnd;
 
   static const Color _teal = Color(0xFF006972);
-  static const Color _bg = Color(0xFFFBF3E7);
   static const Color _bookedBg = Color(0xFFE8D4C4);
   static const Color _blockedBg = Color(0xFFEDEDED);
 
@@ -69,15 +68,12 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
 
     setState(() {
       if (_rangeStart == null || (_rangeStart != null && _rangeEnd != null)) {
-        // Start a fresh selection
         _rangeStart = day;
         _rangeEnd = null;
       } else if (day.isBefore(_rangeStart!)) {
-        // Tapped before the current start — restart from here
         _rangeStart = day;
         _rangeEnd = null;
       } else if (day.isAtSameMomentAs(_rangeStart!)) {
-        // Tapped the same day again — clear
         _rangeStart = null;
         _rangeEnd = null;
       } else {
@@ -127,133 +123,131 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     final availability = widget.availabilityForMonth(_displayedMonth);
     final firstOfMonth = DateTime(_displayedMonth.year, _displayedMonth.month, 1);
     final daysInMonth = DateTime(_displayedMonth.year, _displayedMonth.month + 1, 0).day;
-    // DateTime.weekday: Mon=1 ... Sun=7. We want Sun-first columns (S M T W T F S).
     final leadingBlanks = firstOfMonth.weekday % 7;
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                _monthLabel(_displayedMonth),
-                style: const TextStyle(
-                  color: Color(0xFF2A1B12),
-                  fontSize: 20,
-                  fontFamily: 'CormorantGaramond',
-                  fontWeight: FontWeight.w600,
-                ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _monthLabel(_displayedMonth),
+              style: const TextStyle(
+                color: Color(0xFF2A1B12),
+                fontSize: 18,
+                fontFamily: 'CormorantGaramond',
+                fontWeight: FontWeight.w600,
               ),
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => _changeMonth(-1),
-                    icon: const Icon(Icons.chevron_left, color: Color(0xFF2A1B12)),
-                    splashRadius: 18,
-                  ),
-                  IconButton(
-                    onPressed: () => _changeMonth(1),
-                    icon: const Icon(Icons.chevron_right, color: Color(0xFF2A1B12)),
-                    splashRadius: 18,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
-                .map((d) => Expanded(
-                      child: Center(
-                        child: Text(
-                          d,
-                          style: const TextStyle(
-                            color: Color(0xFF8A7B6E),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ))
-                .toList(),
-          ),
-          const SizedBox(height: 8),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: leadingBlanks + daysInMonth,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 7,
-              mainAxisSpacing: 6,
-              crossAxisSpacing: 4,
-              childAspectRatio: 0.85,
             ),
-            itemBuilder: (context, index) {
-              if (index < leadingBlanks) return const SizedBox();
-
-              final dayNum = index - leadingBlanks + 1;
-              final day = DateTime(_displayedMonth.year, _displayedMonth.month, dayNum);
-              final dayAvailability = availability[_dateOnly(day)] ??
-                  const DayAvailability(status: DayStatus.available, price: 0);
-              final isPast = _isBeforeToday(day);
-              final isEdge = _isRangeEdge(day);
-              final inRange = _isInRange(day);
-
-              final isSelectable = dayAvailability.status == DayStatus.available && !isPast;
-
-              Color bg = Colors.transparent;
-              if (dayAvailability.status == DayStatus.booked) bg = _bookedBg;
-              if (dayAvailability.status == DayStatus.blocked) bg = _blockedBg;
-              if (inRange) bg = _teal.withOpacity(0.12);
-
-              return GestureDetector(
-                onTap: isSelectable ? () => _onDayTap(day, dayAvailability) : null,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: bg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: isEdge ? Border.all(color: _teal, width: 1.6) : null,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$dayNum',
-                        style: TextStyle(
-                          fontSize: 13,
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () => _changeMonth(-1),
+                  icon: const Icon(Icons.chevron_left, color: Color(0xFF2A1B12)),
+                  splashRadius: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+                IconButton(
+                  onPressed: () => _changeMonth(1),
+                  icon: const Icon(Icons.chevron_right, color: Color(0xFF2A1B12)),
+                  splashRadius: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Row(
+          children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+              .map((d) => Expanded(
+                    child: Center(
+                      child: Text(
+                        d,
+                        style: const TextStyle(
+                          color: Color(0xFF8A7B6E),
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: isPast || dayAvailability.status != DayStatus.available
-                              ? const Color(0xFF9A8C7F)
-                              : const Color(0xFF2A1B12),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      if (dayAvailability.status == DayStatus.booked)
-                        const Text('Booked',
-                            style: TextStyle(fontSize: 8, color: Color(0xFF9A8C7F)))
-                      else if (dayAvailability.status == DayStatus.blocked)
-                        const Text('BLOCKED',
-                            style: TextStyle(fontSize: 8, color: Color(0xFF9A8C7F)))
-                      else if (!isPast)
-                        Text(
-                          _compactPrice(dayAvailability.price),
-                          style: const TextStyle(fontSize: 10, color: _teal, fontWeight: FontWeight.w600),
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
+                    ),
+                  ))
+              .toList(),
+        ),
+        const SizedBox(height: 2),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: leadingBlanks + daysInMonth,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 7,
+            mainAxisSpacing: 2,
+            crossAxisSpacing: 2,
+            childAspectRatio: 1.0,
           ),
-        ],
-      ),
+          itemBuilder: (context, index) {
+            if (index < leadingBlanks) return const SizedBox();
+
+            final dayNum = index - leadingBlanks + 1;
+            final day = DateTime(_displayedMonth.year, _displayedMonth.month, dayNum);
+            final dayAvailability = availability[_dateOnly(day)] ??
+                const DayAvailability(status: DayStatus.available, price: 0);
+            final isPast = _isBeforeToday(day);
+            final isEdge = _isRangeEdge(day);
+            final inRange = _isInRange(day);
+
+            final isSelectable = dayAvailability.status == DayStatus.available && !isPast;
+
+            Color bg = Colors.transparent;
+            if (dayAvailability.status == DayStatus.booked) bg = _bookedBg;
+            if (dayAvailability.status == DayStatus.blocked) bg = _blockedBg;
+            if (inRange) bg = _teal.withOpacity(0.12);
+
+            return GestureDetector(
+              onTap: isSelectable ? () => _onDayTap(day, dayAvailability) : null,
+              child: Container(
+                margin: const EdgeInsets.all(1),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(16),
+                  border: isEdge ? Border.all(color: _teal, width: 1.6) : null,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$dayNum',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isPast || dayAvailability.status != DayStatus.available
+                            ? const Color(0xFF9A8C7F)
+                            : const Color(0xFF2A1B12),
+                      ),
+                    ),
+                    if (dayAvailability.status == DayStatus.booked)
+                      const Text('Booked',
+                          style: TextStyle(fontSize: 7, color: Color(0xFF9A8C7F)))
+                    else if (dayAvailability.status == DayStatus.blocked)
+                      const Text('BLOCKED',
+                          style: TextStyle(fontSize: 7, color: Color(0xFF9A8C7F)))
+                    else if (!isPast)
+                      Text(
+                        _compactPrice(dayAvailability.price),
+                        style: const TextStyle(fontSize: 9, color: _teal, fontWeight: FontWeight.w600),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 }

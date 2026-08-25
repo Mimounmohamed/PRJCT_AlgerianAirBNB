@@ -41,16 +41,16 @@ class AmenitiesPage extends StatelessWidget {
         backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          'Amenities - $listingTitle',
+          'Amenities',
           style: const TextStyle(
             color: Color(0xFF2A1B12),
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-            fontFamily: 'HenkenGrotesk',
+            fontSize: 29,
+            fontWeight: FontWeight.w700,
+            fontFamily: 'CormorantGaramond',
           ),
         ),
         centerTitle: true,

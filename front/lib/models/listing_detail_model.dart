@@ -42,6 +42,8 @@ class ListingDetailModel {
   final bool hostIsSuperhost;
   final String? hostSince;
   final String? hostCreatedAt; // fallback source for hostSinceLabel below
+  final String? hostPhoneCountryCode;
+  final String? hostPhoneNumber;
 
   ListingDetailModel({
     required this.id,
@@ -72,6 +74,8 @@ class ListingDetailModel {
     required this.hostIsSuperhost,
     required this.hostSince,
     required this.hostCreatedAt,
+    required this.hostPhoneCountryCode,
+    required this.hostPhoneNumber,
   });
 
   factory ListingDetailModel.fromJson(Map<String, dynamic> json) {
@@ -87,7 +91,7 @@ class ListingDetailModel {
     final categoriesRaw = json['categories'] as List<dynamic>? ?? [];
 
     // hostId is populated by the backend with a subset of User fields
-    // (see listing.routes.js: .populate('hostId', 'fullName profilePhoto isSuperhost hostSince'))
+    // (see listing.routes.js: .populate('hostId', 'fullName profilePhoto isSuperhost hostSince createdAt phone'))
     final host = json['hostId'] as Map<String, dynamic>? ?? {};
 
     return ListingDetailModel(
@@ -123,10 +127,9 @@ class ListingDetailModel {
       hostProfilePhotoUrl: host['profilePhoto'] as String?,
       hostIsSuperhost: host['isSuperhost'] as bool? ?? false,
       hostSince: host['hostSince'] as String?,
-      // Requires listing.routes.js to also populate 'createdAt' on hostId
-      // (currently selects 'fullName profilePhoto isSuperhost hostSince') —
-      // add createdAt to that populate() call for this fallback to work.
       hostCreatedAt: host['createdAt'] as String?,
+      hostPhoneCountryCode: (host['phone'] as Map<String, dynamic>?)?['countryCode'] as String?,
+      hostPhoneNumber: (host['phone'] as Map<String, dynamic>?)?['number'] as String?,
     );
   }
 
@@ -141,6 +144,14 @@ class ListingDetailModel {
     if (year == null) return null;
 
     return hostSince != null ? 'Superhost since $year' : 'Member since $year';
+  }
+
+  /// Full phone number for display, e.g. "+213 555123456". Null if the
+  /// host has no phone number on file.
+  String? get hostPhoneFormatted {
+    if (hostPhoneNumber == null || hostPhoneNumber!.isEmpty) return null;
+    final code = hostPhoneCountryCode ?? '';
+    return '$code $hostPhoneNumber'.trim();
   }
 
   /// "12 500 DA" — thousands separated with a space, DZD shown as "DA".

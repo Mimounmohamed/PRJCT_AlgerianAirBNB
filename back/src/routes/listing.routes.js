@@ -60,7 +60,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const listing = await Listing.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
-      .populate('hostId', 'fullName profilePhoto isSuperhost hostSince');
+      .populate('hostId', 'fullName profilePhoto isSuperhost hostSince createdAt phone');
 
     if (!listing) return res.status(404).json({ error: 'Listing not found.' });
 
