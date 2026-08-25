@@ -3,6 +3,7 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 import '../../models/host_dashboard_model.dart';
 import '../../models/host_listing_summary_model.dart';
 import '../widgets/host_stats_grid.dart';
+import 'all_listings_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/host_listing_row.dart';
 
 /// Real Host dashboard — shown once the user is confirmed to be a host.
@@ -89,15 +90,17 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
 
     final dashboard = _dashboard!;
 
-    return RefreshIndicator(
-      onRefresh: _fetchAll,
-      color: _teal,
-      child: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Text(
-            'HOST DASHBOARD',
-            style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: _fetchAll,
+          color: _teal,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+            children: [
+              const Text(
+                'HOST DASHBOARD',
+                style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
           ),
           const SizedBox(height: 4),
           Text(
@@ -122,7 +125,7 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF004D53), _teal],
+                colors: [Color(0xFF00363B), Color(0xFF12A0AA)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -135,7 +138,7 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
                   'Get verified to benefit from\nexclusive features',
                   style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 28),
                 OutlinedButton(
                   onPressed: () {
                     // TODO: push real verification flow
@@ -165,9 +168,11 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
                 style: TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600),
               ),
               TextButton(
-                onPressed: () {
-                  // TODO: push a full "all listings" list once it's worth separating from this view
-                },
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AllListingsPage(listings: _listings),
+                  ),
+                ),
                 child: const Text('View all', style: TextStyle(color: _teal, fontWeight: FontWeight.w600)),
               ),
             ],
@@ -190,25 +195,34 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
                     // TODO: push a host-facing listing detail/edit screen
                   },
                 )),
-
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: wire real listing-creation flow
-              },
-              icon: const Icon(Icons.add, color: Colors.white, size: 18),
-              label: const Text('LIST A NEW PLACE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _teal,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+            ],
+          ),
+        ),
+        // ── Floating "List a new place" button ──────────────────────────
+        // Right-corner floating pill, sized down, with generous bottom
+        // clearance so it never touches the nav bar's center button.
+        Positioned(
+          right: 20,
+          bottom: 44,
+          child: ElevatedButton.icon(
+            onPressed: () {
+              // TODO: wire real listing-creation flow
+            },
+            icon: const Icon(Icons.add, color: Colors.white, size: 16),
+            label: const Text(
+              'LIST A NEW PLACE',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _teal,
+              elevation: 6,
+              shadowColor: Colors.black.withOpacity(0.3),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
