@@ -6,6 +6,7 @@ import '../widgets/host_section.dart';
 import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
 import 'booking_page.dart'; // adjust path if you placed this elsewhere
 import 'reviews_page.dart'; // adjust path if you placed this elsewhere
+import '../widgets/share_sheet.dart'; // adjust path to match your project structure
 import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
@@ -85,9 +86,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                     DetailImageCarousel(
                       photoUrls: listing.photoUrls,
                       onBackTap: () => Navigator.of(context).pop(),
-                      onShareTap: () {
-                        // TODO: wire share sheet
-                      },
+                      onShareTap: () => showShareSheet(context, listing),
                       onFavoriteToggle: (isFav) {
                         // TODO: wire favorite persistence
                       },
