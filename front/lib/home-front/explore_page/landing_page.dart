@@ -10,7 +10,8 @@ import '../../settings/Profile_&_Settings.dart';
 import '../widgets/explore_search_bar.dart';
 import '../widgets/explore_filter_bar.dart';
 import 'listing_card.dart';
-import 'listing_detail_page.dart'; // adjust path to match your project structure
+import 'listing_detail_page.dart';
+import '../Host/host_tab_entry.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -162,12 +163,34 @@ class _LandingPageState extends State<LandingPage> {
     );
   }
 
+  Widget _buildHostTab() {
+    final token = UserSession.instance.token;
+    if (token == null) {
+      return const Center(
+        child: Text(
+          'Please log in again to access hosting.',
+          style: TextStyle(color: Color(0xFF8A7B6E)),
+        ),
+      );
+    }
+
+    final fullName = UserSession.instance.currentUser?.name ?? '';
+    final firstName = fullName.trim().isEmpty ? 'Host' : fullName.trim().split(RegExp(r'\s+')).first;
+
+    return HostTabEntry(
+      authToken: token,
+      hostFirstName: firstName,
+    );
+  }
+
   Widget _buildTabBody() {
     switch (_currentIndex) {
       case 4:
         return const ProfileSettingsScreen();
       case 0:
         return _buildExploreTab();
+      case 2:
+        return _buildHostTab();
       case 1:
       case 3:
       default:
