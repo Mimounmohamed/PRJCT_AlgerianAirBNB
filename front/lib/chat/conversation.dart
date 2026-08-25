@@ -19,7 +19,20 @@ class _C {
 }
 
 class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
+  final String conversationId;
+  final String otherUserName;
+  final String otherUserInitials;
+  final String? listingName;
+  final String? listingLocation;
+
+  const ChatScreen({
+    super.key,
+    required this.conversationId,
+    required this.otherUserName,
+    required this.otherUserInitials,
+    this.listingName,
+    this.listingLocation,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -48,15 +61,15 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
         title: Row(
           children: [
-            _AvatarWithBadge(),
+            _AvatarWithBadge(initials: widget.otherUserInitials),
             const SizedBox(width: 10),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text(
-                  'Sidi Ahmed',
-                  style: TextStyle(
+                Text(
+                  widget.otherUserName,
+                  style: const TextStyle(
                     color: _C.darkText,
                     fontSize: 17,
                     fontFamily: 'HankenGrotesk',
@@ -99,10 +112,14 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: _RegardingStayCard(),
-          ),
+          if (widget.listingName != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: _RegardingStayCard(
+                listingName: widget.listingName!,
+                listingLocation: widget.listingLocation,
+              ),
+            ),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -138,6 +155,9 @@ class _ChatScreenState extends State<ChatScreen> {
 }
 
 class _AvatarWithBadge extends StatelessWidget {
+  final String initials;
+  const _AvatarWithBadge({required this.initials});
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -154,11 +174,17 @@ class _AvatarWithBadge extends StatelessWidget {
               shape: BoxShape.circle,
               color: _C.goldRing,
             ),
-            // Placeholder avatar circle — swap the child for a real
-            // CircleAvatar(backgroundImage: NetworkImage(...)/AssetImage(...))
-            child: const CircleAvatar(
+            child: CircleAvatar(
               backgroundColor: _C.border,
-              child: Icon(Icons.person, color: _C.mutedText, size: 20),
+              child: Text(
+                initials,
+                style: const TextStyle(
+                  color: _C.darkText,
+                  fontSize: 14,
+                  fontFamily: 'HankenGrotesk',
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -182,6 +208,10 @@ class _AvatarWithBadge extends StatelessWidget {
 }
 
 class _RegardingStayCard extends StatelessWidget {
+  final String listingName;
+  final String? listingLocation;
+  const _RegardingStayCard({required this.listingName, this.listingLocation});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -201,16 +231,13 @@ class _RegardingStayCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Placeholder thumbnail — swap for Image.network/Image.asset
-          // of the actual property photo.
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Container(
               width: 56,
               height: 56,
               color: const Color(0xFF5C4A38),
-              child: const Icon(Icons.home_outlined,
-                  color: Colors.white54, size: 24),
+              child: const Icon(Icons.home_outlined, color: Colors.white54, size: 24),
             ),
           ),
           const SizedBox(width: 14),
@@ -229,24 +256,26 @@ class _RegardingStayCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'Dar El-Bahia',
-                  style: TextStyle(
+                Text(
+                  listingName,
+                  style: const TextStyle(
                     color: _C.darkText,
                     fontSize: 18,
                     fontFamily: 'HankenGrotesk',
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Oct 12 — Oct 15',
-                  style: TextStyle(
-                    color: _C.mutedText,
-                    fontSize: 13,
-                    fontFamily: 'HankenGrotesk',
+                if (listingLocation != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    listingLocation!,
+                    style: const TextStyle(
+                      color: _C.mutedText,
+                      fontSize: 13,
+                      fontFamily: 'HankenGrotesk',
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),

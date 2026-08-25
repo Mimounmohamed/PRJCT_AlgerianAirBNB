@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/user_session.dart';
 import '../services/socket_service.dart';
+import 'conversation.dart';
 
 class MessagesScreen extends StatefulWidget {
   const MessagesScreen({super.key});
@@ -187,7 +188,18 @@ class _MessagesScreenState extends State<MessagesScreen> {
                                   hasUnread: hasUnread,
                                   unreadCount: unread,
                                   onTap: () {
-                                    // TODO: push to chat thread screen
+                                    final listing = conv['listingId'] as Map<String, dynamic>?;
+                                    Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => ChatScreen(
+                                          conversationId: conv['_id']?.toString() ?? '',
+                                          otherUserName: name,
+                                          otherUserInitials: initials,
+                                          listingName: listing?['title'] as String?,
+                                          listingLocation: (listing?['location']?['city'] ?? listing?['location']?['address']) as String?,
+                                        ),
+                                      ),
+                                    );
                                   },
                                 );
                               },
