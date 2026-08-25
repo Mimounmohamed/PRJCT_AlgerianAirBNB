@@ -5,6 +5,7 @@ import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
 import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
 import 'booking_page.dart'; // adjust path if you placed this elsewhere
+import 'reviews_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
@@ -125,37 +126,46 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                           const SizedBox(height: 16),
 
                           if (listing.ratingOverall > 0) ...[
-                            Row(
-                              children: [
-                                const Icon(Icons.star, size: 22, color: Color.fromARGB(255, 29, 28, 21)),
-                                const SizedBox(width: 6),
-                                // TODO: wrap in GestureDetector/InkWell later to
-                                // navigate to the reviews & comments screen.
-                                RichText(
-                                  text: TextSpan(
-                                    children: [
-                                      TextSpan(
-                                        text: listing.ratingOverall.toStringAsFixed(2),
-                                        style: const TextStyle(
-                                          color: Color(0xFF2A1B12),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          fontFamily: 'HenkenGrotesk',
-                                        ),
-                                      ),
-                                      TextSpan(
-                                        text: ' · ${listing.reviewCount} reviews',
-                                        style: const TextStyle(
-                                          color: Color(0xFF61564D),
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w400,
-                                          fontFamily: 'HenkenGrotesk',
-                                        ),
-                                      ),
-                                    ],
+                            GestureDetector(
+                              onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReviewsPage(
+                                    listingTitle: listing.title,
+                                    ratingOverall: listing.ratingOverall,
+                                    reviewCount: listing.reviewCount,
                                   ),
                                 ),
-                              ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.star, size: 22, color: Color.fromARGB(255, 29, 28, 21)),
+                                  const SizedBox(width: 6),
+                                  RichText(
+                                    text: TextSpan(
+                                      children: [
+                                        TextSpan(
+                                          text: listing.ratingOverall.toStringAsFixed(2),
+                                          style: const TextStyle(
+                                            color: Color(0xFF2A1B12),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w600,
+                                            fontFamily: 'HenkenGrotesk',
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text: ' · ${listing.reviewCount} reviews',
+                                          style: const TextStyle(
+                                            color: Color(0xFF61564D),
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w400,
+                                            fontFamily: 'HenkenGrotesk',
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 16),
                             const Divider(height: 1, color: Color(0xFFE7DCCB)),
