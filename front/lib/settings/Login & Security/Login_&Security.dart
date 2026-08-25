@@ -14,7 +14,7 @@ class LoginSecurityScreen extends StatefulWidget {
 }
 
 class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
-  bool _twoStepEnabled = false;
+  final bool _twoStepEnabled = false;
   bool _isGoogleLinked = false;
 
   @override

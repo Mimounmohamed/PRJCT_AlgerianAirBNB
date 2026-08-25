@@ -13,6 +13,7 @@ const listingSchema = new mongoose.Schema(
     // ── Basics ─────────────────────────────────────────────
     title:       { type: String, required: true, trim: true },
     description: { type: String, required: true },
+    descriptionTitle: { type: String, default: '' }, // optional short headline above the description, host-written
     propertyType: {
       type: String,
       required: true,
@@ -35,10 +36,12 @@ const listingSchema = new mongoose.Schema(
 
     // ── Pricing ────────────────────────────────────────────
     price: {
-      perNight:          { type: Number, required: true },
-      currency:          { type: String, default: 'DZD' },
-      touristTaxPercent: { type: Number, default: 5.5 },
-      serviceFeePercent: { type: Number, default: 8 },
+      perNight:              { type: Number, required: true },
+      currency:              { type: String, default: 'DZD' },
+      touristTaxPercent:     { type: Number, default: 5.5 },
+      serviceFeePercent:     { type: Number, default: 8 },
+      weeklyDiscountPercent:  { type: Number, default: 0 },
+      monthlyDiscountPercent: { type: Number, default: 0 },
     },
 
     // ── Capacity ───────────────────────────────────────────
@@ -50,12 +53,25 @@ const listingSchema = new mongoose.Schema(
 
     // ── Media ──────────────────────────────────────────────
     photos: [photoSchema],
+    coverPhotoIndex: { type: Number, default: 0 }, // index into photos[] used as the card's hero image
 
     // ── Amenities ──────────────────────────────────────────
-    amenities: [{ type: String }],
-    // Examples: 'Fiber WiFi', 'Breakfast included', 'Full kitchen',
-    // 'Air conditioning', 'Sea View Terrace', '24/7 Security',
-    // 'Smoke alarm', 'Parking', 'In-unit washer', 'Espresso machine'
+    // Each entry is either picked from AmenityCatalog (catalogKey set,
+    // name/category/iconName copied over at selection time so this
+    // listing's amenities are stable even if the catalog changes later)
+    // or a one-off custom amenity the host typed in (catalogKey null,
+    // isCustom true — host also picks a category from the same fixed
+    // AMENITY_CATEGORIES list used by AmenityCatalog).
+    amenities: [
+      {
+        catalogKey:  { type: String, default: null }, // null when isCustom is true
+        name:        { type: String, required: true },
+        category:    { type: String, required: true },
+        iconName:    { type: String, required: true },
+        description: { type: String, default: '' }, // host-written, optional
+        isCustom:    { type: Boolean, default: false },
+      },
+    ],
 
     // ── House Rules ────────────────────────────────────────
     houseRules: {
@@ -98,6 +114,8 @@ const listingSchema = new mongoose.Schema(
       default: 'draft',
     },
     rejectionReason: { type: String },
+    publishedAt:     { type: Date }, // set when status first transitions to 'active'
+    isDeleted:       { type: Boolean, default: false }, // soft delete — keep bookings/reviews intact
 
     // ── Aggregated Ratings (updated after each review) ─────
     rating: {
@@ -109,6 +127,9 @@ const listingSchema = new mongoose.Schema(
       value:         { type: Number, default: 0 },
       totalReviews:  { type: Number, default: 0 },
     },
+
+    // ── Guest Favorite ──────────────────────────────────────
+    isGuestFavorite: { type: Boolean, default: false },
 
     // ── Performance Stats ──────────────────────────────────
     stats: {
@@ -130,5 +151,10 @@ listingSchema.index({ categories: 1 });
 listingSchema.index({ propertyType: 1 });
 listingSchema.index({ 'price.perNight': 1 });
 listingSchema.index({ 'rating.overall': -1 });
+listingSchema.index({ isDeleted: 1 });
+listingSchema.index(
+  { title: 'text', description: 'text', 'location.city': 'text', 'location.wilaya': 'text' },
+  { name: 'listing_text_search' }
+);
 
 module.exports = mongoose.model('Listing', listingSchema);
