@@ -5,6 +5,7 @@ import '../../models/host_listing_summary_model.dart';
 import '../widgets/host_stats_grid.dart';
 import 'all_listings_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/host_listing_row.dart';
+import 'create_listing_intro_page.dart'; // adjust path if you placed this elsewhere
 
 /// Real Host dashboard — shown once the user is confirmed to be a host.
 /// Fetches GET /api/host/dashboard (stats) and GET /api/host/listings
@@ -205,9 +206,9 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
           right: 20,
           bottom: 44,
           child: ElevatedButton.icon(
-            onPressed: () {
-              // TODO: wire real listing-creation flow
-            },
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CreateListingIntroPage()),
+            ),
             icon: const Icon(Icons.add, color: Colors.white, size: 16),
             label: const Text(
               'LIST A NEW PLACE',
