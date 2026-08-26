@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/complete_profile_dialog.dart';
 import '../../services/user_session.dart';
+import '../../services/auth_service.dart';
+import '../../services/socket_service.dart';
 import '../../services/listing_service.dart';
 import '../../models/listing_model.dart';
 import '../widgets/landing_app_bar.dart';
-import '../nav_bar/nav_bar.dart';
-import '../widgets/landing_profile_side_panel.dart';
-import '../../settings/Profile_&_Settings.dart';
 import '../widgets/explore_search_bar.dart';
 import '../widgets/explore_filter_bar.dart';
-import 'listing_card.dart';
-import 'listing_detail_page.dart'; // adjust path to match your project structure
+import '../nav_bar/nav_bar.dart';
+import '../widgets/landing_profile_side_panel.dart';
+import '../explore_page/listing_card.dart';
+import '../explore_page/listing_detail_page.dart';
+import '../../settings/Profile_&_Settings.dart';
+import '../../chat/msg_center.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -18,8 +21,6 @@ class LandingPage extends StatefulWidget {
     this.showCompleteProfileDialog = false, // NEW
   });
 
-  /// Set to true only when arriving right after signup — shows the
-  /// "Complete Your Profile" nudge once. Login flows should leave this false.
   final bool showCompleteProfileDialog;
 
   @override
@@ -28,8 +29,8 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   int _currentIndex = 0;
+  bool _hasUnreadMessages = false;
 
-  // ── Explore tab listings state ──────────────────────────────────────
   List<ListingModel> _listings = [];
   bool _isLoadingListings = true;
   String? _listingsError;
@@ -38,13 +39,46 @@ class _LandingPageState extends State<LandingPage> {
   void initState() {
     super.initState();
 
-    if (widget.showCompleteProfileDialog) { // CHANGED — was unconditional
+    if (widget.showCompleteProfileDialog) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _showCompleteProfileDialog();
       });
     }
 
     _fetchListings();
+    _checkUnread();
+
+    // Keep badge in sync when a new message arrives
+    SocketService.instance.onConversationUpdated((_) => _checkUnread());
+  }
+
+  @override
+  void dispose() {
+    SocketService.instance.offConversationUpdated();
+    super.dispose();
+  }
+
+  Future<void> _checkUnread() async {
+    try {
+      final token = UserSession.instance.token ?? '';
+      if (token.isEmpty) return;
+      final convs = await AuthService.getConversations(token: token);
+      final myId = UserSession.instance.currentUser?.id ?? '';
+      if (myId.isEmpty) return;
+      bool hasUnread = false;
+      for (final c in convs) {
+        final unreadRaw = c['unreadCount'];
+        if (unreadRaw == null) continue;
+        if (unreadRaw is Map) {
+          final val = unreadRaw[myId];
+          if (val != null && (val as num) > 0) {
+            hasUnread = true;
+            break;
+          }
+        }
+      }
+      if (mounted) setState(() => _hasUnreadMessages = hasUnread);
+    } catch (_) {}
   }
 
   Future<void> _fetchListings({String? category}) async {
@@ -164,14 +198,15 @@ class _LandingPageState extends State<LandingPage> {
 
   Widget _buildTabBody() {
     switch (_currentIndex) {
+      case 3:
+        return const MessagesScreen();
       case 4:
         return const ProfileSettingsScreen();
       case 0:
         return _buildExploreTab();
       case 1:
-      case 3:
+      case 2:
       default:
-        // TODO: swap in the real Saved / Messages screens once they exist.
         return const SizedBox.shrink();
     }
   }
@@ -201,7 +236,14 @@ class _LandingPageState extends State<LandingPage> {
       ),
       bottomNavigationBar: AkriliNavBar(
         currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+        hasUnreadMessages: _hasUnreadMessages,
+        onTap: (i) {
+          setState(() {
+            _currentIndex = i;
+            // Clear badge when user opens Messages
+            if (i == 3) _hasUnreadMessages = false;
+          });
+        },
       ),
     );
   }

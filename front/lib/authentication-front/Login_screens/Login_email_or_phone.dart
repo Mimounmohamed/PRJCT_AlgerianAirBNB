@@ -7,6 +7,7 @@ import '../widgets/otp_method_selector.dart';
 import 'OTP_ResetPass/reset_password_method.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
+import '../../services/socket_service.dart';
 import '../../home-front/explore_page/landing_page.dart';
 
 class LoginEmailOrPhoneScreen extends StatefulWidget {
@@ -98,6 +99,7 @@ class _LoginEmailOrPhoneScreenState extends State<LoginEmailOrPhoneScreen> {
       final jwt = data['token'] as String? ?? '';
       if (userJson != null) {
         UserSession.instance.setUser(AppUser.fromJson(userJson), token: jwt, raw: userJson);
+        SocketService.instance.connect();
       }
 
       Navigator.of(context).pushAndRemoveUntil(

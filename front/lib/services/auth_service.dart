@@ -494,4 +494,132 @@ class AuthService {
     }
     return data;
   }
+
+  // ══════════════════════════════════════════════════════════
+  // CHAT / MESSAGES
+  // ══════════════════════════════════════════════════════════
+
+  /// GET /api/messages — inbox list of conversations
+  static Future<List<dynamic>> getConversations({required String token}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/messages'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) {
+      final d = jsonDecode(response.body);
+      throw Exception(d['error'] ?? 'Failed to load conversations');
+    }
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  /// GET /api/messages/:id — messages in a thread
+  static Future<List<dynamic>> getMessages({
+    required String token,
+    required String conversationId,
+    int page = 1,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId?page=$page'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+    if (response.statusCode != 200) {
+      final d = jsonDecode(response.body);
+      throw Exception(d['error'] ?? 'Failed to load messages');
+    }
+    return jsonDecode(response.body) as List<dynamic>;
+  }
+
+  /// POST /api/messages/:id — send a text message
+  static Future<Map<String, dynamic>> sendMessage({
+    required String token,
+    required String conversationId,
+    required String content,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'content': content, 'messageType': 'text'}),
+    );
+    final d = jsonDecode(response.body);
+    if (response.statusCode != 201) throw Exception(d['error'] ?? 'Failed to send');
+    return d;
+  }
+
+  /// POST /api/messages/:id — send an image message
+  static Future<Map<String, dynamic>> sendImageMessage({
+    required String token,
+    required String conversationId,
+    required String imageUrl,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'content': '📷 Photo', 'messageType': 'image', 'imageUrl': imageUrl}),
+    );
+    final d = jsonDecode(response.body);
+    if (response.statusCode != 201) throw Exception(d['error'] ?? 'Failed to send');
+    return d;
+  }
+
+  /// POST /api/messages/start — start or find existing conversation
+  static Future<Map<String, dynamic>> startConversation({
+    required String token,
+    required String recipientId,
+    String? listingId,
+    required String content,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/messages/start'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'recipientId': recipientId, 'listingId': listingId, 'content': content}),
+    );
+    final d = jsonDecode(response.body);
+    if (response.statusCode != 201) throw Exception(d['error'] ?? 'Failed to start conversation');
+    return d;
+  }
+
+  /// PUT /api/messages/:id/read — mark conversation as read
+  static Future<void> markConversationRead({
+    required String token,
+    required String conversationId,
+  }) async {
+    await http.put(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId/read'),
+      headers: {'Authorization': 'Bearer $token'},
+    );
+  }
+
+  /// Upload a video file to Cloudinary (video/upload endpoint)
+  static Future<String> uploadVideoToCloudinary(File videoFile) async {
+    const cloudName = 'bcaeahkm';
+    const uploadPreset = 'akrili_unsigned';
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/video/upload');
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..fields['resource_type'] = 'video'
+      ..files.add(await http.MultipartFile.fromPath('file', videoFile.path));
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    final data = jsonDecode(body);
+    if (streamed.statusCode != 200) {
+      throw Exception(data['error']?['message'] ?? 'Video upload failed');
+    }
+    return data['secure_url'] as String;
+  }
+
+  /// POST /api/messages/:id - send a video message
+  static Future<Map<String, dynamic>> sendVideoMessage({
+    required String token,
+    required String conversationId,
+    required String videoUrl,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'content': '🎥 Video', 'messageType': 'video', 'imageUrl': videoUrl}),
+    );
+    final d = jsonDecode(response.body);
+    if (response.statusCode != 201) throw Exception(d['error'] ?? 'Failed to send');
+    return d;
+  }
 }
