@@ -588,4 +588,38 @@ class AuthService {
       headers: {'Authorization': 'Bearer $token'},
     );
   }
-}
+
+  /// Upload a video file to Cloudinary (video/upload endpoint)
+  static Future<String> uploadVideoToCloudinary(File videoFile) async {
+    const cloudName = 'bcaeahkm';
+    const uploadPreset = 'akrili_unsigned';
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/video/upload');
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = uploadPreset
+      ..fields['resource_type'] = 'video'
+      ..files.add(await http.MultipartFile.fromPath('file', videoFile.path));
+    final streamed = await request.send();
+    final body = await streamed.stream.bytesToString();
+    final data = jsonDecode(body);
+    if (streamed.statusCode != 200) {
+      throw Exception(data['error']?['message'] ?? 'Video upload failed');
+    }
+    return data['secure_url'] as String;
+  }
+
+  /// POST /api/messages/:id - send a video message
+  static Future<Map<String, dynamic>> sendVideoMessage({
+    required String token,
+    required String conversationId,
+    required String videoUrl,
+  }) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/messages/$conversationId'),
+      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'content': '🎥 Video', 'messageType': 'video', 'imageUrl': videoUrl}),
+    );
+    final d = jsonDecode(response.body);
+    if (response.statusCode != 201) throw Exception(d['error'] ?? 'Failed to send');
+    return d;
+  }
+}
