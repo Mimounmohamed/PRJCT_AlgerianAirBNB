@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
+import '../../authentication-front/widgets/app_bar.dart';
 import 'create_listing_property_type_page.dart';
-import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
 import '../widgets/create_listing_pattern_background.dart';
 
 /// First screen of the Create Listing flow — marketing intro matching the

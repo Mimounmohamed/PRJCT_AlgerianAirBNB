@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
 import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
+import 'create_listing_location_page.dart'; // adjust path if you placed this elsewhere
 
 /// Step 2 of the Create Listing wizard — basics (guests, bedrooms,
 /// bathrooms). Currently holds its own local state; once a shared
@@ -255,14 +256,19 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    child: const Text('Back', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
+                    // Matches the property-type page: exits the whole
+                    // wizard back to the Host dashboard (tab shell root)
+                    // instead of just going back one step.
+                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: push the Location step, passing widget.draft
-                      // forward (guests/bedrooms/bathrooms/propertyType are
-                      // already written into it above).
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateListingLocationPage(draft: widget.draft),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,
