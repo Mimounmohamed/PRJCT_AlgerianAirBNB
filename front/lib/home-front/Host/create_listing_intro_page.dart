@@ -15,34 +15,49 @@ class CreateListingIntroPage extends StatelessWidget {
   static const Color _accent = Color(0xFFB5652B);
 
   Widget _stepRow(int number, String title, String description) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: Color(0xFFF3EBDE),
-            shape: BoxShape.circle,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-          child: Text(
-            '$number',
-            style: const TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: Color(0xFFF3EBDE),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$number',
+              style: const TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+            ),
           ),
-        ),
-        const SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 2),
-              Text(description, style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 13, height: 1.4)),
-            ],
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(description, style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 13, height: 1.4)),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -50,9 +65,24 @@ class CreateListingIntroPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
-      appBar: AkriliAppBar(
-        title: 'AKRILI',
-        onBack: () => Navigator.of(context).maybePop(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBF3E7),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: AkriliAppBar(
+            title: 'AKRILI',
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+        ),
       ),
       body: CreateListingPatternBackground(
         child: Column(
@@ -91,9 +121,9 @@ class CreateListingIntroPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 28),
                     _stepRow(1, 'Tell us about your place', 'Share basic info like location and how many guests can stay.'),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     _stepRow(2, 'Make it stand out', 'Add 5 or more photos plus a title and description of your authentic stay.'),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
                     _stepRow(3, 'Finish and publish', "Choose if you'd like to start with an experienced guest, then set your price."),
                     const SizedBox(height: 28),
                     ClipRRect(
@@ -102,8 +132,8 @@ class CreateListingIntroPage extends StatelessWidget {
                         children: [
                           AspectRatio(
                             aspectRatio: 1.4,
-                            child: Image.network(
-                              'https://images.unsplash.com/photo-1580746738099-9e0a4a03fd88',
+                            child: Image.asset(
+                              'assets/images/w.png',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
                                   Container(color: const Color(0xFFE7DCCB)),
