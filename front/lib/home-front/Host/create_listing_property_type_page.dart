@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
-import '../widgets/create_listing_progress_dots.dart';
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
 
 class _PropertyTypeOption {
@@ -42,9 +41,24 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
-      appBar: AkriliAppBar(
-        title: 'AKRILI',
-        onBack: () => Navigator.of(context).maybePop(),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(kToolbarHeight),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFFBF3E7),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: AkriliAppBar(
+            title: 'AKRILI',
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+        ),
       ),
       body: CreateListingPatternBackground(
         child: Column(
@@ -59,7 +73,7 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
                     'What kind of place are you listing?',
                     style: TextStyle(
                       color: _dark,
-                      fontSize: 24,
+                      fontSize: 26,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w700,
                       height: 1.2,
@@ -68,7 +82,7 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
                   const SizedBox(height: 8),
                   const Text(
                     'Choose the category that best describes your home to help guests find you.',
-                    style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 14, height: 1.4),
+                    style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 15, height: 1.4),
                   ),
                   const SizedBox(height: 24),
                   GridView.builder(
@@ -100,13 +114,13 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(option.icon, size: 22, color: isSelected ? _teal : _dark),
+                              Icon(option.icon, size: 32, color: isSelected ? _teal : _dark),
                               const Spacer(),
                               Text(
                                 option.label,
                                 style: TextStyle(
                                   color: isSelected ? _teal : _dark,
-                                  fontSize: 13,
+                                  fontSize: 15,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -116,8 +130,6 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
                       );
                     },
                   ),
-                  const SizedBox(height: 20),
-                  const CreateListingProgressDots(currentStep: 0, totalSteps: 3),
                 ],
               ),
             ),
@@ -132,7 +144,10 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.of(context).maybePop(),
+                  // Exit flow now returns all the way to the Host dashboard
+                  // (the tab shell root) instead of just popping one step
+                  // back to the Create Listing intro page.
+                  onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
                   child: const Text('Exit flow', style: TextStyle(color: Color(0xFF8A7B6E), fontWeight: FontWeight.w600)),
                 ),
                 ElevatedButton(
