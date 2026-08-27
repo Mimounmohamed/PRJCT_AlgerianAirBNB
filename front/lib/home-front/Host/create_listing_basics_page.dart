@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
+import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
 
 /// Step 2 of the Create Listing wizard — basics (guests, bedrooms,
 /// bathrooms). Currently holds its own local state; once a shared
 /// listing-draft object exists, these values (and the propertyType
 /// selected on the previous step) should be threaded through it instead.
+/// Step 2 of the Create Listing wizard — basics (guests, bedrooms,
+/// bathrooms). Reads/writes directly into the shared [ListingDraft]
+/// carried forward from the property-type step, so values survive
+/// navigation and are ready for the final submit call.
 class CreateListingBasicsPage extends StatefulWidget {
-  final String propertyType;
+  final ListingDraft draft;
 
-  const CreateListingBasicsPage({super.key, required this.propertyType});
+  const CreateListingBasicsPage({super.key, required this.draft});
 
   @override
   State<CreateListingBasicsPage> createState() => _CreateListingBasicsPageState();
@@ -21,9 +26,9 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
   static const Color _muted = Color(0xFF8A7B6E);
   static const Color _border = Color(0xFFE7DCCB);
 
-  int _guests = 4;
-  int _bedrooms = 2;
-  double _bathrooms = 1.5;
+  late int _guests = widget.draft.guests;
+  late int _bedrooms = widget.draft.bedrooms;
+  late double _bathrooms = widget.draft.bathrooms;
 
   static const int _minGuests = 1;
   static const int _minBedrooms = 0;
@@ -48,9 +53,9 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(color: _dark, fontSize: 20, fontWeight: FontWeight.w700)),
+                    Text(title, style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(color: _muted, fontSize: 15, fontWeight: FontWeight.w500)),
+                    Text(subtitle, style: const TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -60,7 +65,7 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                 child: Text(
                   valueLabel,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: _dark, fontSize: 19, fontWeight: FontWeight.w700),
+                  style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w700),
                 ),
               ),
               _stepperButton(icon: Icons.add, onTap: onIncrement),
@@ -76,8 +81,8 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 38,
-        height: 38,
+        width: 32,
+        height: 32,
         alignment: Alignment.center,
         decoration: const BoxDecoration(
           shape: BoxShape.circle,
@@ -112,11 +117,8 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
         ),
       ),
       body: CreateListingPatternBackground(
-        
         child: Column(
-          
           children: [
-            const SizedBox(height: 32),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -127,7 +129,7 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                       'Share some basics about your place',
                       style: TextStyle(
                         color: _dark,
-                        fontSize: 32,
+                        fontSize: 26,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w700,
                         height: 1.2,
@@ -136,9 +138,9 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'Help guests know what to expect when booking your Algerian escape.',
-                      style: TextStyle(color: _muted, fontSize: 16, height: 1.4),
+                      style: TextStyle(color: _muted, fontSize: 15, height: 1.4),
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -160,18 +162,30 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                             subtitle: 'MAXIMUM CAPACITY',
                             valueLabel: '$_guests',
                             onDecrement: () => setState(() {
-                              if (_guests > _minGuests) _guests--;
+                              if (_guests > _minGuests) {
+                                _guests--;
+                                widget.draft.guests = _guests;
+                              }
                             }),
-                            onIncrement: () => setState(() => _guests++),
+                            onIncrement: () => setState(() {
+                              _guests++;
+                              widget.draft.guests = _guests;
+                            }),
                           ),
                           _counterRow(
                             title: 'Bedrooms',
                             subtitle: 'PRIVATE OR SHARED',
                             valueLabel: '$_bedrooms',
                             onDecrement: () => setState(() {
-                              if (_bedrooms > _minBedrooms) _bedrooms--;
+                              if (_bedrooms > _minBedrooms) {
+                                _bedrooms--;
+                                widget.draft.bedrooms = _bedrooms;
+                              }
                             }),
-                            onIncrement: () => setState(() => _bedrooms++),
+                            onIncrement: () => setState(() {
+                              _bedrooms++;
+                              widget.draft.bedrooms = _bedrooms;
+                            }),
                           ),
                           _counterRow(
                             title: 'Bathrooms',
@@ -179,9 +193,15 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                             valueLabel: _bathrooms.toStringAsFixed(1),
                             showDivider: false,
                             onDecrement: () => setState(() {
-                              if (_bathrooms > _minBathrooms) _bathrooms -= 0.5;
+                              if (_bathrooms > _minBathrooms) {
+                                _bathrooms -= 0.5;
+                                widget.draft.bathrooms = _bathrooms;
+                              }
                             }),
-                            onIncrement: () => setState(() => _bathrooms += 0.5),
+                            onIncrement: () => setState(() {
+                              _bathrooms += 0.5;
+                              widget.draft.bathrooms = _bathrooms;
+                            }),
                           ),
                         ],
                       ),
@@ -192,7 +212,7 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                       child: Stack(
                         children: [
                           AspectRatio(
-                            aspectRatio: 1.8,
+                            aspectRatio: 1.5,
                             child: Image.asset(
                               // TODO: replace with the actual filename once added
                               // under front/assets/images/ (same pattern as the
@@ -240,9 +260,9 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: push the Location step, carrying widget.propertyType
-                      // plus _guests/_bedrooms/_bathrooms forward once the
-                      // shared listing-draft object exists.
+                      // TODO: push the Location step, passing widget.draft
+                      // forward (guests/bedrooms/bathrooms/propertyType are
+                      // already written into it above).
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,
