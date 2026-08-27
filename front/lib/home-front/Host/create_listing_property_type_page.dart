@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
+import 'create_listing_basics_page.dart'; // adjust path if you placed this elsewhere
 
 class _PropertyTypeOption {
   final String label;
@@ -154,9 +155,11 @@ class _CreateListingPropertyTypePageState extends State<CreateListingPropertyTyp
                   onPressed: _selected == null
                       ? null
                       : () {
-                          // TODO: push the Basics step (guests/bedrooms/bathrooms),
-                          // carrying _selected forward as propertyType once that
-                          // step and a shared listing-draft object exist.
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => CreateListingBasicsPage(propertyType: _selected!),
+                            ),
+                          );
                         },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _teal,
