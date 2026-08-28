@@ -43,19 +43,17 @@ class _NavBarDemoState extends State<NavBarDemo> {
 class AkriliNavBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
+  final bool hasUnreadMessages;
 
   const AkriliNavBar({
     super.key,
     required this.currentIndex,
     required this.onTap,
+    this.hasUnreadMessages = false,
   });
 
   static const _white = Color(0xFFFFFCF6);
-
-  // Diameter of the protruding Host circle; half of it sits above the bar.
   static const _hostCircleSize = 56.0;
-
-  // Radius of the bar's rounded top-left/top-right corners.
   static const _cornerRadius = 24.0;
 
   @override
@@ -75,7 +73,7 @@ class AkriliNavBar extends StatelessWidget {
                 offset: Offset(0, -4),
                 blurRadius: 12,
                 spreadRadius: 0,
-                color: Color(0x143A271D), // #3A271D at 8% opacity
+                color: Color(0x143A271D),
               ),
             ],
           ),
@@ -107,6 +105,7 @@ class AkriliNavBar extends StatelessWidget {
                     label: 'Messages',
                     isActive: currentIndex == 3,
                     onTap: () => onTap(3),
+                    showBadge: hasUnreadMessages,
                   ),
                   _NavItem(
                     icon: Icons.person_outline,
@@ -120,7 +119,6 @@ class AkriliNavBar extends StatelessWidget {
             ),
           ),
         ),
-        // Host button — positioned so half the circle sits above the bar.
         Positioned(
           top: -_hostCircleSize / 2.5,
           left: 0,
@@ -141,6 +139,7 @@ class _NavItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final bool showBadge;
 
   static const _active = Color(0xFF006972);
   static const _inactive = Color(0xFF4F4540);
@@ -151,6 +150,7 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.showBadge = false,
   });
 
   @override
@@ -163,10 +163,29 @@ class _NavItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              isActive ? activeIcon : icon,
-              size: 26,
-              color: isActive ? _active : _inactive,
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  isActive ? activeIcon : icon,
+                  size: 26,
+                  color: isActive ? _active : _inactive,
+                ),
+                if (showBadge)
+                  Positioned(
+                    top: -2,
+                    right: -4,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE53935),
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             Text(
@@ -207,7 +226,7 @@ class _HostButton extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: _active.withOpacity(0.3),
+                  color: _active.withValues(alpha: 0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
