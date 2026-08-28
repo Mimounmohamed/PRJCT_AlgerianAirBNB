@@ -17,7 +17,7 @@ const listingSchema = new mongoose.Schema(
     propertyType: {
       type: String,
       required: true,
-      enum: ['Riad', 'Apartment', 'Villa', 'Townhouse', 'Cabin', 'Private room', 'Desert House'],
+      enum: ['Apartment', 'Hotel', 'Touristic Complex', 'Beach Cabin', 'House', 'Villa', 'Duplex', 'Desert Cabin'],
     },
     styleType:  { type: String },
     categories: [{ type: String }], // ['Riads', 'Casbah', 'Sea view', 'Desert']
