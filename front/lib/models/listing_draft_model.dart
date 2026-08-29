@@ -3,8 +3,7 @@
 /// [toJson] can be POSTed straight to `POST /api/listings` once the
 /// wizard reaches the Review & Submit step.
 ///
-/// Not every field has a wizard step yet (Photos/Pricing/House Rules/
-/// Booking Preferences steps don't exist yet) — those fields just sit at
+/// Not every field has a wizard step yet — those fields just sit at
 /// their schema defaults until built out.
 class ListingDraft {
   // ── Basics ─────────────────────────────────────────────
@@ -32,9 +31,17 @@ class ListingDraft {
   num? pricePerNight;
   String currency = 'DZD';
   double touristTaxPercent = 5.5;
-  double serviceFeePercent = 8;
+  double serviceFeePercent = 10; // Akrili's cut
   double weeklyDiscountPercent = 0;
   double monthlyDiscountPercent = 0;
+
+  /// 'nightly' — short stays, priced and booked per night.
+  /// 'monthly' — long-term stays, priced and booked per month.
+  /// Both cases reuse [pricePerNight] as the generic price-per-unit
+  /// field, and [minStayNights]/[maxStayNights] as the generic
+  /// min/max-stay-length fields — only labels in the UI change based
+  /// on this value.
+  String rentalPeriod = 'nightly';
 
   // ── Media ──────────────────────────────────────────────
   // Each entry: {url, caption, order}
@@ -51,8 +58,13 @@ class ListingDraft {
   bool eventsAllowed = false;
   bool adultOnly = false;
   bool curfew = false;
-  String? curfewTime;
+  String? curfewTime; // formatted "HH:mm - HH:mm" when curfew is true
   String? additionalRules;
+
+  /// Algeria-specific: when true, the host requires proof of marriage
+  /// ("livret de famille" / family booklet) for unmarried couples
+  /// booking together — i.e. only married couples may book without it.
+  bool familyBookletRequired = false;
 
   // ── Booking Preferences ────────────────────────────────
   bool instantBook = false;
@@ -150,9 +162,29 @@ class ListingDraft {
     }
   }
 
+  // ── Photo helpers ──────────────────────────────────────
+
+  void addPhoto(String url) {
+    photos.add({'url': url, 'caption': '', 'order': photos.length});
+  }
+
+  void removePhotoAt(int index) {
+    photos.removeAt(index);
+    if (coverPhotoIndex >= photos.length) {
+      coverPhotoIndex = photos.isEmpty ? 0 : photos.length - 1;
+    }
+    for (var i = 0; i < photos.length; i++) {
+      photos[i]['order'] = i;
+    }
+  }
+
+  void setCoverPhoto(int index) => coverPhotoIndex = index;
+
   /// Builds the POST /api/listings request body. Note: hostId and
-  /// status are forced server-side (see listing.routes.js), so they're
-  /// intentionally omitted here.
+  /// status are forced server-side (see listing.routes.js), so status
+  /// is only included here when the caller explicitly wants a draft
+  /// save — otherwise it's omitted and the backend defaults to
+  /// 'pending_review'.
   Map<String, dynamic> toJson() {
     return {
       'title': title,
@@ -178,6 +210,7 @@ class ListingDraft {
         'serviceFeePercent': serviceFeePercent,
         'weeklyDiscountPercent': weeklyDiscountPercent,
         'monthlyDiscountPercent': monthlyDiscountPercent,
+        'rentalPeriod': rentalPeriod,
       },
       'capacity': {
         'guests': guests,
@@ -195,6 +228,7 @@ class ListingDraft {
         'curfew': curfew,
         if (curfewTime != null) 'curfewTime': curfewTime,
         if (additionalRules != null) 'additionalRules': additionalRules,
+        'familyBookletRequired': familyBookletRequired,
       },
       'bookingPreferences': {
         'instantBook': instantBook,

@@ -4,6 +4,7 @@ import '../widgets/create_listing_pattern_background.dart'; // adjust path if yo
 import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
 import '../../../models/amenity_model.dart'; // adjust path to match your project structure — for AmenityModel.iconFor()
 import '../../../services/amenity_catalog_service.dart'; // adjust path to match your project structure
+import 'create_listing_review_page.dart'; // adjust path if you placed this elsewhere
 
 /// Step 5 of the Create Listing wizard — amenities. With ~90+ catalog
 /// items across 11 fixed categories, this uses:
@@ -538,9 +539,11 @@ class _CreateListingAmenitiesPageState extends State<CreateListingAmenitiesPage>
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: push the Review & Submit step, passing
-                      // widget.draft forward — amenities are already
-                      // written into it above.
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateListingReviewPage(draft: widget.draft),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,

@@ -47,4 +47,43 @@ class ListingService {
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     return ListingDetailModel.fromJson(body);
   }
+
+  /// POST /api/listings — creates a new listing from a Create Listing
+  /// wizard draft (see listing_draft_model.dart's toJson()). Requires
+  /// a host auth token — the backend's requireHost middleware rejects
+  /// non-host accounts with a 403.
+  ///
+  /// Pass status: 'draft' to save without submitting for review; omit
+  /// it (or pass null) to submit normally — the backend forces
+  /// 'pending_review' server-side for anything other than 'draft', so
+  /// a host can never self-publish straight to 'active' from the client.
+  ///
+  /// Returns the new listing's _id on success.
+  static Future<String> createListing({
+    required String authToken,
+    required Map<String, dynamic> draftJson,
+    String? status,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings');
+    final body = {
+      ...draftJson,
+      if (status != null) 'status': status,
+    };
+
+    final response = await http.post(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Failed to save listing (${response.statusCode}): ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return data['_id'] as String;
+  }
 }

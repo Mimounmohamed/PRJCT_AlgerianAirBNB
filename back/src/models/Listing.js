@@ -39,9 +39,18 @@ const listingSchema = new mongoose.Schema(
       perNight:              { type: Number, required: true },
       currency:              { type: String, default: 'DZD' },
       touristTaxPercent:     { type: Number, default: 5.5 },
-      serviceFeePercent:     { type: Number, default: 8 },
+      serviceFeePercent:     { type: Number, default: 10 }, // Akrili's cut
       weeklyDiscountPercent:  { type: Number, default: 0 },
       monthlyDiscountPercent: { type: Number, default: 0 },
+      // 'nightly' — short stays, priced/booked per night.
+      // 'monthly' — long-term stays, priced/booked per month.
+      // `perNight` is reused as the generic price-per-unit field in
+      // both cases; only the label/unit differs on the frontend.
+      rentalPeriod: {
+        type: String,
+        enum: ['nightly', 'monthly'],
+        default: 'nightly',
+      },
     },
 
     // ── Capacity ───────────────────────────────────────────
@@ -80,8 +89,12 @@ const listingSchema = new mongoose.Schema(
       eventsAllowed:   { type: Boolean, default: false },
       adultOnly:       { type: Boolean, default: false },
       curfew:          { type: Boolean, default: false },
-      curfewTime:      { type: String },
+      curfewTime:      { type: String }, // formatted "HH:mm - HH:mm" when curfew is true
       additionalRules: { type: String },
+      // Algeria-specific: when true, unmarried couples booking together
+      // must provide proof of marriage ("livret de famille" / family
+      // booklet) — i.e. only married couples may book without one.
+      familyBookletRequired: { type: Boolean, default: false },
     },
 
     // ── Booking Preferences ────────────────────────────────
@@ -97,7 +110,7 @@ const listingSchema = new mongoose.Schema(
 
     cancellationPolicy: {
       type: String,
-      enum: ['Flexible', 'Moderate', 'Strict'],
+      enum: ['Flexible', 'Moderate', 'Firm'],
       default: 'Moderate',
     },
     checkInInstructions: { type: String },
