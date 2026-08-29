@@ -3,9 +3,9 @@
 /// [toJson] can be POSTed straight to `POST /api/listings` once the
 /// wizard reaches the Review & Submit step.
 ///
-/// Not every field has a wizard step yet (Location/Photos/Pricing/
-/// Amenities/House Rules/Booking Preferences steps don't exist yet) —
-/// those fields just sit at their schema defaults until built out.
+/// Not every field has a wizard step yet (Photos/Pricing/House Rules/
+/// Booking Preferences steps don't exist yet) — those fields just sit at
+/// their schema defaults until built out.
 class ListingDraft {
   // ── Basics ─────────────────────────────────────────────
   String propertyType;
@@ -72,6 +72,83 @@ class ListingDraft {
     required this.bedrooms,
     required this.bathrooms,
   });
+
+  // ── Amenity helpers ────────────────────────────────────
+
+  /// True if a catalog amenity (matched by catalogKey) is already selected.
+  bool isCatalogAmenitySelected(String catalogKey) {
+    return amenities.any((a) => a['catalogKey'] == catalogKey);
+  }
+
+  /// Adds or removes a catalog amenity. Adding starts with an empty
+  /// (optional) description; toggling off removes it entirely, discarding
+  /// whatever description was entered.
+  void toggleCatalogAmenity({
+    required String catalogKey,
+    required String name,
+    required String category,
+    required String iconName,
+  }) {
+    final index = amenities.indexWhere((a) => a['catalogKey'] == catalogKey);
+    if (index != -1) {
+      amenities.removeAt(index);
+    } else {
+      amenities.add({
+        'catalogKey': catalogKey,
+        'name': name,
+        'category': category,
+        'iconName': iconName,
+        'description': '',
+        'isCustom': false,
+      });
+    }
+  }
+
+  /// Adds a one-off amenity the host typed in themselves (no catalogKey).
+  /// iconName is left blank — AmenityModel.iconFor() falls back to a
+  /// generic check-circle icon for unknown/blank icon names.
+  void addCustomAmenity({
+    required String name,
+    required String category,
+    String description = '',
+  }) {
+    amenities.add({
+      'catalogKey': null,
+      'name': name,
+      'category': category,
+      'iconName': '',
+      'description': description,
+      'isCustom': true,
+    });
+  }
+
+  /// Removes any amenity (catalog or custom) by identity — catalogKey for
+  /// catalog amenities, or the exact name for custom ones (custom
+  /// amenities have no catalogKey to key off of).
+  void removeAmenity({String? catalogKey, String? customName}) {
+    amenities.removeWhere((a) {
+      if (catalogKey != null) return a['catalogKey'] == catalogKey;
+      return a['isCustom'] == true && a['name'] == customName;
+    });
+  }
+
+  /// Updates the free-text description for an already-selected amenity
+  /// (catalog or custom), identified the same way as [removeAmenity].
+  void updateAmenityDescription({
+    String? catalogKey,
+    String? customName,
+    required String description,
+  }) {
+    for (final a in amenities) {
+      final matches = catalogKey != null
+          ? a['catalogKey'] == catalogKey
+          : (a['isCustom'] == true && a['name'] == customName);
+      if (matches) {
+        a['description'] = description;
+        return;
+      }
+    }
+  }
 
   /// Builds the POST /api/listings request body. Note: hostId and
   /// status are forced server-side (see listing.routes.js), so they're
