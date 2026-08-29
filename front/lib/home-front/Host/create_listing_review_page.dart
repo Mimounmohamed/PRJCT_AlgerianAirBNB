@@ -9,8 +9,8 @@ import '../../../services/listing_service.dart'; // adjust path — exposes List
 import '../../../services/user_session.dart'; // adjust path to match your project structure — exposes UserSession.instance.token
 
 /// Final step of the Create Listing wizard — Review & Submit. Pulls
-/// together photos, title, house rules, rental period, booking
-/// preferences, cancellation policy, and pricing, then POSTs the whole
+/// together photos, title, house rules, booking preferences, rental
+/// period, cancellation policy, and pricing, then POSTs the whole
 /// draft to `POST /api/listings` (status: 'pending_review', forced
 /// server-side — see listing.routes.js).
 class CreateListingReviewPage extends StatefulWidget {
@@ -29,6 +29,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   static const Color _muted = Color(0xFF8A7B6E);
   static const Color _border = Color(0xFFE7DCCB);
   static const Color _gold = Color(0xFFE8A33D);
+  static const Color _cream = Color(0xFFFBF7EF); // price-card text color
 
   final ImagePicker _picker = ImagePicker();
   bool _isUploadingPhotos = false;
@@ -73,6 +74,10 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   String get _unitLabel => widget.draft.rentalPeriod == 'monthly' ? 'month' : 'night';
   String get _unitLabelPlural => widget.draft.rentalPeriod == 'monthly' ? 'months' : 'nights';
 
+  /// Hard ceiling for maxStayNights based on the current rental period —
+  /// 12 months for long-term stays, 365 nights for short-term ones.
+  int get _maxStayCap => widget.draft.rentalPeriod == 'monthly' ? 12 : 365;
+
   // ── Photos ──────────────────────────────────────────────
 
   Future<void> _pickPhotos() async {
@@ -95,6 +100,8 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
     }
   }
 
+  static const double _photoTileSize = 104;
+
   Widget _photoThumbnail(int index) {
     final photo = widget.draft.photos[index];
     final isCover = widget.draft.coverPhotoIndex == index;
@@ -102,19 +109,19 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
     return GestureDetector(
       onTap: () => setState(() => widget.draft.setCoverPhoto(index)),
       child: Container(
-        width: 84,
-        height: 84,
+        width: _photoTileSize,
+        height: _photoTileSize,
         margin: const EdgeInsets.only(right: 10),
         child: Stack(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
               child: Container(
-                width: 84,
-                height: 84,
+                width: _photoTileSize,
+                height: _photoTileSize,
                 decoration: BoxDecoration(
                   border: Border.all(color: isCover ? _teal : Colors.transparent, width: 2),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Image.network(
                   photo['url'] as String,
@@ -154,25 +161,25 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   Widget _addPhotosTile() {
     return GestureDetector(
       onTap: _isUploadingPhotos ? null : _pickPhotos,
-      child: Container(
-        width: 84,
-        height: 84,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _teal, width: 1.4),
+      child: SizedBox(
+        width: _photoTileSize,
+        height: _photoTileSize,
+        child: CustomPaint(
+          painter: _DashedRectPainter(color: _teal, radius: 16),
+          child: Container(
+            alignment: Alignment.center,
+            child: _isUploadingPhotos
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: _teal))
+                : const Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.camera_alt_outlined, color: _teal, size: 26),
+                      SizedBox(height: 8),
+                      Text('ADD PHOTOS', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                    ],
+                  ),
+          ),
         ),
-        alignment: Alignment.center,
-        child: _isUploadingPhotos
-            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: _teal))
-            : const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.add_a_photo_outlined, color: _teal, size: 20),
-                  SizedBox(height: 6),
-                  Text('Add photos', style: TextStyle(color: _teal, fontSize: 10, fontWeight: FontWeight.w700)),
-                ],
-              ),
       ),
     );
   }
@@ -181,8 +188,13 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Text(
-        text.toUpperCase(),
-        style: const TextStyle(color: _teal, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6),
+        text,
+        style: const TextStyle(
+          color: _teal,
+          fontSize: 24,
+          fontFamily: 'CormorantGaramond',
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }
@@ -381,12 +393,30 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
 
   // ── Rental period ───────────────────────────────────────
 
+  /// Switches the rental period and resets the max-stay cap to the new
+  /// period's default (12 for monthly, 365 for nightly) — only when the
+  /// period is actually changing, so re-tapping the already-selected
+  /// pill doesn't clobber a value the host already customized.
+  void _setRentalPeriod(String value) {
+    if (widget.draft.rentalPeriod == value) return;
+    setState(() {
+      widget.draft.rentalPeriod = value;
+      final defaultMax = value == 'monthly' ? 12 : 365;
+      widget.draft.maxStayNights = defaultMax;
+      _maxStayController.text = defaultMax.toString();
+      if (widget.draft.minStayNights > defaultMax) {
+        widget.draft.minStayNights = defaultMax;
+        _minStayController.text = defaultMax.toString();
+      }
+    });
+  }
+
   Widget _rentalPeriodToggle() {
     Widget pill(String label, String value) {
       final selected = widget.draft.rentalPeriod == value;
       return Expanded(
         child: GestureDetector(
-          onTap: () => setState(() => widget.draft.rentalPeriod = value),
+          onTap: () => _setRentalPeriod(value),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
@@ -474,9 +504,15 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
         children: [
           Text(
             'Price per $_unitLabel',
-            style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.4),
+            style: const TextStyle(
+              color: _cream,
+              fontFamily: 'CormorantGaramond',
+              fontSize: 20,
+              fontWeight: FontWeight.w400,
+              height: 1.5,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -487,19 +523,27 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.center,
                   onChanged: (v) => setState(() => widget.draft.pricePerNight = num.tryParse(v)),
-                  style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: _cream,
+                    fontFamily: 'CormorantGaramond',
+                    fontSize: 34,
+                    fontWeight: FontWeight.w700,
+                  ),
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     isDense: true,
                     hintText: '0',
-                    hintStyle: TextStyle(color: Colors.white38),
+                    hintStyle: TextStyle(color: Colors.white38, fontFamily: 'CormorantGaramond'),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               const Padding(
-                padding: EdgeInsets.only(top: 6),
-                child: Text('DA', style: TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.w600)),
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  'DA',
+                  style: TextStyle(color: Colors.white70, fontFamily: 'CormorantGaramond', fontSize: 18, fontWeight: FontWeight.w600),
+                ),
               ),
             ],
           ),
@@ -511,17 +555,23 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
             children: [
               Text(
                 'AKRILI SERVICE FEE (${widget.draft.serviceFeePercent.toStringAsFixed(0)}%)',
-                style: const TextStyle(color: Colors.white60, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                style: const TextStyle(color: Colors.white60, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.4),
               ),
-              Text('${_formatAmount(fee)} DA', style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600)),
+              Text(
+                '${_formatAmount(fee)} DA',
+                style: const TextStyle(color: _cream, fontFamily: 'CormorantGaramond', fontSize: 16, fontWeight: FontWeight.w600),
+              ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('YOU EARN', style: TextStyle(color: _gold, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-              Text('${_formatAmount(earn)} DA', style: const TextStyle(color: _gold, fontSize: 15, fontWeight: FontWeight.w800)),
+              const Text('YOU EARN', style: TextStyle(color: _gold, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+              Text(
+                '${_formatAmount(earn)} DA',
+                style: const TextStyle(color: _gold, fontFamily: 'CormorantGaramond', fontSize: 18, fontWeight: FontWeight.w700),
+              ),
             ],
           ),
         ],
@@ -598,7 +648,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                       'List your place',
                       style: TextStyle(
                         color: _dark,
-                        fontSize: 26,
+                        fontSize: 32,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w700,
                         height: 1.2,
@@ -606,15 +656,15 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Review the details below — you can always change these later.',
-                      style: TextStyle(color: _muted, fontSize: 15, height: 1.4),
+                      'Review the details below you can always change these later.',
+                      style: TextStyle(color: _muted, fontSize: 16, height: 1.4),
                     ),
                     const SizedBox(height: 24),
 
                     // ── Photos ─────────────────────────────
                     _sectionLabel('Photos'),
                     SizedBox(
-                      height: 84,
+                      height: _photoTileSize,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
                         children: [
@@ -627,6 +677,11 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
 
                     // ── Title ──────────────────────────────
                     _sectionLabel('Give it a title'),
+                    const Text(
+                      'TITLE',
+                      style: TextStyle(color: _teal, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                    ),
+                    const SizedBox(height: 6),
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -682,8 +737,8 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           ),
                           _ruleRow(
                             icon: Icons.family_restroom_outlined,
-                            title: 'Livret de famille required',
-                            subtitle: 'Only married couples can book without providing a family booklet.',
+                            title: 'Family booklet required',
+                            subtitle: 'Only married couples can book By providing a family booklet.',
                             value: widget.draft.familyBookletRequired,
                             onChanged: (v) => setState(() => widget.draft.familyBookletRequired = v),
                           ),
@@ -710,21 +765,6 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    // ── Rental period ──────────────────────
-                    _sectionLabel('Rental period'),
-                    _rentalPeriodToggle(),
-                    const SizedBox(height: 6),
-                    Padding(
-                      padding: const EdgeInsets.only(top: 6, left: 4),
-                      child: Text(
-                        widget.draft.rentalPeriod == 'monthly'
-                            ? 'Guests book your place for one or more months at a time.'
-                            : 'Guests book your place for one or more nights at a time.',
-                        style: const TextStyle(color: _muted, fontSize: 12, height: 1.3),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
                     // ── Booking preferences ────────────────
                     _sectionLabel('Booking preferences'),
                     Container(
@@ -747,14 +787,42 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 24),
+
+                    // ── Rental period ──────────────────────
+                    _sectionLabel('Rental period'),
+                    _rentalPeriodToggle(),
+                    const SizedBox(height: 6),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6, left: 4),
+                      child: Text(
+                        widget.draft.rentalPeriod == 'monthly'
+                            ? 'Guests book your place for one or more months at a time.'
+                            : 'Guests book your place for one or more nights at a time.',
+                        style: const TextStyle(color: _muted, fontSize: 12, height: 1.3),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // ── Min / Max stay ─────────────────────
                     Row(
                       children: [
                         Expanded(
                           child: _numberField(
                             label: 'MIN ${_unitLabelPlural.toUpperCase()}',
                             controller: _minStayController,
-                            onChanged: (v) => widget.draft.minStayNights = int.tryParse(v) ?? widget.draft.minStayNights,
+                            onChanged: (v) {
+                              final parsed = int.tryParse(v);
+                              if (parsed == null) return;
+                              final clamped = parsed > _maxStayCap ? _maxStayCap : parsed;
+                              widget.draft.minStayNights = clamped;
+                              if (clamped != parsed) {
+                                _minStayController.value = TextEditingValue(
+                                  text: clamped.toString(),
+                                  selection: TextSelection.collapsed(offset: clamped.toString().length),
+                                );
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -762,7 +830,18 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           child: _numberField(
                             label: 'MAX ${_unitLabelPlural.toUpperCase()}',
                             controller: _maxStayController,
-                            onChanged: (v) => widget.draft.maxStayNights = int.tryParse(v) ?? widget.draft.maxStayNights,
+                            onChanged: (v) {
+                              final parsed = int.tryParse(v);
+                              if (parsed == null) return;
+                              final clamped = parsed > _maxStayCap ? _maxStayCap : parsed;
+                              widget.draft.maxStayNights = clamped;
+                              if (clamped != parsed) {
+                                _maxStayController.value = TextEditingValue(
+                                  text: clamped.toString(),
+                                  selection: TextSelection.collapsed(offset: clamped.toString().length),
+                                );
+                              }
+                            },
                           ),
                         ),
                       ],
@@ -865,4 +944,57 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       ],
     );
   }
+}
+
+/// Draws a dashed rounded-rect border — used for the "Add photos" tile.
+/// No external package needed; Flutter's Path.computeMetrics() lets us
+/// walk the rounded-rect outline and stroke it in short segments.
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double dashWidth;
+  final double dashSpace;
+  final double strokeWidth;
+
+  _DashedRectPainter({
+    required this.color,
+    this.radius = 16,
+    this.dashWidth = 5,
+    this.dashSpace = 4,
+    this.strokeWidth = 1.6,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        strokeWidth / 2,
+        strokeWidth / 2,
+        size.width - strokeWidth,
+        size.height - strokeWidth,
+      ),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(
+          metric.extractPath(distance, next.clamp(0, metric.length)),
+          paint,
+        );
+        distance = next + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRectPainter oldDelegate) => false;
 }
