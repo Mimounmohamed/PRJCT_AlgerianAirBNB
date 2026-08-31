@@ -36,6 +36,8 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
 
   late final TextEditingController _titleController =
       TextEditingController(text: widget.draft.title);
+  late final TextEditingController _descriptionController =
+      TextEditingController(text: widget.draft.description);
   late final TextEditingController _priceController = TextEditingController(
     text: widget.draft.pricePerNight != null
         ? widget.draft.pricePerNight!.toStringAsFixed(0)
@@ -51,6 +53,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     _priceController.dispose();
     _minStayController.dispose();
     _maxStayController.dispose();
@@ -588,6 +591,12 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       );
       return;
     }
+    if (_descriptionController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add a description.')),
+      );
+      return;
+    }
     if (widget.draft.pricePerNight == null || widget.draft.pricePerNight! <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please set a price.')),
@@ -620,6 +629,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   @override
   Widget build(BuildContext context) {
     widget.draft.title = _titleController.text;
+    widget.draft.description = _descriptionController.text;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBF3E7),
@@ -701,6 +711,37 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           hintText: 'Dar el-Hawa',
                           hintStyle: TextStyle(color: _muted, fontWeight: FontWeight.normal),
                           counterStyle: TextStyle(color: _muted, fontSize: 11),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // ── Description ─────────────────────────
+                    _sectionLabel('Describe your place'),
+                    const Text(
+                      'DESCRIPTION',
+                      style: TextStyle(color: _teal, fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 0.4),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _border),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: TextField(
+                        controller: _descriptionController,
+                        maxLines: 5,
+                        minLines: 3,
+                        onChanged: (v) => setState(() => widget.draft.description = v),
+                        style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 14),
+                          hintText: 'Tell guests what makes your place special — the neighborhood, the view, what\'s nearby...',
+                          hintStyle: TextStyle(color: _muted, fontWeight: FontWeight.normal),
                         ),
                       ),
                     ),
