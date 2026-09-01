@@ -75,12 +75,22 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/listings — Create new listing (host only)
+//
+// Instant Book: when the host has bookingPreferences.instantBook set to
+// true, the listing skips admin review entirely and goes live immediately
+// (status: 'active', visibility: 'listed', publishedAt set to now).
+// Otherwise it follows the normal review flow (status: 'pending_review',
+// visibility stays at the schema default 'unlisted' until an admin
+// approves it and flips it to 'active'/'listed').
 router.post('/', protect, requireHost, async (req, res) => {
   try {
+    const instantBook = req.body?.bookingPreferences?.instantBook === true;
+
     const listing = await Listing.create({
       ...req.body,
       hostId: req.user._id,
-      status: 'pending_review',
+      status: instantBook ? 'active' : 'pending_review',
+      ...(instantBook && { visibility: 'listed', publishedAt: new Date() }),
     });
     res.status(201).json(listing);
   } catch (err) {

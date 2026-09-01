@@ -7,6 +7,7 @@ import '../../../models/listing_draft_model.dart'; // adjust path to match your 
 import '../../../services/auth_service.dart'; // adjust path — exposes AuthService.uploadToCloudinary()
 import '../../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
 import '../../../services/user_session.dart'; // adjust path to match your project structure — exposes UserSession.instance.token
+import 'create_listing_confirmation_page.dart'; // adjust path if you placed this elsewhere
 
 /// Final step of the Create Listing wizard — Review & Submit. Pulls
 /// together photos, title, house rules, booking preferences, rental
@@ -607,15 +608,32 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
     setState(() => _isPublishing = true);
     try {
       final token = UserSession.instance.token;
-      await ListingService.createListing(
+      final listingId = await ListingService.createListing(
         authToken: token!,
         draftJson: widget.draft.toJson(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Listing submitted for review!')),
-      );
-      Navigator.of(context).popUntil((route) => route.isFirst);
+
+      if (widget.draft.instantBook) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Listing published!')),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => CreateListingConfirmationPage(
+              listingId: listingId,
+              title: widget.draft.title,
+              city: widget.draft.city,
+              wilaya: widget.draft.wilaya,
+              coverPhotoUrl: widget.draft.photos.isNotEmpty
+                  ? widget.draft.photos[widget.draft.coverPhotoIndex]['url'] as String?
+                  : null,
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
