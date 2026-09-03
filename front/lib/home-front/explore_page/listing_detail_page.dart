@@ -276,8 +276,10 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
 
                           LocationMapPreview(
                             locationLabel: locationLabel,
+                            latitude: listing.latitude,
+                            longitude: listing.longitude,
                             onTap: () {
-                              // TODO: push real map screen once implemented
+                              // TODO: push real full-screen map view once implemented
                             },
                           ),
                         ],
