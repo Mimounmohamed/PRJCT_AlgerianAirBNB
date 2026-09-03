@@ -32,6 +32,34 @@ const protect = async (req, res, next) => {
   }
 };
 
+// Middleware: same as protect, but never rejects the request — if there's
+// no token, or it's invalid/expired, or the user no longer exists/is
+// inactive, req.user is just left undefined and the request continues.
+// Used on routes that behave differently for logged-in vs anonymous
+// requesters but shouldn't require login (e.g. view-count tracking on a
+// public listing detail route).
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id).select('-passwordHash');
+    if (user && user.accountStatus === 'active') {
+      req.user = user;
+    }
+    next();
+  } catch (err) {
+    // Invalid/expired token on an optional-auth route — treat as anonymous
+    // rather than rejecting the request.
+    next();
+  }
+};
+
 // Middleware: require host role
 const requireHost = (req, res, next) => {
   if (!req.user.isHost) {
@@ -47,4 +75,4 @@ const generateToken = (userId) => {
   });
 };
 
-module.exports = { protect, requireHost, generateToken };
+module.exports = { protect, optionalAuth, requireHost, generateToken };

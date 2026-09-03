@@ -114,7 +114,7 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
             formattedEarnings: dashboard.formattedEarnings,
             activeListings: dashboard.activeListings,
             avgRating: dashboard.avgRating,
-            totalBookings: dashboard.totalBookings,
+            formattedViews: dashboard.formattedViews,
           ),
           const SizedBox(height: 20),
 

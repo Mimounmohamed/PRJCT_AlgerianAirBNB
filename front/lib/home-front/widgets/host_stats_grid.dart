@@ -1,23 +1,19 @@
 import 'package:flutter/material.dart';
 
 /// 2x2 stats grid on the Host dashboard — Projected Earnings, Active
-/// Listings, Overall Rating, Bookings.
-///
-/// Note: the 4th box shows "Bookings" (real data from the dashboard
-/// endpoint) instead of "Views (30D)" — real 30-day view tracking isn't
-/// implemented on the backend yet (stats.totalViews is all-time only).
+/// Listings, Overall Rating, Views.
 class HostStatsGrid extends StatelessWidget {
   final String formattedEarnings;
   final int activeListings;
   final double avgRating;
-  final int totalBookings;
+  final String formattedViews;
 
   const HostStatsGrid({
     super.key,
     required this.formattedEarnings,
     required this.activeListings,
     required this.avgRating,
-    required this.totalBookings,
+    required this.formattedViews,
   });
 
   Widget _statBox({required String label, required Widget value}) {
@@ -80,7 +76,7 @@ class HostStatsGrid extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            _statBox(label: 'Bookings', value: Text('$totalBookings', style: valueStyle)),
+            _statBox(label: 'Views', value: Text(formattedViews, style: valueStyle)),
           ],
         ),
       ],

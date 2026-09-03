@@ -26,6 +26,10 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
     const activeListings = listings.filter((l) => l.status === 'active').length;
     const totalEarnings = listings.reduce((sum, l) => sum + (l.stats.totalEarnings || 0), 0);
     const totalBookings = listings.reduce((sum, l) => sum + (l.stats.totalBookings || 0), 0);
+    // All-time total across the host's listings — see Listing.stats.totalViews.
+    // Real 30-day-windowed view tracking isn't implemented yet, so this is
+    // labeled plainly as "Views" on the frontend rather than "Views (30D)".
+    const totalViews = listings.reduce((sum, l) => sum + (l.stats.totalViews || 0), 0);
 
     const avgRating = listings.length > 0
       ? listings.reduce((sum, l) => sum + (l.rating.overall || 0), 0) / listings.length
@@ -42,6 +46,7 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
       activeListings,
       totalEarnings,
       totalBookings,
+      totalViews,
       avgRating: parseFloat(avgRating.toFixed(2)),
       recentBookings,
     });
