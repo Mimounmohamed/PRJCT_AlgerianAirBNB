@@ -65,6 +65,43 @@ router.get('/listings', protect, requireHost, async (req, res) => {
   }
 });
 
+// GET /api/host/listings/:id — Single listing, scoped to the requesting
+// host (ownership-checked), for the Manage Listing page. Unlike the public
+// GET /api/listings/:id, this returns the raw doc (with stats/rating
+// already on it — no separate aggregation needed) and 404s if the listing
+// doesn't exist OR isn't owned by the requester, rather than exposing
+// other hosts' data.
+router.get('/listings/:id', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+    res.json(listing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/host/listings/:id — Permanently delete a listing (soft
+// delete via isDeleted). Distinct from the public DELETE /api/listings/:id,
+// which only pauses (status: 'inactive', visibility: 'unlisted') and is
+// reversible — this is the "Delete" action on the Manage Listing page's
+// advanced controls, meant to be permanent. isDeleted keeps the doc (and
+// its bookings/reviews) intact for records, it just excludes it from
+// every listing query going forward.
+router.delete('/listings/:id', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOneAndUpdate(
+      { _id: req.params.id, hostId: req.user._id },
+      { isDeleted: true, status: 'inactive', visibility: 'unlisted' },
+      { new: true }
+    );
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+    res.json({ message: 'Listing deactivated.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/host/verify — Submit ID for verification
 router.post('/verify', protect, requireHost, async (req, res) => {
   try {
