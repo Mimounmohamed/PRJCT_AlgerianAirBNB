@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../models/host_listing_summary_model.dart'; // adjust path to match your project structure
 import 'create_listing_intro_page.dart'; // adjust path if you placed this elsewhere
+import 'manage_listing_page.dart'; // adjust path if you placed this elsewhere
 
 /// Full list of the host's listings — shown from "View all" on the Host
 /// dashboard. Takes the already-fetched list from HostDashboardPage rather
 /// than refetching, since the data's already there. Adds a search field,
 /// status filter pills, and a floating "List a new place" button.
-///
-/// TODO: "MANAGE" and the row tap both still just placeholder — wire to a
-/// real host-facing listing detail/edit screen once one exists (same TODO
-/// as the dashboard's own listing rows).
 class AllListingsPage extends StatefulWidget {
   final List<HostListingSummaryModel> listings;
+  final String authToken;
 
-  const AllListingsPage({super.key, required this.listings});
+  const AllListingsPage({
+    super.key,
+    required this.listings,
+    required this.authToken,
+  });
 
   @override
   State<AllListingsPage> createState() => _AllListingsPageState();
@@ -78,6 +80,17 @@ class _AllListingsPageState extends State<AllListingsPage> {
     }).toList();
   }
 
+  void _openManageListing(HostListingSummaryModel listing) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ManageListingPage(
+          authToken: widget.authToken,
+          listingId: listing.id,
+        ),
+      ),
+    );
+  }
+
   Widget _filterPill(_StatusFilter filter) {
     final selected = _filter == filter;
     return GestureDetector(
@@ -106,9 +119,7 @@ class _AllListingsPageState extends State<AllListingsPage> {
     final statusColor = _statusColor(listing.status);
 
     return GestureDetector(
-      onTap: () {
-        // TODO: push a host-facing listing detail/edit screen
-      },
+      onTap: () => _openManageListing(listing),
       child: Container(
         margin: const EdgeInsets.only(bottom: 14),
         padding: const EdgeInsets.all(14),

@@ -6,6 +6,7 @@ import '../widgets/host_stats_grid.dart';
 import 'all_listings_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/host_listing_row.dart';
 import 'create_listing_intro_page.dart'; // adjust path if you placed this elsewhere
+import 'manage_listing_page.dart'; // adjust path if you placed this elsewhere
 
 /// Real Host dashboard — shown once the user is confirmed to be a host.
 /// Fetches GET /api/host/dashboard (stats) and GET /api/host/listings
@@ -171,7 +172,10 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
               TextButton(
                 onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => AllListingsPage(listings: _listings),
+                    builder: (_) => AllListingsPage(
+                      listings: _listings,
+                      authToken: widget.authToken,
+                    ),
                   ),
                 ),
                 child: const Text('View all', style: TextStyle(color: _teal, fontWeight: FontWeight.w600)),
@@ -192,9 +196,14 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
           else
             ..._listings.map((listing) => HostListingRow(
                   listing: listing,
-                  onTap: () {
-                    // TODO: push a host-facing listing detail/edit screen
-                  },
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ManageListingPage(
+                        authToken: widget.authToken,
+                        listingId: listing.id,
+                      ),
+                    ),
+                  ),
                 )),
             ],
           ),
