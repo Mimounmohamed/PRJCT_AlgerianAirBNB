@@ -8,6 +8,8 @@ class HostListingSummaryModel {
   final String city;
   final String? coverPhotoUrl;
   final String status; // 'draft' | 'pending_review' | 'active' | 'inactive' | 'rejected'
+  final double pricePerNight;
+  final String currency;
 
   HostListingSummaryModel({
     required this.id,
@@ -16,12 +18,15 @@ class HostListingSummaryModel {
     required this.city,
     required this.coverPhotoUrl,
     required this.status,
+    required this.pricePerNight,
+    required this.currency,
   });
 
   factory HostListingSummaryModel.fromJson(Map<String, dynamic> json) {
     final location = json['location'] as Map<String, dynamic>? ?? {};
     final photos = json['photos'] as List<dynamic>? ?? [];
     final coverIndex = (json['coverPhotoIndex'] as num?)?.toInt() ?? 0;
+    final price = json['price'] as Map<String, dynamic>? ?? {};
 
     String? coverUrl;
     if (photos.isNotEmpty) {
@@ -36,6 +41,8 @@ class HostListingSummaryModel {
       city: location['city'] as String? ?? '',
       coverPhotoUrl: coverUrl,
       status: json['status'] as String? ?? 'draft',
+      pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
+      currency: price['currency'] as String? ?? 'DZD',
     );
   }
 
@@ -62,5 +69,18 @@ class HostListingSummaryModel {
       case 'rejected': return 'Rejected — needs changes';
       default: return 'Draft — not yet published';
     }
+  }
+
+  /// "12 500 DA/night" — thousands separated with a space, DZD shown as "DA".
+  String get formattedPricePerNight {
+    final rounded = pricePerNight.round().toString();
+    final buffer = StringBuffer();
+    for (int i = 0; i < rounded.length; i++) {
+      final posFromEnd = rounded.length - i;
+      buffer.write(rounded[i]);
+      if (posFromEnd > 1 && posFromEnd % 3 == 1) buffer.write(' ');
+    }
+    final currencyLabel = currency == 'DZD' ? 'DA' : currency;
+    return '${buffer.toString()} $currencyLabel/night';
   }
 }
