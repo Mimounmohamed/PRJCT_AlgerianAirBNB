@@ -7,10 +7,14 @@ import '../explore_page/reviews_page.dart'; // adjust path if you placed this el
 
 /// "Manage Listing" — shown when a host taps MANAGE on one of their own
 /// listings (from the Host dashboard or All Listings page). Shows real
-/// performance data pulled straight from the listing document (no
-/// fabricated trend %s or "recommended" score — those aren't tracked
-/// anywhere in the schema yet), quick actions, and pause/deactivate
-/// controls.
+/// performance data pulled straight from the listing document, quick
+/// actions, and pause/delete controls.
+///
+/// NOTE: the "98% recommended" figure next to the rating is a STATIC
+/// placeholder — no guest-recommendation-percentage tracking exists in
+/// the schema yet. Replace with a real field once that's built
+/// server-side; until then this is intentionally fake and should not be
+/// trusted as real data (see the inline comment where it's rendered).
 class ManageListingPage extends StatefulWidget {
   final String authToken;
   final String listingId;
@@ -338,7 +342,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
                         ),
                         child: Container(
                           width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
@@ -346,25 +350,39 @@ class _ManageListingPageState extends State<ManageListingPage> {
                           ),
                           child: Row(
                             children: [
-                              if (listing.isGuestFavorite) ...[
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
-                                  child: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.star, size: 12, color: Colors.white),
-                                      SizedBox(width: 4),
-                                      Text('Guest Favorite', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-                                    ],
-                                  ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.star, size: 14, color: _dark),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      listing.ratingOverall.toStringAsFixed(2),
+                                      style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 12),
-                              ],
+                              ),
+                              const SizedBox(width: 14),
                               Expanded(
-                                child: Text(
-                                  '${listing.ratingOverall.toStringAsFixed(2)} · ${listing.reviewCount} reviews',
-                                  style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (listing.isGuestFavorite)
+                                      const Text(
+                                        'Guest Favorite',
+                                        style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
+                                      ),
+                                    Text(
+                                      '${listing.reviewCount} reviews'
+                                      // STATIC PLACEHOLDER — not a real tracked
+                                      // stat, see class doc comment above.
+                                      ' · 98% recommended',
+                                      style: const TextStyle(color: _muted, fontSize: 12),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const Icon(Icons.chevron_right, size: 18, color: _muted),
@@ -418,59 +436,61 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     const SizedBox(height: 24),
 
                     // ── Advanced controls ────────────────────
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: _danger.withValues(alpha: 0.3)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Advanced controls', style: TextStyle(color: _danger, fontSize: 15, fontWeight: FontWeight.w700)),
-                          const SizedBox(height: 6),
-                          const Text(
-                            'Temporarily pause your listing to hide it from search results, or permanently delete it.',
-                            style: TextStyle(color: _muted, fontSize: 12, height: 1.4),
-                          ),
-                          const SizedBox(height: 14),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: OutlinedButton(
-                                  onPressed: (_isBusy || listing.status == 'inactive') ? null : _pauseListing,
-                                  style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: _danger),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                  ),
-                                  child: Text(
-                                    listing.status == 'inactive' ? 'Paused' : 'Pause Listing',
-                                    style: const TextStyle(color: _danger, fontWeight: FontWeight.w700, fontSize: 13),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: ElevatedButton(
-                                  onPressed: _isBusy ? null : _deleteListing,
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _border,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
-                                  ),
-                                  child: const Text(
-                                    'Delete',
-                                    style: TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+                    CustomPaint(
+                      foregroundPainter: _DashedRectPainter(color: _danger.withValues(alpha: 0.4), radius: 16),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Advanced controls', style: TextStyle(color: _danger, fontSize: 15, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 6),
+                            const Text(
+                              'Temporarily pause your listing to hide it from search results, or permanently delete it.',
+                              style: TextStyle(color: _muted, fontSize: 12, height: 1.4),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: _isBusy ? null : _deleteListing,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: _danger,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: const Text(
+                                      'Delete',
+                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: (_isBusy || listing.status == 'inactive') ? null : _pauseListing,
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: _border),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                    ),
+                                    child: Text(
+                                      listing.status == 'inactive' ? 'Paused' : 'Pause Listing',
+                                      style: const TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -487,4 +507,54 @@ class _ManageListingPageState extends State<ManageListingPage> {
       ),
     );
   }
+}
+
+/// Draws a dashed rounded-rect border — used for the "Advanced controls"
+/// box, matching the Figma reference's dashed outline. Same technique as
+/// the dashed "Add photos" tile in create_listing_review_page.dart.
+class _DashedRectPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  static const double dashWidth = 5;
+  static const double dashSpace = 4;
+  static const double strokeWidth = 1.4;
+
+  const _DashedRectPainter({
+    required this.color,
+    this.radius = 16,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth;
+
+    final rrect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(
+        strokeWidth / 2,
+        strokeWidth / 2,
+        size.width - strokeWidth,
+        size.height - strokeWidth,
+      ),
+      Radius.circular(radius),
+    );
+
+    final path = Path()..addRRect(rrect);
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        final next = distance + dashWidth;
+        canvas.drawPath(
+          metric.extractPath(distance, next.clamp(0, metric.length)),
+          paint,
+        );
+        distance = next + dashSpace;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRectPainter oldDelegate) => false;
 }
