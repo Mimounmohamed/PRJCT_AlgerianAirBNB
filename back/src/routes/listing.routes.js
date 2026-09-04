@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { protect, requireHost } = require('../middleware/auth.middleware');
+const { protect, optionalAuth, requireHost } = require('../middleware/auth.middleware');
 const Listing = require('../models/Listing');
+const ListingView = require('../models/ListingView');
 
 // GET /api/listings — Browse all active listings (public)
 router.get('/', async (req, res) => {
@@ -56,17 +57,41 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/listings/:id — Listing detail (public)
-router.get('/:id', async (req, res) => {
+// GET /api/listings/:id — Listing detail (public, but view-count tracking
+// behaves differently depending on who's asking — see below)
+//
+// View counting rules:
+//  - Anonymous (logged-out) requests never increment the counter at all —
+//    there's no stable identity to dedup against.
+//  - The listing's own host viewing their own listing never increments it
+//    (covers both normal browsing and the "Preview my listing" flow after
+//    publishing).
+//  - Any other logged-in user increments it, but only once per user per
+//    listing — enforced via ListingView's unique (listingId, userId) index
+//    rather than an in-memory/app-level check, so it's safe under
+//    concurrent requests.
+router.get('/:id', optionalAuth, async (req, res) => {
   try {
     const listing = await Listing.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
       .populate('hostId', 'fullName profilePhoto isSuperhost hostSince createdAt phone');
 
     if (!listing) return res.status(404).json({ error: 'Listing not found.' });
 
-    // Increment view count
-    listing.stats.totalViews += 1;
-    await listing.save();
+    const viewerId = req.user?._id;
+    const isOwnListing = viewerId && viewerId.toString() === listing.hostId._id.toString();
+
+    if (viewerId && !isOwnListing) {
+      try {
+        // Succeeds only the first time this (listing, user) pair is seen —
+        // the unique index rejects duplicates, which we treat as "already
+        // counted" rather than an error.
+        await ListingView.create({ listingId: listing._id, userId: viewerId });
+        listing.stats.totalViews += 1;
+        await listing.save();
+      } catch (viewErr) {
+        if (viewErr.code !== 11000) throw viewErr; // 11000 = duplicate key, i.e. already viewed
+      }
+    }
 
     res.json(listing);
   } catch (err) {
@@ -75,12 +100,22 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/listings — Create new listing (host only)
+//
+// Instant Book: when the host has bookingPreferences.instantBook set to
+// true, the listing skips admin review entirely and goes live immediately
+// (status: 'active', visibility: 'listed', publishedAt set to now).
+// Otherwise it follows the normal review flow (status: 'pending_review',
+// visibility stays at the schema default 'unlisted' until an admin
+// approves it and flips it to 'active'/'listed').
 router.post('/', protect, requireHost, async (req, res) => {
   try {
+    const instantBook = req.body?.bookingPreferences?.instantBook === true;
+
     const listing = await Listing.create({
       ...req.body,
       hostId: req.user._id,
-      status: 'pending_review',
+      status: instantBook ? 'active' : 'pending_review',
+      ...(instantBook && { visibility: 'listed', publishedAt: new Date() }),
     });
     res.status(201).json(listing);
   } catch (err) {

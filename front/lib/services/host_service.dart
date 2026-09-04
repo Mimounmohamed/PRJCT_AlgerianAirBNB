@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'base_client.dart'; // ApiConfig — same folder (lib/services/)
 import '../models/host_dashboard_model.dart';
 import '../models/host_listing_summary_model.dart';
+import '../models/host_listing_detail_model.dart';
 
 class HostService {
   /// POST /api/host/become
@@ -52,5 +53,96 @@ class HostService {
     return body
         .map((item) => HostListingSummaryModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  /// GET /api/host/listings/:id — single listing, ownership-checked, for
+  /// the Manage Listing page and the Edit Listing Details page.
+  static Future<HostListingDetailModel> fetchListingDetail({
+    required String authToken,
+    required String listingId,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId');
+    final response = await http.get(
+      uri,
+      headers: {'Authorization': 'Bearer $authToken'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to load this listing (${response.statusCode}).');
+    }
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return HostListingDetailModel.fromJson(body);
+  }
+
+  /// PUT /api/listings/:id — "Pause Listing" on the Manage Listing page.
+  /// Reversible: sets status back to 'inactive'/'unlisted' rather than
+  /// deleting anything. Uses the general (non-host-prefixed) listings
+  /// route since that's where update already lives.
+  static Future<void> pauseListing({
+    required String authToken,
+    required String listingId,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': 'inactive', 'visibility': 'unlisted'}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to pause listing (${response.statusCode}).');
+    }
+  }
+
+  /// DELETE /api/host/listings/:id — "Delete" on the Manage Listing
+  /// page's advanced controls. Permanent (soft delete via isDeleted) —
+  /// distinct from pauseListing above.
+  static Future<void> deleteListing({
+    required String authToken,
+    required String listingId,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId');
+    final response = await http.delete(
+      uri,
+      headers: {'Authorization': 'Bearer $authToken'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete listing (${response.statusCode}).');
+    }
+  }
+
+  /// PUT /api/listings/:id — used by the Edit Listing Details page.
+  ///
+  /// IMPORTANT: the backend does a shallow `Object.assign(listing, req.body)`
+  /// (see listing.routes.js), not a deep merge. That means nested fields
+  /// like `location` and array fields like `photos`/`categories` must be
+  /// sent as COMPLETE objects/arrays here — sending a partial `location`
+  /// object (e.g. just `{wilaya, city}`) will silently wipe out
+  /// `fullAddress`/`neighborhood`/`coordinates` if they're omitted, since
+  /// the whole `location` key gets replaced wholesale. Always build the
+  /// full nested object client-side before calling this.
+  static Future<void> updateListingDetails({
+    required String authToken,
+    required String listingId,
+    required Map<String, dynamic> updates,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(updates),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to save changes (${response.statusCode}).');
+    }
   }
 }

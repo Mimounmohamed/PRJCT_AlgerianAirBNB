@@ -4,6 +4,7 @@ class HostDashboardModel {
   final int activeListings;
   final double totalEarnings;
   final int totalBookings;
+  final int totalViews;
   final double avgRating;
 
   HostDashboardModel({
@@ -11,6 +12,7 @@ class HostDashboardModel {
     required this.activeListings,
     required this.totalEarnings,
     required this.totalBookings,
+    required this.totalViews,
     required this.avgRating,
   });
 
@@ -20,6 +22,7 @@ class HostDashboardModel {
       activeListings: (json['activeListings'] as num?)?.toInt() ?? 0,
       totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0,
       totalBookings: (json['totalBookings'] as num?)?.toInt() ?? 0,
+      totalViews: (json['totalViews'] as num?)?.toInt() ?? 0,
       avgRating: (json['avgRating'] as num?)?.toDouble() ?? 0,
     );
   }
@@ -34,5 +37,13 @@ class HostDashboardModel {
       if (posFromEnd > 1 && posFromEnd % 3 == 1) buffer.write(' ');
     }
     return '${buffer.toString()} DA';
+  }
+
+  /// "1.2k" for large view counts, plain number otherwise.
+  String get formattedViews {
+    if (totalViews >= 1000) {
+      return '${(totalViews / 1000).toStringAsFixed(1)}k';
+    }
+    return '$totalViews';
   }
 }

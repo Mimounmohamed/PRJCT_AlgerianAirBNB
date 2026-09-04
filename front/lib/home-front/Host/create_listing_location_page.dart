@@ -9,6 +9,7 @@ import '../widgets/create_listing_pattern_background.dart'; // adjust path if yo
 import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
 import '../../../data/algeria_location_data.dart'; // adjust path to match your project structure
 import '../widgets/app_search_sheet_picker.dart'; // adjust path if you placed this elsewhere
+import 'create_listing_amenities_page.dart'; // adjust path if you placed this elsewhere
 
 /// Step 3 of the Create Listing wizard — location. Wilaya and Baladiya
 /// (commune) are searchable dropdowns sourced from the bundled
@@ -406,7 +407,7 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                       "Where's your place located?",
                       style: TextStyle(
                         color: _dark,
-                        fontSize: 32,
+                        fontSize: 26,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w700,
                         height: 1.2,
@@ -415,7 +416,7 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                     const SizedBox(height: 8),
                     const Text(
                       'Your address is only shared with guests after they book.',
-                      style: TextStyle(color: _muted, fontSize: 16, height: 1.4),
+                      style: TextStyle(color: _muted, fontSize: 15, height: 1.4),
                     ),
                     const SizedBox(height: 20),
                     if (_isLoadingDataset)
@@ -578,9 +579,11 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      // TODO: push the Photos step, passing widget.draft
-                      // forward (wilaya/city/lat/lng are already written
-                      // into it above).
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => CreateListingAmenitiesPage(draft: widget.draft),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,
