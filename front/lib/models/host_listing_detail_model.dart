@@ -9,6 +9,7 @@ class HostListingDetailModel {
   final String propertyType;
   final String? styleType;
   final List<String> categories;
+  final List<Map<String, dynamic>> amenities; // raw [{catalogKey, name, category, iconName, description, isCustom}]
   final String status; // 'draft' | 'pending_review' | 'active' | 'inactive' | 'rejected'
 
   final List<Map<String, dynamic>> photos; // raw {url, caption, order} maps
@@ -37,6 +38,7 @@ class HostListingDetailModel {
     required this.propertyType,
     required this.styleType,
     required this.categories,
+    this.amenities = const [],
     required this.status,
     required this.photos,
     required this.coverPhotoIndex,
@@ -59,6 +61,9 @@ class HostListingDetailModel {
     final photosJson = (json['photos'] as List<dynamic>? ?? [])
         .map((p) => Map<String, dynamic>.from(p as Map))
         .toList();
+    final amenitiesJson = (json['amenities'] as List<dynamic>? ?? [])
+        .map((a) => Map<String, dynamic>.from(a as Map))
+        .toList();
     final coverIndex = (json['coverPhotoIndex'] as num?)?.toInt() ?? 0;
     final stats = json['stats'] as Map<String, dynamic>? ?? {};
     final rating = json['rating'] as Map<String, dynamic>? ?? {};
@@ -79,6 +84,7 @@ class HostListingDetailModel {
       propertyType: json['propertyType'] as String? ?? '',
       styleType: json['styleType'] as String?,
       categories: (json['categories'] as List<dynamic>? ?? []).map((c) => c.toString()).toList(),
+      amenities: amenitiesJson,
       status: json['status'] as String? ?? 'draft',
       photos: photosJson,
       coverPhotoIndex: coverIndex,
