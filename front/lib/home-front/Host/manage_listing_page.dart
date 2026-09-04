@@ -4,6 +4,7 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 import '../../models/host_listing_detail_model.dart';
 import '../explore_page/listing_detail_page.dart'; // adjust path if you placed this elsewhere
 import '../explore_page/reviews_page.dart'; // adjust path if you placed this elsewhere
+import 'edit_listing_details_page.dart';
 
 /// "Manage Listing" — shown when a host taps MANAGE on one of their own
 /// listings (from the Host dashboard or All Listings page). Shows real
@@ -401,9 +402,16 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     _quickAction(
                       icon: Icons.edit_outlined,
                       label: 'Edit listing details',
-                      onTap: () {
-                        // TODO: no host-facing edit flow exists yet — the
-                        // Create Listing wizard only handles new listings.
+                      onTap: () async {
+                        final saved = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => EditListingDetailsPage(
+                              authToken: widget.authToken,
+                              listingId: widget.listingId,
+                            ),
+                          ),
+                        );
+                        if (saved == true) setState(_load); // refresh hero/stats after edit
                       },
                     ),
                     _quickAction(

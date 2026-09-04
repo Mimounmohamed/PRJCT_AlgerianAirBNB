@@ -56,7 +56,7 @@ class HostService {
   }
 
   /// GET /api/host/listings/:id — single listing, ownership-checked, for
-  /// the Manage Listing page.
+  /// the Manage Listing page and the Edit Listing Details page.
   static Future<HostListingDetailModel> fetchListingDetail({
     required String authToken,
     required String listingId,
@@ -113,6 +113,36 @@ class HostService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to delete listing (${response.statusCode}).');
+    }
+  }
+
+  /// PUT /api/listings/:id — used by the Edit Listing Details page.
+  ///
+  /// IMPORTANT: the backend does a shallow `Object.assign(listing, req.body)`
+  /// (see listing.routes.js), not a deep merge. That means nested fields
+  /// like `location` and array fields like `photos`/`categories` must be
+  /// sent as COMPLETE objects/arrays here — sending a partial `location`
+  /// object (e.g. just `{wilaya, city}`) will silently wipe out
+  /// `fullAddress`/`neighborhood`/`coordinates` if they're omitted, since
+  /// the whole `location` key gets replaced wholesale. Always build the
+  /// full nested object client-side before calling this.
+  static Future<void> updateListingDetails({
+    required String authToken,
+    required String listingId,
+    required Map<String, dynamic> updates,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(updates),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to save changes (${response.statusCode}).');
     }
   }
 }
