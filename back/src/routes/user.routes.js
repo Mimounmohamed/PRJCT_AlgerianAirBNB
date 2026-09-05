@@ -67,4 +67,31 @@ router.delete('/me/permanent', protect, async (req, res) => {
   }
 });
 
+// PUT /api/users/fcm-token
+router.put('/fcm-token', protect, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    if (!fcmToken) return res.status(400).json({ error: 'fcmToken is required' });
+    await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/users/notification-settings
+router.put('/notification-settings', protect, async (req, res) => {
+  try {
+    const { messagesPush, remindersPush, promotionsEmail } = req.body;
+    const update = {};
+    if (messagesPush !== undefined) update['notificationSettings.messages'] = messagesPush;
+    if (remindersPush !== undefined) update['notificationSettings.bookingUpdates'] = remindersPush;
+    if (promotionsEmail !== undefined) update['notificationSettings.promotions'] = promotionsEmail;
+    await User.findByIdAndUpdate(req.user._id, update);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

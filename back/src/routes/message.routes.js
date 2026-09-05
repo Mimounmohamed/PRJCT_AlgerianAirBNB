@@ -3,6 +3,8 @@ const router       = express.Router();
 const { protect }  = require('../middleware/auth.middleware');
 const Conversation = require('../models/Conversation');
 const Message      = require('../models/Message');
+const User         = require('../models/User');
+const { sendPushNotification } = require('../config/pushNotification');
 
 // ── Helper: emit a new message to all participants ──────────
 function emitMessage(req, conversation, message) {
@@ -124,6 +126,23 @@ router.post('/:conversationId', protect, async (req, res) => {
 
     const populated = await message.populate('senderId', 'fullName profilePhoto');
     emitMessage(req, conversation, populated);
+
+    // FCM push to recipient
+    try {
+      const recipientUser = await User.findById(otherId).select('fcmToken notificationSettings');
+      if (recipientUser?.fcmToken && recipientUser?.notificationSettings?.messages !== false) {
+        const senderName = req.user.fullName || 'New message';
+        const preview = content && content.length > 80 ? content.substring(0, 80) + '…' : (content || '📎 Media');
+        await sendPushNotification({
+          fcmToken: recipientUser.fcmToken,
+          title: senderName,
+          body: preview,
+          data: { type: 'message', conversationId: conversation._id.toString() },
+        });
+      }
+    } catch (pushErr) {
+      console.error('FCM push error:', pushErr.message);
+    }
 
     res.status(201).json(populated);
   } catch (err) {
