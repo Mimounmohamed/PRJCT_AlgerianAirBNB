@@ -330,67 +330,95 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    if (listing.reviewCount > 0)
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ReviewsPage(
-                              listingTitle: listing.title,
-                              ratingOverall: listing.ratingOverall,
-                              reviewCount: listing.reviewCount,
-                            ),
-                          ),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: _border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.star, size: 14, color: _dark),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      listing.ratingOverall.toStringAsFixed(2),
-                                      style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700),
-                                    ),
-                                  ],
+                    GestureDetector(
+                      onTap: listing.reviewCount > 0
+                          ? () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReviewsPage(
+                                    listingTitle: listing.title,
+                                    ratingOverall: listing.ratingOverall,
+                                    reviewCount: listing.reviewCount,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (listing.isGuestFavorite)
-                                      const Text(
-                                        'Guest Favorite',
-                                        style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
-                                      ),
-                                    Text(
-                                      '${listing.reviewCount} reviews'
-                                      // STATIC PLACEHOLDER — not a real tracked
-                                      // stat, see class doc comment above.
-                                      ' · 98% recommended',
-                                      style: const TextStyle(color: _muted, fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right, size: 18, color: _muted),
-                            ],
-                          ),
+                              )
+                          : null,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _border),
                         ),
+                        child: listing.reviewCount > 0
+                            ? Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star, size: 14, color: _dark),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          listing.ratingOverall.toStringAsFixed(2),
+                                          style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (listing.isGuestFavorite)
+                                          const Text(
+                                            'Guest Favorite',
+                                            style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
+                                          ),
+                                        Text(
+                                          '${listing.reviewCount} reviews'
+                                          // STATIC PLACEHOLDER — not a real
+                                          // tracked stat, see class doc
+                                          // comment above.
+                                          ' · 98% recommended',
+                                          style: const TextStyle(color: _muted, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, size: 18, color: _muted),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(20)),
+                                    child: const Icon(Icons.star_border, size: 18, color: _muted),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'No reviews yet',
+                                          style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
+                                        ),
+                                        Text(
+                                          'Reviews will show up here once guests start booking.',
+                                          style: TextStyle(color: _muted, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
+                    ),
                     const SizedBox(height: 28),
 
                     // ── Quick actions ───────────────────────
