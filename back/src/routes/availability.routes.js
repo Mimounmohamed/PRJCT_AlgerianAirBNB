@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, requireHost } = require('../middleware/auth.middleware');
 const Availability = require('../models/Availability');
+const Listing = require('../models/Listing');
 
 // GET /api/availability/:listingId — Get calendar for a listing
 router.get('/:listingId', async (req, res) => {
@@ -22,9 +23,15 @@ router.get('/:listingId', async (req, res) => {
   }
 });
 
-// PUT /api/availability/:listingId — Bulk update dates (host only)
+// PUT /api/availability/:listingId — Bulk update dates (host only, and
+// only the listing's own host — requireHost alone only checks the
+// requester HAS a host account, not that they own THIS listing, so an
+// ownership check is added here explicitly).
 router.put('/:listingId', protect, requireHost, async (req, res) => {
   try {
+    const listing = await Listing.findOne({ _id: req.params.listingId, hostId: req.user._id });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+
     const { dates, status, priceOverride } = req.body;
     // dates: array of date strings ["2024-10-15", "2024-10-16", ...]
 

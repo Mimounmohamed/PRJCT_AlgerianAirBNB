@@ -1,7 +1,8 @@
 /// Parses one listing document as returned by GET /api/host/listings/:id
 /// (raw Listing doc, host-scoped/ownership-checked) — used for the
-/// Manage Listing page's performance highlights/header AND the Edit
-/// Listing Details page's form fields.
+/// Manage Listing page's performance highlights/header, the Edit
+/// Listing Details page's form fields, AND the Manage Calendar page's
+/// default nightly price.
 class HostListingDetailModel {
   final String id;
   final String title;
@@ -31,6 +32,9 @@ class HostListingDetailModel {
   final int reviewCount;
   final bool isGuestFavorite;
 
+  final double pricePerNight;
+  final String currency;
+
   HostListingDetailModel({
     required this.id,
     required this.title,
@@ -55,6 +59,8 @@ class HostListingDetailModel {
     required this.ratingOverall,
     required this.reviewCount,
     required this.isGuestFavorite,
+    required this.pricePerNight,
+    required this.currency,
   });
 
   factory HostListingDetailModel.fromJson(Map<String, dynamic> json) {
@@ -70,6 +76,7 @@ class HostListingDetailModel {
     final location = json['location'] as Map<String, dynamic>? ?? {};
     final coordinates = location['coordinates'] as Map<String, dynamic>?;
     final coordsList = coordinates?['coordinates'] as List<dynamic>?; // [lng, lat]
+    final price = json['price'] as Map<String, dynamic>? ?? {};
 
     String? coverUrl;
     if (photosJson.isNotEmpty) {
@@ -101,6 +108,8 @@ class HostListingDetailModel {
       ratingOverall: (rating['overall'] as num?)?.toDouble() ?? 0,
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
       isGuestFavorite: json['isGuestFavorite'] as bool? ?? false,
+      pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
+      currency: price['currency'] as String? ?? 'DZD',
     );
   }
 

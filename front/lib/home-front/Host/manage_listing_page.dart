@@ -5,6 +5,7 @@ import '../../models/host_listing_detail_model.dart';
 import '../explore_page/listing_detail_page.dart'; // adjust path if you placed this elsewhere
 import '../explore_page/reviews_page.dart'; // adjust path if you placed this elsewhere
 import 'edit_listing_details_page.dart';
+import 'manage_calendar_page.dart'; // adjust path if you placed this elsewhere
 
 /// "Manage Listing" — shown when a host taps MANAGE on one of their own
 /// listings (from the Host dashboard or All Listings page). Shows real
@@ -445,9 +446,15 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     _quickAction(
                       icon: Icons.calendar_today_outlined,
                       label: 'Manage calendar',
-                      onTap: () {
-                        // TODO: availability management UI doesn't exist yet.
-                      },
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ManageCalendarPage(
+                            authToken: widget.authToken,
+                            listingId: widget.listingId,
+                            basePricePerNight: listing.pricePerNight,
+                          ),
+                        ),
+                      ),
                     ),
                     _quickAction(
                       icon: Icons.rate_review_outlined,
