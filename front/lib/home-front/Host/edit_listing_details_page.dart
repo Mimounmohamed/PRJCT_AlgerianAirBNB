@@ -57,6 +57,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   static const Color _muted = Color(0xFF8A7B6E);
   static const Color _border = Color(0xFFE7DCCB);
   static const Color _gold = Color(0xFFE8A33D);
+  // Reuses the app's one recurring accent (_teal) for the success
+  // popup — there's no separate green defined anywhere in this codebase
+  // as shared so far. If a different success color already exists
+  // elsewhere in the app, swap this one line to match it.
+  static const Color _success = _teal;
 
   /// Matches the backend's Listing.propertyType enum exactly (see
   /// Listing.js) — same list/icons as create_listing_property_type_page.dart.
@@ -1097,6 +1102,24 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
   }
 
+  // ── Success popup ────────────────────────────────────────
+
+  /// Small centered dialog shown on a successful save — a checkmark in
+  /// a filled circle plus "Changes saved" text, animated (pop-in, hold,
+  /// fade-out) and auto-dismissing on its own. See _SavedPopupContent
+  /// below for the animation itself.
+  Future<void> _showSavedPopup() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _SavedPopupContent(
+        accentColor: _success,
+        textColor: _dark,
+        backgroundColor: _cream,
+      ),
+    );
+  }
+
   // ── Save ─────────────────────────────────────────────────
 
   Future<void> _save() async {
@@ -1164,7 +1187,8 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Changes saved.')));
+      await _showSavedPopup();
+      if (!mounted) return;
       Navigator.of(context).pop(true); // true = caller should refresh
     } catch (e) {
       if (!mounted) return;
@@ -1343,6 +1367,100 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Animated content for the "Changes saved" popup — pops in with a
+/// slight overshoot, holds, then fades out and pops its own dialog
+/// route. Runs entirely on its own AnimationController so the caller
+/// just does `await showDialog(... builder: (_) => _SavedPopupContent(...))`
+/// and the dialog closes itself when the animation finishes.
+class _SavedPopupContent extends StatefulWidget {
+  final Color accentColor;
+  final Color textColor;
+  final Color backgroundColor;
+
+  const _SavedPopupContent({
+    required this.accentColor,
+    required this.textColor,
+    required this.backgroundColor,
+  });
+
+  @override
+  State<_SavedPopupContent> createState() => _SavedPopupContentState();
+}
+
+class _SavedPopupContentState extends State<_SavedPopupContent> with SingleTickerProviderStateMixin {
+  static const Duration _totalDuration = Duration(milliseconds: 2200);
+
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _totalDuration);
+
+    // Weighted phases of the SAME controller: pop in with a slight
+    // overshoot (~15%), settle (~10%), hold fully visible (~55%), then
+    // fade + shrink slightly out (~20%) before the dialog closes itself.
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.6, end: 1.08).chain(CurveTween(curve: Curves.easeOutBack)), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 55),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.92).chain(CurveTween(curve: Curves.easeIn)), weight: 20),
+    ]).animate(_controller);
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_controller);
+
+    _controller.forward().whenComplete(() {
+      if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Opacity(
+        opacity: _opacity.value,
+        child: Transform.scale(scale: _scale.value, child: child),
+      ),
+      child: Dialog(
+        backgroundColor: widget.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: widget.accentColor, shape: BoxShape.circle),
+                child: const Icon(Icons.check, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Changes saved',
+                style: TextStyle(color: widget.textColor, fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

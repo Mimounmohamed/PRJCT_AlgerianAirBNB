@@ -66,6 +66,37 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
     }
   }
 
+  /// Pushes Manage Listing and refreshes the whole dashboard (stats +
+  /// listing rows) if anything might have changed there — pause,
+  /// delete, or a save from Edit Listing Details.
+  Future<void> _openManageListing(HostListingSummaryModel listing) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ManageListingPage(
+          authToken: widget.authToken,
+          listingId: listing.id,
+        ),
+      ),
+    );
+    if (changed == true) _fetchAll();
+  }
+
+  /// Pushes "View all" and refreshes the dashboard on return too — even
+  /// though AllListingsPage refreshes its own internal list after an
+  /// edit, this dashboard's stats grid and row list are separate state
+  /// and won't otherwise know anything changed.
+  Future<void> _openAllListings() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AllListingsPage(
+          listings: _listings,
+          authToken: widget.authToken,
+        ),
+      ),
+    );
+    _fetchAll();
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -103,108 +134,94 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
               const Text(
                 'HOST DASHBOARD',
                 style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Marhaban, ${widget.hostFirstName}',
-            style: const TextStyle(color: _dark, fontSize: 26, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 20),
-
-          HostStatsGrid(
-            formattedEarnings: dashboard.formattedEarnings,
-            activeListings: dashboard.activeListings,
-            avgRating: dashboard.avgRating,
-            formattedViews: dashboard.formattedViews,
-          ),
-          const SizedBox(height: 20),
-
-          // ── Get verified banner ───────────────────────────────────────
-          // TODO: wire to a real verification submission flow
-          // (POST /api/host/verify needs documentType + documentImageUrl,
-          // meaning a document picker + upload UI that doesn't exist yet).
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF00363B), Color(0xFF12A0AA)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
               ),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Get verified to benefit from\nexclusive features',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
-                ),
-                const SizedBox(height: 28),
-                OutlinedButton(
-                  onPressed: () {
-                    // TODO: push real verification flow
-                  },
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    side: BorderSide.none,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  child: const Text(
-                    'START VERIFICATION',
-                    style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // ── Your listings ──────────────────────────────────────────────
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Your listings',
-                style: TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600),
+              const SizedBox(height: 4),
+              Text(
+                'Marhaban, ${widget.hostFirstName}',
+                style: const TextStyle(color: _dark, fontSize: 26, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => AllListingsPage(
-                      listings: _listings,
-                      authToken: widget.authToken,
+              const SizedBox(height: 20),
+
+              HostStatsGrid(
+                formattedEarnings: dashboard.formattedEarnings,
+                activeListings: dashboard.activeListings,
+                avgRating: dashboard.avgRating,
+                formattedViews: dashboard.formattedViews,
+              ),
+              const SizedBox(height: 20),
+
+              // ── Get verified banner ───────────────────────────────────────
+              // TODO: wire to a real verification submission flow
+              // (POST /api/host/verify needs documentType + documentImageUrl,
+              // meaning a document picker + upload UI that doesn't exist yet).
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF00363B), Color(0xFF12A0AA)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Get verified to benefit from\nexclusive features',
+                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
                     ),
-                  ),
-                ),
-                child: const Text('View all', style: TextStyle(color: _teal, fontWeight: FontWeight.w600)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          if (_listings.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              child: const Text(
-                "You haven't listed a place yet.",
-                style: TextStyle(color: Color(0xFF8A7B6E)),
-              ),
-            )
-          else
-            ..._listings.map((listing) => HostListingRow(
-                  listing: listing,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ManageListingPage(
-                        authToken: widget.authToken,
-                        listingId: listing.id,
+                    const SizedBox(height: 28),
+                    OutlinedButton(
+                      onPressed: () {
+                        // TODO: push real verification flow
+                      },
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        side: BorderSide.none,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      ),
+                      child: const Text(
+                        'START VERIFICATION',
+                        style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.5),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ── Your listings ──────────────────────────────────────────────
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Your listings',
+                    style: TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600),
                   ),
-                )),
+                  TextButton(
+                    onPressed: _openAllListings,
+                    child: const Text('View all', style: TextStyle(color: _teal, fontWeight: FontWeight.w600)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              if (_listings.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                  child: const Text(
+                    "You haven't listed a place yet.",
+                    style: TextStyle(color: Color(0xFF8A7B6E)),
+                  ),
+                )
+              else
+                ..._listings.map((listing) => HostListingRow(
+                      listing: listing,
+                      onTap: () => _openManageListing(listing),
+                    )),
             ],
           ),
         ),
@@ -226,7 +243,7 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
             style: ElevatedButton.styleFrom(
               backgroundColor: _teal,
               elevation: 6,
-              shadowColor: Colors.black.withOpacity(0.3),
+              shadowColor: Colors.black.withValues(alpha: 0.3),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             ),
