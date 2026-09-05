@@ -37,11 +37,12 @@ class ListingDetailModel {
   final double ratingOverall;
   final int reviewCount;
 
+  final String hostId;
   final String hostName;
   final String? hostProfilePhotoUrl;
   final bool hostIsSuperhost;
   final String? hostSince;
-  final String? hostCreatedAt; // fallback source for hostSinceLabel below
+  final String? hostCreatedAt;
   final String? hostPhoneCountryCode;
   final String? hostPhoneNumber;
 
@@ -69,6 +70,7 @@ class ListingDetailModel {
     required this.amenities,
     required this.ratingOverall,
     required this.reviewCount,
+    required this.hostId,
     required this.hostName,
     required this.hostProfilePhotoUrl,
     required this.hostIsSuperhost,
@@ -123,6 +125,7 @@ class ListingDetailModel {
           .toList(),
       ratingOverall: (rating['overall'] as num?)?.toDouble() ?? 0,
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
+      hostId: host['_id'] as String? ?? '',
       hostName: host['fullName'] as String? ?? 'Host',
       hostProfilePhotoUrl: host['profilePhoto'] as String?,
       hostIsSuperhost: host['isSuperhost'] as bool? ?? false,

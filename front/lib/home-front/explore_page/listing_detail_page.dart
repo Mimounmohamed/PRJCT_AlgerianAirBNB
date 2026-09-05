@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../services/listing_service.dart'; // adjust path to match your project structure
-import '../../models/listing_detail_model.dart'; // adjust path to match your project structure
+import '../../services/listing_service.dart';
+import '../../models/listing_detail_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/user_session.dart';
+import '../../chat/conversation.dart';
 import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
-import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
-import 'booking_page.dart'; // adjust path if you placed this elsewhere
-import 'reviews_page.dart'; // adjust path if you placed this elsewhere
-import '../widgets/share_sheet.dart'; // adjust path to match your project structure
+import 'host_profile_page.dart';
+import 'booking_page.dart';
+import 'reviews_page.dart';
+import '../widgets/share_sheet.dart';
 import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
