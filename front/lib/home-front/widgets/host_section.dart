@@ -8,6 +8,7 @@ class HostSection extends StatelessWidget {
   final String? hostSinceLabel;
   final VoidCallback? onMessageTap;
   final VoidCallback? onHostTap;
+  final bool isChatLoading;
 
   const HostSection({
     super.key,
@@ -16,6 +17,7 @@ class HostSection extends StatelessWidget {
     required this.hostSinceLabel,
     this.onMessageTap,
     this.onHostTap,
+    this.isChatLoading = false,
   });
 
   String get _initials {
@@ -62,7 +64,7 @@ class HostSection extends StatelessWidget {
                           color: Color(0xFF2A1B12),
                           fontSize: 19,
                           fontWeight: FontWeight.w700,
-                          fontFamily: 'HenkenGrotesk',
+                          fontFamily: 'HankenGrotesk',
                         ),
                       ),
                       if (hostSinceLabel != null) ...[
@@ -72,7 +74,7 @@ class HostSection extends StatelessWidget {
                           style: const TextStyle(
                             color: Color(0xFF8A7B6E),
                             fontSize: 13,
-                            fontFamily: 'HenkenGrotesk',
+                            fontFamily: 'HankenGrotesk',
                           ),
                         ),
                       ],
@@ -83,12 +85,29 @@ class HostSection extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          onPressed: onMessageTap,
-          icon: const Icon(Icons.chat_bubble_outline, size: 28, color: Color(0xFF2A1B12)),
-          splashRadius: 20,
+        // Chat button — shows spinner while opening the conversation
+        SizedBox(
+          width: 44,
+          height: 44,
+          child: isChatLoading
+              ? const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF006972),
+                  ),
+                )
+              : IconButton(
+                  onPressed: onMessageTap,
+                  icon: const Icon(
+                    Icons.chat_bubble_outline,
+                    size: 26,
+                    color: Color(0xFF2A1B12),
+                  ),
+                  splashRadius: 20,
+                ),
         ),
       ],
     );
   }
-}
+}

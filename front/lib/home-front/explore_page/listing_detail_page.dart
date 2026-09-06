@@ -30,11 +30,65 @@ class ListingDetailPage extends StatefulWidget {
 class _ListingDetailPageState extends State<ListingDetailPage> {
   late Future<ListingDetailModel> _future;
   bool _descriptionExpanded = false;
+  bool _openingChat = false;
 
   @override
   void initState() {
     super.initState();
     _future = ListingService.fetchListingById(widget.listingId);
+  }
+
+  Future<void> _openChat(ListingDetailModel listing) async {
+    // Don't allow messaging yourself
+    final myId = UserSession.instance.currentUser?.id ?? '';
+    if (listing.hostId.isEmpty || listing.hostId == myId) return;
+
+    setState(() => _openingChat = true);
+    try {
+      final token = UserSession.instance.token ?? '';
+      final result = await AuthService.startConversation(
+        token: token,
+        recipientId: listing.hostId,
+        listingId: listing.id,
+        content: 'Hi, I\'m interested in your listing "${listing.title}".',
+      );
+
+      final conv = result['conversation'] as Map<String, dynamic>? ?? result;
+      final conversationId = (conv['_id'] ?? conv['id'] ?? '').toString();
+
+      if (!mounted) return;
+
+      // Build initials from host name
+      final nameParts = listing.hostName.trim().split(' ');
+      final initials = nameParts.length >= 2
+          ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
+          : listing.hostName.isNotEmpty
+              ? listing.hostName[0].toUpperCase()
+              : '?';
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            otherUserName: listing.hostName,
+            otherUserInitials: initials,
+            listingName: listing.title,
+            listingLocation: '${listing.city}, Algeria',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open chat: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
   }
 
   @override
@@ -178,9 +232,10 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             hostName: listing.hostName,
                             hostProfilePhotoUrl: listing.hostProfilePhotoUrl,
                             hostSinceLabel: listing.hostSinceLabel,
-                            onMessageTap: () {
-                              // TODO: wire messaging flow
-                            },
+                            onMessageTap: _openingChat
+                                ? null
+                                : () => _openChat(listing),
+                            isChatLoading: _openingChat,
                             onHostTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => HostProfilePage(
