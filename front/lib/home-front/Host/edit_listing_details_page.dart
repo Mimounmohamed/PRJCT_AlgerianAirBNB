@@ -135,7 +135,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       _descriptionController.text = listing.description;
       _photos = listing.photos.map((p) => Map<String, dynamic>.from(p)).toList();
       _coverPhotoIndex = listing.coverPhotoIndex;
-      _selectedPropertyType = listing.propertyType;
+      final matchedType = _propertyTypeOptions.cast<_PropertyTypeOption?>().firstWhere(
+        (opt) => opt!.label.toLowerCase() == listing.propertyType.trim().toLowerCase(),
+        orElse: () => null,
+      );
+      _selectedPropertyType = matchedType?.label ?? listing.propertyType;
       _amenities = listing.amenities.map((a) => Map<String, dynamic>.from(a)).toList();
       _lat = listing.latitude;
       _lng = listing.longitude;
@@ -187,16 +191,25 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   // ── Photos ──────────────────────────────────────────────
 
   Future<void> _addPhoto() async {
-    if (_photos.length >= _maxPhotos) return;
+    final remaining = _maxPhotos - _photos.length;
+    if (remaining <= 0) return;
     try {
-      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked == null) return;
+      final picked = await _picker.pickMultiImage(imageQuality: 85);
+      if (picked.isEmpty) return;
       setState(() => _isUploadingPhoto = true);
-      final url = await AuthService.uploadToCloudinary(File(picked.path));
-      if (!mounted) return;
-      setState(() {
-        _photos.add({'url': url, 'caption': '', 'order': _photos.length});
-      });
+      final toUpload = picked.take(remaining).toList();
+      for (final img in toUpload) {
+        final url = await AuthService.uploadToCloudinary(File(img.path));
+        if (!mounted) return;
+        setState(() {
+          _photos.add({'url': url, 'caption': '', 'order': _photos.length});
+        });
+      }
+      if (picked.length > remaining && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added $remaining photo(s). Maximum is $_maxPhotos.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -223,6 +236,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   Widget _photoThumbnail(int index) {
     final photo = _photos[index];
     final isCover = _coverPhotoIndex == index;
+    final photoUrl = photo['url']?.toString() ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -230,9 +244,12 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         fit: StackFit.expand,
         children: [
           Image.network(
-            photo['url'] as String,
+            photoUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(color: _border),
+            errorBuilder: (_, _, _) => Container(
+              color: _border,
+              child: const Icon(Icons.broken_image, color: _muted, size: 24),
+            ),
           ),
           if (isCover)
             DecoratedBox(
@@ -312,7 +329,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   // ── Property type (single-select "stay category") ─────
 
   Widget _propertyTypeCard(_PropertyTypeOption option) {
-    final isSelected = _selectedPropertyType == option.label;
+    final isSelected = _selectedPropertyType?.toLowerCase() == option.label.toLowerCase();
     return GestureDetector(
       onTap: () => setState(() => _selectedPropertyType = option.label),
       child: Container(
@@ -324,11 +341,14 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(option.icon, size: 26, color: isSelected ? _teal : _dark),
             const SizedBox(height: 10),
             Text(
               option.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isSelected ? _teal : _dark,
                 fontSize: 13,
@@ -373,8 +393,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   void _removeAmenity({String? catalogKey, String? customName, required StateSetter sheetSetState}) {
     setState(() {
       _amenities.removeWhere((a) {
-        if (catalogKey != null) return a['catalogKey'] == catalogKey;
-        return a['isCustom'] == true && a['name'] == customName;
+        if (catalogKey != null && catalogKey.isNotEmpty) {
+          return a['catalogKey'] == catalogKey;
+        }
+        return a['name'] == customName;
       });
     });
     sheetSetState(() {});
@@ -382,8 +404,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   void _updateAmenityDescription({String? catalogKey, String? customName, required String description}) {
     final idx = _amenities.indexWhere((a) {
-      if (catalogKey != null) return a['catalogKey'] == catalogKey;
-      return a['isCustom'] == true && a['name'] == customName;
+      if (catalogKey != null && catalogKey.isNotEmpty) {
+        return a['catalogKey'] == catalogKey;
+      }
+      return a['name'] == customName;
     });
     if (idx >= 0) _amenities[idx]['description'] = description;
   }
@@ -442,17 +466,25 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
 
     if (added == true && nameController.text.trim().isNotEmpty) {
-      setState(() {
-        _amenities.add({
-          'catalogKey': null,
-          'name': nameController.text.trim(),
-          'category': category,
-          'iconName': 'other',
-          'description': descController.text.trim(),
-          'isCustom': true,
+      final customName = nameController.text.trim();
+      final alreadyExists = _amenities.any((a) => (a['name'] as String?)?.toLowerCase() == customName.toLowerCase());
+      if (!alreadyExists) {
+        setState(() {
+          _amenities.add({
+            'catalogKey': null,
+            'name': customName,
+            'category': category,
+            'iconName': 'other',
+            'description': descController.text.trim(),
+            'isCustom': true,
+          });
         });
-      });
-      sheetSetState(() {});
+        sheetSetState(() {});
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$customName" is already in your amenities list.')),
+        );
+      }
     }
   }
 
@@ -634,11 +666,12 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   Widget _selectedAmenityRow(Map<String, dynamic> amenity, StateSetter sheetSetState) {
     final String? catalogKey = amenity['catalogKey'] as String?;
-    final String name = amenity['name'] as String;
+    final String name = amenity['name'] as String? ?? '';
     final bool isCustom = amenity['isCustom'] as bool? ?? false;
     final String iconName = amenity['iconName'] as String? ?? '';
 
     return Padding(
+      key: ValueKey('amenity_${catalogKey ?? name}'),
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -659,6 +692,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                     border: Border.all(color: _border),
                   ),
                   child: TextFormField(
+                    key: ValueKey('desc_${catalogKey ?? name}'),
                     initialValue: amenity['description'] as String? ?? '',
                     onChanged: (value) => _updateAmenityDescription(
                       catalogKey: catalogKey,
@@ -757,14 +791,21 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                   return results;
                 }
 
+                if (expandedCategories.isEmpty && _amenityCatalog.isNotEmpty) {
+                  expandedCategories.add(_amenityCatalog.keys.first);
+                }
+
                 final isSearching = query.trim().isNotEmpty;
 
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: _cream,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
+                return AnimatedPadding(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: _cream,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
                     children: [
                       const SizedBox(height: 10),
                       Container(
@@ -879,6 +920,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       ),
                     ],
                   ),
+                ),
                 );
               },
             );
@@ -959,6 +1001,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                     options: MapOptions(
                       initialCenter: _center,
                       initialZoom: _zoom,
+                      onPositionChanged: (camera, hasGesture) {
+                        expandedCenter = camera.center;
+                        expandedZoom = camera.zoom;
+                      },
                       onMapEvent: (event) {
                         if (event is MapEventMoveEnd || event is MapEventFlingAnimationEnd) {
                           expandedCenter = _expandedMapController.camera.center;
@@ -1043,6 +1089,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   Widget _locationPreview() {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _openFullMap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -1051,19 +1098,21 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _center,
-                  initialZoom: _zoom,
-                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.akrili.app',
+              IgnorePointer(
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _center,
+                    initialZoom: _zoom,
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                   ),
-                ],
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.akrili.app',
+                    ),
+                  ],
+                ),
               ),
               const IgnorePointer(
                 child: Center(
@@ -1123,6 +1172,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   // ── Save ─────────────────────────────────────────────────
 
   Future<void> _save() async {
+    if (_isUploadingPhoto) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please wait for photo upload to finish.')));
+      return;
+    }
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please give your place a title.')));
       return;
@@ -1147,18 +1200,19 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     try {
       final normalizedPhotos = [
         for (int i = 0; i < _photos.length; i++)
-          {'url': _photos[i]['url'], 'caption': _photos[i]['caption'] ?? '', 'order': i},
+          {'url': _photos[i]['url']?.toString() ?? '', 'caption': _photos[i]['caption'] ?? '', 'order': i},
       ];
       final normalizedAmenities = [
         for (final a in _amenities)
-          {
-            'catalogKey': a['catalogKey'],
-            'name': a['name'],
-            'category': a['category'],
-            'iconName': a['iconName'],
-            'description': a['description'] ?? '',
-            'isCustom': a['isCustom'] ?? false,
-          },
+          if ((a['name'] as String?)?.trim().isNotEmpty ?? false)
+            {
+              'catalogKey': a['catalogKey'],
+              'name': (a['name'] as String).trim(),
+              'category': (a['category'] as String?)?.isNotEmpty == true ? a['category'] : 'Other',
+              'iconName': (a['iconName'] as String?)?.isNotEmpty == true ? a['iconName'] : 'other',
+              'description': a['description'] ?? '',
+              'isCustom': a['isCustom'] ?? false,
+            },
       ];
 
       final safeCoverIndex = _coverPhotoIndex.clamp(0, normalizedPhotos.length - 1);
@@ -1268,7 +1322,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _photos.length + 1,
+                        itemCount: _photos.length >= _maxPhotos ? _photos.length : _photos.length + 1,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           mainAxisSpacing: 10,
@@ -1345,11 +1399,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
-                      onPressed: _isSaving ? null : _discard,
+                      onPressed: (_isSaving || _isUploadingPhoto) ? null : _discard,
                       child: const Text('Discard', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                     ),
                     ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _save,
+                      onPressed: (_isSaving || _isUploadingPhoto) ? null : _save,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _teal,
                         disabledBackgroundColor: _teal.withValues(alpha: 0.4),
@@ -1359,7 +1413,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       icon: _isSaving
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
-                      label: const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      label: Text(_isUploadingPhoto ? 'Uploading...' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),

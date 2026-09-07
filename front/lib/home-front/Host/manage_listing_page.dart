@@ -42,6 +42,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
 
   Future<HostListingDetailModel>? _future;
   bool _isBusy = false;
+  bool _didChange = false; // true once pause/resume/delete/edit succeeds — popped back so callers know to refresh
 
   @override
   void initState() {
@@ -102,6 +103,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
       setState(() {
         _load();
         _isBusy = false;
+        _didChange = true;
       });
     } catch (e) {
       if (!mounted) return;
@@ -116,8 +118,16 @@ class _ManageListingPageState extends State<ManageListingPage> {
         title: 'Pause this listing?',
         message: "It'll be hidden from search results, but you can bring it back anytime from here.",
         confirmLabel: 'Pause',
-        confirmColor: _danger,
+        confirmColor: _teal,
         action: () => HostService.pauseListing(authToken: widget.authToken, listingId: widget.listingId),
+      );
+
+  Future<void> _resumeListing() => _confirmAndRun(
+        title: 'Resume this listing?',
+        message: "It'll go back to being visible in search results.",
+        confirmLabel: 'Resume',
+        confirmColor: _teal,
+        action: () => HostService.resumeListing(authToken: widget.authToken, listingId: widget.listingId),
       );
 
   Future<void> _deleteListing() => _confirmAndRun(
@@ -127,7 +137,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
         confirmColor: _danger,
         action: () async {
           await HostService.deleteListing(authToken: widget.authToken, listingId: widget.listingId);
-          if (mounted) Navigator.of(context).pop(); // nothing left to manage — back out
+          if (mounted) Navigator.of(context).pop(true); // nothing left to manage — back out, and tell the caller something changed
         },
       );
 
@@ -189,7 +199,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
-          child: AkriliAppBar(title: 'AKRILI', onBack: () => Navigator.of(context).maybePop()),
+          child: AkriliAppBar(title: 'AKRILI', onBack: () => Navigator.of(context).pop(_didChange)),
         ),
       ),
       body: FutureBuilder<HostListingDetailModel>(
@@ -440,7 +450,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
                             ),
                           ),
                         );
-                        if (saved == true) setState(_load); // refresh hero/stats after edit
+                        if (saved == true) setState(() { _load(); _didChange = true; }); // refresh hero/stats after edit
                       },
                     ),
                     _quickAction(
@@ -517,18 +527,32 @@ class _ManageListingPageState extends State<ManageListingPage> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: (_isBusy || listing.status == 'inactive') ? null : _pauseListing,
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: _border),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                    child: Text(
-                                      listing.status == 'inactive' ? 'Paused' : 'Pause Listing',
-                                      style: const TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
-                                    ),
-                                  ),
+                                  child: listing.status == 'inactive'
+                                      ? ElevatedButton(
+                                          onPressed: _isBusy ? null : _resumeListing,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _teal,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: const Text(
+                                            'Resume Listing',
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                                          ),
+                                        )
+                                      : OutlinedButton(
+                                          onPressed: _isBusy ? null : _pauseListing,
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(color: _border),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: const Text(
+                                            'Pause Listing',
+                                            style: TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+                                          ),
+                                        ),
                                 ),
                               ],
                             ),
