@@ -129,10 +129,16 @@ router.post('/:conversationId', protect, async (req, res) => {
 
     // FCM push to recipient
     try {
-      const recipientUser = await User.findById(otherId).select('fcmToken notificationSettings');
-      if (recipientUser?.fcmToken && recipientUser?.notificationSettings?.messages !== false) {
+      const recipientUser = await User.findById(otherId).select('fcmToken notificationSettings fullName');
+      console.log(`[PUSH] recipient fcmToken=${recipientUser?.fcmToken ? recipientUser.fcmToken.substring(0,12)+'...' : 'NONE'} messagesEnabled=${recipientUser?.notificationSettings?.messages}`);
+      if (!recipientUser?.fcmToken) {
+        console.log('[PUSH] Skipping — no FCM token saved for recipient');
+      } else if (recipientUser?.notificationSettings?.messages === false) {
+        console.log('[PUSH] Skipping — recipient has messages push disabled');
+      } else {
         const senderName = req.user.fullName || 'New message';
         const preview = content && content.length > 80 ? content.substring(0, 80) + '…' : (content || '📎 Media');
+        console.log(`[PUSH] Sending push -> title="${senderName}" body="${preview}"`);
         await sendPushNotification({
           fcmToken: recipientUser.fcmToken,
           title: senderName,
