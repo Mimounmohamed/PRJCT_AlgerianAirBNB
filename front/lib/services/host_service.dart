@@ -56,7 +56,7 @@ class HostService {
   }
 
   /// GET /api/host/listings/:id — single listing, ownership-checked, for
-  /// the Manage Listing page and the Edit Listing Details page.
+  /// the Manage Listing page.
   static Future<HostListingDetailModel> fetchListingDetail({
     required String authToken,
     required String listingId,
@@ -95,6 +95,28 @@ class HostService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to pause listing (${response.statusCode}).');
+    }
+  }
+
+  /// PUT /api/listings/:id — "Resume Listing" on the Manage Listing page,
+  /// shown once a listing is paused. Reverses pauseListing above — sets
+  /// status back to 'active'/'listed'.
+  static Future<void> resumeListing({
+    required String authToken,
+    required String listingId,
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
+    final response = await http.put(
+      uri,
+      headers: {
+        'Authorization': 'Bearer $authToken',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'status': 'active', 'visibility': 'listed'}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to resume listing (${response.statusCode}).');
     }
   }
 
@@ -142,6 +164,14 @@ class HostService {
     );
 
     if (response.statusCode != 200) {
+      try {
+        final body = jsonDecode(response.body);
+        if (body is Map && body['error'] != null) {
+          throw Exception(body['error'].toString());
+        }
+      } catch (e) {
+        if (e is! FormatException) rethrow;
+      }
       throw Exception('Failed to save changes (${response.statusCode}).');
     }
   }

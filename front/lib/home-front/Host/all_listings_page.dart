@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../models/host_listing_summary_model.dart'; // adjust path to match your project structure
+import '../../services/host_service.dart'; // adjust path to match your project structure
 import 'create_listing_intro_page.dart'; // adjust path if you placed this elsewhere
 import 'manage_listing_page.dart'; // adjust path if you placed this elsewhere
 
 /// Full list of the host's listings — shown from "View all" on the Host
-/// dashboard. Takes the already-fetched list from HostDashboardPage rather
-/// than refetching, since the data's already there. Adds a search field,
-/// status filter pills, and a floating "List a new place" button.
+/// dashboard. Seeded from the already-fetched list HostDashboardPage
+/// passes in (avoids a duplicate fetch on first open), but keeps its own
+/// local copy so it can refresh itself after a Manage Listing edit
+/// without needing the parent dashboard to re-render.
 class AllListingsPage extends StatefulWidget {
   final List<HostListingSummaryModel> listings;
   final String authToken;
@@ -55,10 +57,39 @@ class _AllListingsPageState extends State<AllListingsPage> {
   String _query = '';
   _StatusFilter _filter = _StatusFilter.all;
 
+  late List<HostListingSummaryModel> _listings;
+  bool _isRefreshing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _listings = widget.listings;
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Re-fetches the host's listings from the backend — used after
+  /// returning from Manage Listing with a change (pause/delete/edit),
+  /// so this page reflects it without waiting for the parent dashboard
+  /// to reload.
+  Future<void> _refreshListings() async {
+    setState(() => _isRefreshing = true);
+    try {
+      final fresh = await HostService.fetchHostListings(authToken: widget.authToken);
+      if (!mounted) return;
+      setState(() {
+        _listings = fresh;
+        _isRefreshing = false;
+      });
+    } catch (_) {
+      // Silent fail — keep showing whatever list we already have rather
+      // than blanking the screen over a transient refresh error.
+      if (mounted) setState(() => _isRefreshing = false);
+    }
   }
 
   Color _statusColor(String status) {
@@ -73,15 +104,15 @@ class _AllListingsPageState extends State<AllListingsPage> {
 
   List<HostListingSummaryModel> get _filtered {
     final normalizedQuery = _query.trim().toLowerCase();
-    return widget.listings.where((listing) {
+    return _listings.where((listing) {
       final matchesFilter = _filter.statusValue == null || listing.status == _filter.statusValue;
       final matchesQuery = normalizedQuery.isEmpty || listing.title.toLowerCase().contains(normalizedQuery);
       return matchesFilter && matchesQuery;
     }).toList();
   }
 
-  void _openManageListing(HostListingSummaryModel listing) {
-    Navigator.of(context).push(
+  Future<void> _openManageListing(HostListingSummaryModel listing) async {
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => ManageListingPage(
           authToken: widget.authToken,
@@ -89,6 +120,7 @@ class _AllListingsPageState extends State<AllListingsPage> {
         ),
       ),
     );
+    if (changed == true) _refreshListings();
   }
 
   Widget _filterPill(_StatusFilter filter) {
@@ -228,84 +260,102 @@ class _AllListingsPageState extends State<AllListingsPage> {
       ),
       body: Stack(
         children: [
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                child: Column(
-                  children: [
-                    // ── Search ─────────────────────────────
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(28),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.06),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+          RefreshIndicator(
+            onRefresh: _refreshListings,
+            color: _teal,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                  child: Column(
+                    children: [
+                      // ── Search ─────────────────────────────
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(28),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.06),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (value) => setState(() => _query = value),
+                          style: const TextStyle(color: _dark, fontSize: 15),
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 15),
+                            hintText: 'Search your listings...',
+                            hintStyle: const TextStyle(color: _muted),
+                            prefixIcon: const Icon(Icons.search, size: 28, color: _teal),
+                            suffixIcon: _query.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.close, size: 18, color: _muted),
+                                    onPressed: () => setState(() {
+                                      _searchController.clear();
+                                      _query = '';
+                                    }),
+                                  )
+                                : null,
                           ),
-                        ],
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (value) => setState(() => _query = value),
-                        style: const TextStyle(color: _dark, fontSize: 15),
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(vertical: 15),
-                          hintText: 'Search your listings...',
-                          hintStyle: const TextStyle(color: _muted),
-                          prefixIcon: const Icon(Icons.search, size: 28, color: _teal),
-                          suffixIcon: _query.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.close, size: 18, color: _muted),
-                                  onPressed: () => setState(() {
-                                    _searchController.clear();
-                                    _query = '';
-                                  }),
-                                )
-                              : null,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
+                      const SizedBox(height: 14),
 
-                    // ── Filter pills ────────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: _StatusFilter.values.map(_filterPill).toList(),
+                      // ── Filter pills ────────────────────────
+                      SizedBox(
+                        width: double.infinity,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: _StatusFilter.values.map(_filterPill).toList(),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+
+                // ── Listings ───────────────────────────────────
+                Expanded(
+                  child: filtered.isEmpty
+                      ? Center(
+                          child: Text(
+                            _listings.isEmpty
+                                ? "You haven't listed a place yet."
+                                : 'No listings match your search.',
+                            style: const TextStyle(color: _muted),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) => _listingRow(filtered[index]),
+                        ),
+                ),
+              ],
+            ),
+          ),
+
+          if (_isRefreshing)
+            const Positioned(
+              top: 8,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: _teal),
                 ),
               ),
-
-              // ── Listings ───────────────────────────────────
-              Expanded(
-                child: filtered.isEmpty
-                    ? Center(
-                        child: Text(
-                          widget.listings.isEmpty
-                              ? "You haven't listed a place yet."
-                              : 'No listings match your search.',
-                          style: const TextStyle(color: _muted),
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) => _listingRow(filtered[index]),
-                      ),
-              ),
-            ],
-          ),
+            ),
 
           // ── Floating "List a new place" button ───────────
           Positioned(

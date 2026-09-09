@@ -22,12 +22,12 @@ class _PropertyTypeOption {
 /// "Edit Listing Details" — reached from Manage Listing's Quick Actions.
 /// Edits title, description, photos, property type ("stay category" —
 /// mirrors the exact enum from create_listing_property_type_page.dart,
-/// single-select), amenities (full add/remove/edit — mirrors
-/// create_listing_amenities_page.dart's interaction pattern, but
-/// operating on an existing listing's amenities instead of a fresh
-/// draft), and location (tap the map preview to open a bigger draggable
-/// map — pin fixed at center, map pans underneath, same technique as
-/// the Create Listing wizard's location step's expanded dialog).
+/// single-select), amenities (full add/remove/edit, opened from a
+/// summary row via a bottom sheet rather than shown inline — see
+/// _openAmenitiesSheet), and location (tap the map preview to open a
+/// bigger draggable map — pin fixed at center, map pans underneath,
+/// same technique as the Create Listing wizard's location step's
+/// expanded dialog).
 ///
 /// Saves via PUT /api/listings/:id. Because that route does a shallow
 /// merge (see host_service.dart), every save sends COMPLETE `photos`,
@@ -57,6 +57,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   static const Color _muted = Color(0xFF8A7B6E);
   static const Color _border = Color(0xFFE7DCCB);
   static const Color _gold = Color(0xFFE8A33D);
+  // Reuses the app's one recurring accent (_teal) for the success
+  // popup — there's no separate green defined anywhere in this codebase
+  // as shared so far. If a different success color already exists
+  // elsewhere in the app, swap this one line to match it.
+  static const Color _success = _teal;
 
   /// Matches the backend's Listing.propertyType enum exactly (see
   /// Listing.js) — same list/icons as create_listing_property_type_page.dart.
@@ -107,9 +112,6 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   Map<String, List<AmenityCatalogItem>> _amenityCatalog = {};
   bool _isLoadingCatalog = true;
   String? _catalogError;
-  final TextEditingController _amenitySearchController = TextEditingController();
-  String _amenityQuery = '';
-  final Set<String> _expandedAmenityCategories = {};
 
   @override
   void initState() {
@@ -133,7 +135,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       _descriptionController.text = listing.description;
       _photos = listing.photos.map((p) => Map<String, dynamic>.from(p)).toList();
       _coverPhotoIndex = listing.coverPhotoIndex;
-      _selectedPropertyType = listing.propertyType;
+      final matchedType = _propertyTypeOptions.cast<_PropertyTypeOption?>().firstWhere(
+        (opt) => opt!.label.toLowerCase() == listing.propertyType.trim().toLowerCase(),
+        orElse: () => null,
+      );
+      _selectedPropertyType = matchedType?.label ?? listing.propertyType;
       _amenities = listing.amenities.map((a) => Map<String, dynamic>.from(a)).toList();
       _lat = listing.latitude;
       _lng = listing.longitude;
@@ -157,7 +163,6 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       setState(() {
         _amenityCatalog = catalog;
         _isLoadingCatalog = false;
-        if (catalog.isNotEmpty) _expandedAmenityCategories.add(catalog.keys.first);
       });
     } catch (e) {
       if (!mounted) return;
@@ -172,7 +177,6 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
-    _amenitySearchController.dispose();
     super.dispose();
   }
 
@@ -187,16 +191,25 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   // ── Photos ──────────────────────────────────────────────
 
   Future<void> _addPhoto() async {
-    if (_photos.length >= _maxPhotos) return;
+    final remaining = _maxPhotos - _photos.length;
+    if (remaining <= 0) return;
     try {
-      final picked = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-      if (picked == null) return;
+      final picked = await _picker.pickMultiImage(imageQuality: 85);
+      if (picked.isEmpty) return;
       setState(() => _isUploadingPhoto = true);
-      final url = await AuthService.uploadToCloudinary(File(picked.path));
-      if (!mounted) return;
-      setState(() {
-        _photos.add({'url': url, 'caption': '', 'order': _photos.length});
-      });
+      final toUpload = picked.take(remaining).toList();
+      for (final img in toUpload) {
+        final url = await AuthService.uploadToCloudinary(File(img.path));
+        if (!mounted) return;
+        setState(() {
+          _photos.add({'url': url, 'caption': '', 'order': _photos.length});
+        });
+      }
+      if (picked.length > remaining && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Added $remaining photo(s). Maximum is $_maxPhotos.')),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,12 +233,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     });
   }
 
-  /// Fills whatever cell size the GridView gives it — no fixed
-  /// dimensions here on purpose, so this matches the dashed "Add Photo"
-  /// tile's size exactly instead of being smaller than it.
   Widget _photoThumbnail(int index) {
     final photo = _photos[index];
     final isCover = _coverPhotoIndex == index;
+    final photoUrl = photo['url']?.toString() ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -233,9 +244,12 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         fit: StackFit.expand,
         children: [
           Image.network(
-            photo['url'] as String,
+            photoUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(color: _border),
+            errorBuilder: (_, _, _) => Container(
+              color: _border,
+              child: const Icon(Icons.broken_image, color: _muted, size: 24),
+            ),
           ),
           if (isCover)
             DecoratedBox(
@@ -244,8 +258,6 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-          // Star — hollow when this photo isn't the cover, filled gold
-          // when it is. Tapping it sets this photo as the cover photo.
           Positioned(
             left: 6,
             top: 6,
@@ -253,10 +265,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
               onTap: () => setState(() => _coverPhotoIndex = index),
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.5), shape: BoxShape.circle),
                 child: Icon(
                   isCover ? Icons.star : Icons.star_border,
                   size: 14,
@@ -272,10 +281,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
               onTap: () => _removePhotoAt(index),
               child: Container(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
                 child: const Icon(Icons.close, size: 14, color: Colors.white),
               ),
             ),
@@ -323,7 +329,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   // ── Property type (single-select "stay category") ─────
 
   Widget _propertyTypeCard(_PropertyTypeOption option) {
-    final isSelected = _selectedPropertyType == option.label;
+    final isSelected = _selectedPropertyType?.toLowerCase() == option.label.toLowerCase();
     return GestureDetector(
       onTap: () => setState(() => _selectedPropertyType = option.label),
       child: Container(
@@ -335,11 +341,14 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(option.icon, size: 26, color: isSelected ? _teal : _dark),
             const SizedBox(height: 10),
             Text(
               option.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: isSelected ? _teal : _dark,
                 fontSize: 13,
@@ -361,6 +370,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     required String name,
     required String category,
     required String iconName,
+    required StateSetter sheetSetState,
   }) {
     setState(() {
       final idx = _amenities.indexWhere((a) => a['catalogKey'] == catalogKey);
@@ -377,26 +387,32 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         });
       }
     });
+    sheetSetState(() {});
   }
 
-  void _removeAmenity({String? catalogKey, String? customName}) {
+  void _removeAmenity({String? catalogKey, String? customName, required StateSetter sheetSetState}) {
     setState(() {
       _amenities.removeWhere((a) {
-        if (catalogKey != null) return a['catalogKey'] == catalogKey;
-        return a['isCustom'] == true && a['name'] == customName;
+        if (catalogKey != null && catalogKey.isNotEmpty) {
+          return a['catalogKey'] == catalogKey;
+        }
+        return a['name'] == customName;
       });
     });
+    sheetSetState(() {});
   }
 
   void _updateAmenityDescription({String? catalogKey, String? customName, required String description}) {
     final idx = _amenities.indexWhere((a) {
-      if (catalogKey != null) return a['catalogKey'] == catalogKey;
-      return a['isCustom'] == true && a['name'] == customName;
+      if (catalogKey != null && catalogKey.isNotEmpty) {
+        return a['catalogKey'] == catalogKey;
+      }
+      return a['name'] == customName;
     });
     if (idx >= 0) _amenities[idx]['description'] = description;
   }
 
-  Future<void> _openAddCustomAmenityDialog(String category) async {
+  Future<void> _openAddCustomAmenityDialog(String category, StateSetter sheetSetState) async {
     final nameController = TextEditingController();
     final descController = TextEditingController();
 
@@ -450,19 +466,25 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
 
     if (added == true && nameController.text.trim().isNotEmpty) {
-      setState(() {
-        _amenities.add({
-          'catalogKey': null,
-          'name': nameController.text.trim(),
-          'category': category,
-          // No icon picker in this dialog (matches the create-listing
-          // flow's version) — 'other' is a safe fallback bucket for
-          // AmenityModel.iconFor() when there's no catalog icon to copy.
-          'iconName': 'other',
-          'description': descController.text.trim(),
-          'isCustom': true,
+      final customName = nameController.text.trim();
+      final alreadyExists = _amenities.any((a) => (a['name'] as String?)?.toLowerCase() == customName.toLowerCase());
+      if (!alreadyExists) {
+        setState(() {
+          _amenities.add({
+            'catalogKey': null,
+            'name': customName,
+            'category': category,
+            'iconName': 'other',
+            'description': descController.text.trim(),
+            'isCustom': true,
+          });
         });
-      });
+        sheetSetState(() {});
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('"$customName" is already in your amenities list.')),
+        );
+      }
     }
   }
 
@@ -523,9 +545,9 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
   }
 
-  Widget _addCustomAmenityChip(String category) {
+  Widget _addCustomAmenityChip(String category, StateSetter sheetSetState) {
     return GestureDetector(
-      onTap: () => _openAddCustomAmenityDialog(category),
+      onTap: () => _openAddCustomAmenityDialog(category, sheetSetState),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
@@ -545,8 +567,13 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
   }
 
-  Widget _amenityCategorySection(String category, List<AmenityCatalogItem> items) {
-    final isExpanded = _expandedAmenityCategories.contains(category);
+  Widget _amenityCategorySection(
+    String category,
+    List<AmenityCatalogItem> items,
+    Set<String> expandedCategories,
+    StateSetter sheetSetState,
+  ) {
+    final isExpanded = expandedCategories.contains(category);
     final selectedCount = items.where((i) => _isCatalogAmenitySelected(i.key)).length;
 
     return Container(
@@ -561,11 +588,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         children: [
           InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: () => setState(() {
+            onTap: () => sheetSetState(() {
               if (isExpanded) {
-                _expandedAmenityCategories.remove(category);
+                expandedCategories.remove(category);
               } else {
-                _expandedAmenityCategories.add(category);
+                expandedCategories.add(category);
               }
             }),
             child: Padding(
@@ -603,9 +630,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                         name: item.name,
                         category: category,
                         iconName: item.iconName,
+                        sheetSetState: sheetSetState,
                       ),
                     ),
-                  _addCustomAmenityChip(category),
+                  _addCustomAmenityChip(category, sheetSetState),
                 ],
               ),
             ),
@@ -614,7 +642,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
   }
 
-  Widget _selectedAmenitiesPanel() {
+  Widget _selectedAmenitiesPanel(StateSetter sheetSetState) {
     if (_amenities.isEmpty) return const SizedBox.shrink();
 
     return Container(
@@ -630,19 +658,20 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         children: [
           Text('Selected amenities (${_amenities.length})', style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          for (final amenity in _amenities) _selectedAmenityRow(amenity),
+          for (final amenity in _amenities) _selectedAmenityRow(amenity, sheetSetState),
         ],
       ),
     );
   }
 
-  Widget _selectedAmenityRow(Map<String, dynamic> amenity) {
+  Widget _selectedAmenityRow(Map<String, dynamic> amenity, StateSetter sheetSetState) {
     final String? catalogKey = amenity['catalogKey'] as String?;
-    final String name = amenity['name'] as String;
+    final String name = amenity['name'] as String? ?? '';
     final bool isCustom = amenity['isCustom'] as bool? ?? false;
     final String iconName = amenity['iconName'] as String? ?? '';
 
     return Padding(
+      key: ValueKey('amenity_${catalogKey ?? name}'),
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -663,6 +692,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                     border: Border.all(color: _border),
                   ),
                   child: TextFormField(
+                    key: ValueKey('desc_${catalogKey ?? name}'),
                     initialValue: amenity['description'] as String? ?? '',
                     onChanged: (value) => _updateAmenityDescription(
                       catalogKey: catalogKey,
@@ -686,106 +716,221 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             icon: const Icon(Icons.close, size: 18, color: _muted),
-            onPressed: () => _removeAmenity(catalogKey: catalogKey, customName: isCustom ? name : null),
+            onPressed: () => _removeAmenity(catalogKey: catalogKey, customName: isCustom ? name : null, sheetSetState: sheetSetState),
           ),
         ],
       ),
     );
   }
 
-  bool get _isSearchingAmenities => _amenityQuery.trim().isNotEmpty;
-
-  List<MapEntry<String, AmenityCatalogItem>> get _amenitySearchResults {
-    final normalized = _amenityQuery.trim().toLowerCase();
-    final results = <MapEntry<String, AmenityCatalogItem>>[];
-    _amenityCatalog.forEach((category, items) {
-      for (final item in items) {
-        if (item.name.toLowerCase().contains(normalized)) results.add(MapEntry(category, item));
-      }
-    });
-    return results;
+  /// The summary row shown on the main page — tapping it opens the full
+  /// amenities editor as a bottom sheet (see _openAmenitiesSheet).
+  Widget _amenitiesSummaryTile() {
+    return InkWell(
+      onTap: _openAmenitiesSheet,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: _border),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.checklist_rtl, size: 20, color: _dark),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _amenities.isEmpty ? 'No amenities selected' : '${_amenities.length} amenities selected',
+                style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: _muted),
+          ],
+        ),
+      ),
+    );
   }
 
-  Widget _amenitiesSection() {
-    if (_isLoadingCatalog) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 20),
-        child: Center(child: CircularProgressIndicator(color: _teal)),
-      );
-    }
-    if (_catalogError != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Couldn't load amenities: $_catalogError", style: const TextStyle(color: _muted, fontSize: 12)),
-          TextButton(onPressed: _fetchAmenityCatalog, child: const Text('Retry', style: TextStyle(color: _teal))),
-        ],
-      );
-    }
+  /// Opens the full amenities editor (search, category sections, add
+  /// custom, selected list with per-item description) in a draggable
+  /// bottom sheet. Uses its own StatefulBuilder so search text and
+  /// expanded-category state live only for the life of the sheet, while
+  /// selection/removal/description edits write straight into
+  /// `_amenities` on the page's own state (via the outer setState calls
+  /// in the toggle/remove/update methods above) so they're already
+  /// saved when the sheet closes.
+  Future<void> _openAmenitiesSheet() async {
+    final searchController = TextEditingController();
+    String query = '';
+    final expandedCategories = <String>{};
+    if (_amenityCatalog.isNotEmpty) expandedCategories.add(_amenityCatalog.keys.first);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _border),
-          ),
-          child: TextField(
-            controller: _amenitySearchController,
-            onChanged: (v) => setState(() => _amenityQuery = v),
-            style: const TextStyle(color: _dark, fontSize: 15),
-            decoration: InputDecoration(
-              border: InputBorder.none,
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(vertical: 12),
-              hintText: 'Search amenities...',
-              hintStyle: const TextStyle(color: _muted),
-              prefixIcon: const Icon(Icons.search, color: _muted, size: 20),
-              suffixIcon: _isSearchingAmenities
-                  ? IconButton(
-                      icon: const Icon(Icons.close, size: 18, color: _muted),
-                      onPressed: () => setState(() {
-                        _amenitySearchController.clear();
-                        _amenityQuery = '';
-                      }),
-                    )
-                  : null,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        _selectedAmenitiesPanel(),
-        if (_isSearchingAmenities)
-          _amenitySearchResults.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Text('No matching amenities.', style: TextStyle(color: _muted)),
-                )
-              : Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final entry in _amenitySearchResults)
-                      _amenityChip(
-                        name: entry.value.name,
-                        iconName: entry.value.iconName,
-                        selected: _isCatalogAmenitySelected(entry.value.key),
-                        onTap: () => _toggleCatalogAmenity(
-                          catalogKey: entry.value.key,
-                          name: entry.value.name,
-                          category: entry.key,
-                          iconName: entry.value.iconName,
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.85,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return StatefulBuilder(
+              builder: (context, sheetSetState) {
+                List<MapEntry<String, AmenityCatalogItem>> searchResults() {
+                  final normalized = query.trim().toLowerCase();
+                  final results = <MapEntry<String, AmenityCatalogItem>>[];
+                  _amenityCatalog.forEach((category, items) {
+                    for (final item in items) {
+                      if (item.name.toLowerCase().contains(normalized)) results.add(MapEntry(category, item));
+                    }
+                  });
+                  return results;
+                }
+
+                if (expandedCategories.isEmpty && _amenityCatalog.isNotEmpty) {
+                  expandedCategories.add(_amenityCatalog.keys.first);
+                }
+
+                final isSearching = query.trim().isNotEmpty;
+
+                return AnimatedPadding(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
+                  duration: const Duration(milliseconds: 150),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: _cream,
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                    ),
+                    child: Column(
+                    children: [
+                      const SizedBox(height: 10),
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(4)),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Amenities', style: TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700)),
+                            TextButton(
+                              onPressed: () => Navigator.of(sheetContext).pop(),
+                              child: const Text('Done', style: TextStyle(color: _teal, fontWeight: FontWeight.w700)),
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                )
-        else
-          for (final category in _amenityCatalog.keys) _amenityCategorySection(category, _amenityCatalog[category]!),
-      ],
+                      Expanded(
+                        child: _isLoadingCatalog
+                            ? const Center(child: CircularProgressIndicator(color: _teal))
+                            : _catalogError != null
+                                ? Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text("Couldn't load amenities: $_catalogError", style: const TextStyle(color: _muted, fontSize: 12)),
+                                        TextButton(
+                                          onPressed: () async {
+                                            await _fetchAmenityCatalog();
+                                            sheetSetState(() {});
+                                          },
+                                          child: const Text('Retry', style: TextStyle(color: _teal)),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView(
+                                    controller: scrollController,
+                                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(14),
+                                          border: Border.all(color: _border),
+                                        ),
+                                        child: TextField(
+                                          controller: searchController,
+                                          onChanged: (v) => sheetSetState(() => query = v),
+                                          style: const TextStyle(color: _dark, fontSize: 15),
+                                          decoration: InputDecoration(
+                                            border: InputBorder.none,
+                                            isDense: true,
+                                            contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                                            hintText: 'Search amenities...',
+                                            hintStyle: const TextStyle(color: _muted),
+                                            prefixIcon: const Icon(Icons.search, color: _muted, size: 20),
+                                            suffixIcon: isSearching
+                                                ? IconButton(
+                                                    icon: const Icon(Icons.close, size: 18, color: _muted),
+                                                    onPressed: () => sheetSetState(() {
+                                                      searchController.clear();
+                                                      query = '';
+                                                    }),
+                                                  )
+                                                : null,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      _selectedAmenitiesPanel(sheetSetState),
+                                      if (isSearching)
+                                        searchResults().isEmpty
+                                            ? const Padding(
+                                                padding: EdgeInsets.symmetric(vertical: 16),
+                                                child: Text('No matching amenities.', style: TextStyle(color: _muted)),
+                                              )
+                                            : Wrap(
+                                                spacing: 8,
+                                                runSpacing: 8,
+                                                children: [
+                                                  for (final entry in searchResults())
+                                                    _amenityChip(
+                                                      name: entry.value.name,
+                                                      iconName: entry.value.iconName,
+                                                      selected: _isCatalogAmenitySelected(entry.value.key),
+                                                      onTap: () => _toggleCatalogAmenity(
+                                                        catalogKey: entry.value.key,
+                                                        name: entry.value.name,
+                                                        category: entry.key,
+                                                        iconName: entry.value.iconName,
+                                                        sheetSetState: sheetSetState,
+                                                      ),
+                                                    ),
+                                                ],
+                                              )
+                                      else
+                                        for (final category in _amenityCatalog.keys)
+                                          _amenityCategorySection(
+                                            category,
+                                            _amenityCatalog[category]!,
+                                            expandedCategories,
+                                            sheetSetState,
+                                          ),
+                                    ],
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
+                );
+              },
+            );
+          },
+        );
+      },
     );
+
+    // Sheet closed — reflect any selection changes on the main page.
+    if (mounted) setState(() {});
   }
 
   // ── Location ────────────────────────────────────────────
@@ -856,6 +1001,10 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                     options: MapOptions(
                       initialCenter: _center,
                       initialZoom: _zoom,
+                      onPositionChanged: (camera, hasGesture) {
+                        expandedCenter = camera.center;
+                        expandedZoom = camera.zoom;
+                      },
                       onMapEvent: (event) {
                         if (event is MapEventMoveEnd || event is MapEventFlingAnimationEnd) {
                           expandedCenter = _expandedMapController.camera.center;
@@ -940,6 +1089,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   Widget _locationPreview() {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: _openFullMap,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -948,19 +1098,21 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              FlutterMap(
-                mapController: _mapController,
-                options: MapOptions(
-                  initialCenter: _center,
-                  initialZoom: _zoom,
-                  interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.akrili.app',
+              IgnorePointer(
+                child: FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(
+                    initialCenter: _center,
+                    initialZoom: _zoom,
+                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
                   ),
-                ],
+                  children: [
+                    TileLayer(
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.akrili.app',
+                    ),
+                  ],
+                ),
               ),
               const IgnorePointer(
                 child: Center(
@@ -999,9 +1151,31 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     );
   }
 
+  // ── Success popup ────────────────────────────────────────
+
+  /// Small centered dialog shown on a successful save — a checkmark in
+  /// a filled circle plus "Changes saved" text, animated (pop-in, hold,
+  /// fade-out) and auto-dismissing on its own. See _SavedPopupContent
+  /// below for the animation itself.
+  Future<void> _showSavedPopup() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => _SavedPopupContent(
+        accentColor: _success,
+        textColor: _dark,
+        backgroundColor: _cream,
+      ),
+    );
+  }
+
   // ── Save ─────────────────────────────────────────────────
 
   Future<void> _save() async {
+    if (_isUploadingPhoto) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please wait for photo upload to finish.')));
+      return;
+    }
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please give your place a title.')));
       return;
@@ -1026,18 +1200,19 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     try {
       final normalizedPhotos = [
         for (int i = 0; i < _photos.length; i++)
-          {'url': _photos[i]['url'], 'caption': _photos[i]['caption'] ?? '', 'order': i},
+          {'url': _photos[i]['url']?.toString() ?? '', 'caption': _photos[i]['caption'] ?? '', 'order': i},
       ];
       final normalizedAmenities = [
         for (final a in _amenities)
-          {
-            'catalogKey': a['catalogKey'],
-            'name': a['name'],
-            'category': a['category'],
-            'iconName': a['iconName'],
-            'description': a['description'] ?? '',
-            'isCustom': a['isCustom'] ?? false,
-          },
+          if ((a['name'] as String?)?.trim().isNotEmpty ?? false)
+            {
+              'catalogKey': a['catalogKey'],
+              'name': (a['name'] as String).trim(),
+              'category': (a['category'] as String?)?.isNotEmpty == true ? a['category'] : 'Other',
+              'iconName': (a['iconName'] as String?)?.isNotEmpty == true ? a['iconName'] : 'other',
+              'description': a['description'] ?? '',
+              'isCustom': a['isCustom'] ?? false,
+            },
       ];
 
       final safeCoverIndex = _coverPhotoIndex.clamp(0, normalizedPhotos.length - 1);
@@ -1066,7 +1241,8 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Changes saved.')));
+      await _showSavedPopup();
+      if (!mounted) return;
       Navigator.of(context).pop(true); // true = caller should refresh
     } catch (e) {
       if (!mounted) return;
@@ -1146,7 +1322,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       GridView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _photos.length + 1,
+                        itemCount: _photos.length >= _maxPhotos ? _photos.length : _photos.length + 1,
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           mainAxisSpacing: 10,
@@ -1204,7 +1380,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       ),
 
                       _sectionLabel('Amenities'),
-                      _amenitiesSection(),
+                      _amenitiesSummaryTile(),
 
                       _sectionLabel('Location'),
                       _locationPreview(),
@@ -1223,11 +1399,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     TextButton(
-                      onPressed: _isSaving ? null : _discard,
+                      onPressed: (_isSaving || _isUploadingPhoto) ? null : _discard,
                       child: const Text('Discard', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                     ),
                     ElevatedButton.icon(
-                      onPressed: _isSaving ? null : _save,
+                      onPressed: (_isSaving || _isUploadingPhoto) ? null : _save,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _teal,
                         disabledBackgroundColor: _teal.withValues(alpha: 0.4),
@@ -1237,7 +1413,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                       icon: _isSaving
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                           : const Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
-                      label: const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                      label: Text(_isUploadingPhoto ? 'Uploading...' : 'Save Changes', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
@@ -1245,6 +1421,100 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Animated content for the "Changes saved" popup — pops in with a
+/// slight overshoot, holds, then fades out and pops its own dialog
+/// route. Runs entirely on its own AnimationController so the caller
+/// just does `await showDialog(... builder: (_) => _SavedPopupContent(...))`
+/// and the dialog closes itself when the animation finishes.
+class _SavedPopupContent extends StatefulWidget {
+  final Color accentColor;
+  final Color textColor;
+  final Color backgroundColor;
+
+  const _SavedPopupContent({
+    required this.accentColor,
+    required this.textColor,
+    required this.backgroundColor,
+  });
+
+  @override
+  State<_SavedPopupContent> createState() => _SavedPopupContentState();
+}
+
+class _SavedPopupContentState extends State<_SavedPopupContent> with SingleTickerProviderStateMixin {
+  static const Duration _totalDuration = Duration(milliseconds: 2200);
+
+  late final AnimationController _controller;
+  late final Animation<double> _scale;
+  late final Animation<double> _opacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: _totalDuration);
+
+    // Weighted phases of the SAME controller: pop in with a slight
+    // overshoot (~15%), settle (~10%), hold fully visible (~55%), then
+    // fade + shrink slightly out (~20%) before the dialog closes itself.
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.6, end: 1.08).chain(CurveTween(curve: Curves.easeOutBack)), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0).chain(CurveTween(curve: Curves.easeOut)), weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 55),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.92).chain(CurveTween(curve: Curves.easeIn)), weight: 20),
+    ]).animate(_controller);
+
+    _opacity = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 65),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 20),
+    ]).animate(_controller);
+
+    _controller.forward().whenComplete(() {
+      if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => Opacity(
+        opacity: _opacity.value,
+        child: Transform.scale(scale: _scale.value, child: child),
+      ),
+      child: Dialog(
+        backgroundColor: widget.backgroundColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(color: widget.accentColor, shape: BoxShape.circle),
+                child: const Icon(Icons.check, color: Colors.white, size: 32),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Changes saved',
+                style: TextStyle(color: widget.textColor, fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

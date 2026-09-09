@@ -5,6 +5,8 @@ import '../../models/host_listing_detail_model.dart';
 import '../explore_page/listing_detail_page.dart'; // adjust path if you placed this elsewhere
 import '../explore_page/reviews_page.dart'; // adjust path if you placed this elsewhere
 import 'edit_listing_details_page.dart';
+import 'manage_calendar_page.dart'; // adjust path if you placed this elsewhere
+import 'listing_settings_page.dart'; // adjust path to match your project structure
 
 /// "Manage Listing" — shown when a host taps MANAGE on one of their own
 /// listings (from the Host dashboard or All Listings page). Shows real
@@ -41,6 +43,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
 
   Future<HostListingDetailModel>? _future;
   bool _isBusy = false;
+  bool _didChange = false; // true once pause/resume/delete/edit succeeds — popped back so callers know to refresh
 
   @override
   void initState() {
@@ -101,6 +104,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
       setState(() {
         _load();
         _isBusy = false;
+        _didChange = true;
       });
     } catch (e) {
       if (!mounted) return;
@@ -115,8 +119,16 @@ class _ManageListingPageState extends State<ManageListingPage> {
         title: 'Pause this listing?',
         message: "It'll be hidden from search results, but you can bring it back anytime from here.",
         confirmLabel: 'Pause',
-        confirmColor: _danger,
+        confirmColor: _teal,
         action: () => HostService.pauseListing(authToken: widget.authToken, listingId: widget.listingId),
+      );
+
+  Future<void> _resumeListing() => _confirmAndRun(
+        title: 'Resume this listing?',
+        message: "It'll go back to being visible in search results.",
+        confirmLabel: 'Resume',
+        confirmColor: _teal,
+        action: () => HostService.resumeListing(authToken: widget.authToken, listingId: widget.listingId),
       );
 
   Future<void> _deleteListing() => _confirmAndRun(
@@ -126,7 +138,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
         confirmColor: _danger,
         action: () async {
           await HostService.deleteListing(authToken: widget.authToken, listingId: widget.listingId);
-          if (mounted) Navigator.of(context).pop(); // nothing left to manage — back out
+          if (mounted) Navigator.of(context).pop(true); // nothing left to manage — back out, and tell the caller something changed
         },
       );
 
@@ -188,7 +200,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
               BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
-          child: AkriliAppBar(title: 'AKRILI', onBack: () => Navigator.of(context).maybePop()),
+          child: AkriliAppBar(title: 'AKRILI', onBack: () => Navigator.of(context).pop(_didChange)),
         ),
       ),
       body: FutureBuilder<HostListingDetailModel>(
@@ -330,67 +342,95 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     ),
                     const SizedBox(height: 12),
 
-                    if (listing.reviewCount > 0)
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => ReviewsPage(
-                              listingTitle: listing.title,
-                              ratingOverall: listing.ratingOverall,
-                              reviewCount: listing.reviewCount,
-                            ),
-                          ),
-                        ),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: _border),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.star, size: 14, color: _dark),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      listing.ratingOverall.toStringAsFixed(2),
-                                      style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700),
-                                    ),
-                                  ],
+                    GestureDetector(
+                      onTap: listing.reviewCount > 0
+                          ? () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => ReviewsPage(
+                                    listingTitle: listing.title,
+                                    ratingOverall: listing.ratingOverall,
+                                    reviewCount: listing.reviewCount,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (listing.isGuestFavorite)
-                                      const Text(
-                                        'Guest Favorite',
-                                        style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
-                                      ),
-                                    Text(
-                                      '${listing.reviewCount} reviews'
-                                      // STATIC PLACEHOLDER — not a real tracked
-                                      // stat, see class doc comment above.
-                                      ' · 98% recommended',
-                                      style: const TextStyle(color: _muted, fontSize: 12),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const Icon(Icons.chevron_right, size: 18, color: _muted),
-                            ],
-                          ),
+                              )
+                          : null,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: _border),
                         ),
+                        child: listing.reviewCount > 0
+                            ? Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(color: _gold, borderRadius: BorderRadius.circular(20)),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.star, size: 14, color: _dark),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          listing.ratingOverall.toStringAsFixed(2),
+                                          style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        if (listing.isGuestFavorite)
+                                          const Text(
+                                            'Guest Favorite',
+                                            style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
+                                          ),
+                                        Text(
+                                          '${listing.reviewCount} reviews'
+                                          // STATIC PLACEHOLDER — not a real
+                                          // tracked stat, see class doc
+                                          // comment above.
+                                          ' · 98% recommended',
+                                          style: const TextStyle(color: _muted, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(Icons.chevron_right, size: 18, color: _muted),
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                    decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(20)),
+                                    child: const Icon(Icons.star_border, size: 18, color: _muted),
+                                  ),
+                                  const SizedBox(width: 14),
+                                  const Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'No reviews yet',
+                                          style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
+                                        ),
+                                        Text(
+                                          'Reviews will show up here once guests start booking.',
+                                          style: TextStyle(color: _muted, fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                       ),
+                    ),
                     const SizedBox(height: 28),
 
                     // ── Quick actions ───────────────────────
@@ -411,15 +451,21 @@ class _ManageListingPageState extends State<ManageListingPage> {
                             ),
                           ),
                         );
-                        if (saved == true) setState(_load); // refresh hero/stats after edit
+                        if (saved == true) setState(() { _load(); _didChange = true; }); // refresh hero/stats after edit
                       },
                     ),
                     _quickAction(
                       icon: Icons.calendar_today_outlined,
                       label: 'Manage calendar',
-                      onTap: () {
-                        // TODO: availability management UI doesn't exist yet.
-                      },
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ManageCalendarPage(
+                            authToken: widget.authToken,
+                            listingId: widget.listingId,
+                            basePricePerNight: listing.pricePerNight,
+                          ),
+                        ),
+                      ),
                     ),
                     _quickAction(
                       icon: Icons.rate_review_outlined,
@@ -437,8 +483,16 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     _quickAction(
                       icon: Icons.settings_outlined,
                       label: 'Listing settings',
-                      onTap: () {
-                        // TODO: no dedicated settings screen exists yet.
+                      onTap: () async {
+                        final changed = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => ListingSettingsPage(
+                              authToken: widget.authToken,
+                              listingId: widget.listingId,
+                            ),
+                          ),
+                        );
+                        if (changed == true) setState(() { _load(); _didChange = true; });
                       },
                     ),
                     const SizedBox(height: 24),
@@ -482,18 +536,32 @@ class _ManageListingPageState extends State<ManageListingPage> {
                                 ),
                                 const SizedBox(width: 10),
                                 Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: (_isBusy || listing.status == 'inactive') ? null : _pauseListing,
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(color: _border),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                                      padding: const EdgeInsets.symmetric(vertical: 12),
-                                    ),
-                                    child: Text(
-                                      listing.status == 'inactive' ? 'Paused' : 'Pause Listing',
-                                      style: const TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
-                                    ),
-                                  ),
+                                  child: listing.status == 'inactive'
+                                      ? ElevatedButton(
+                                          onPressed: _isBusy ? null : _resumeListing,
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: _teal,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: const Text(
+                                            'Resume Listing',
+                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                                          ),
+                                        )
+                                      : OutlinedButton(
+                                          onPressed: _isBusy ? null : _pauseListing,
+                                          style: OutlinedButton.styleFrom(
+                                            side: const BorderSide(color: _border),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                                            padding: const EdgeInsets.symmetric(vertical: 12),
+                                          ),
+                                          child: const Text(
+                                            'Pause Listing',
+                                            style: TextStyle(color: _dark, fontWeight: FontWeight.w700, fontSize: 13),
+                                          ),
+                                        ),
                                 ),
                               ],
                             ),
