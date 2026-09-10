@@ -59,6 +59,9 @@ const userSchema = new mongoose.Schema(
       twoFactorMethod:  { type: String, enum: ['sms', 'email'] },
     },
 
+    // ── Push Notifications ─────────────────────────────────
+    fcmToken: { type: String, default: null },
+
     // ── Notification Preferences ───────────────────────────
     notificationSettings: {
       bookingUpdates: { type: Boolean, default: true },

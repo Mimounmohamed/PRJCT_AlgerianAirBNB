@@ -1,4 +1,8 @@
+﻿import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../services/user_session.dart';
+import '../services/base_client.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -8,11 +12,82 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  bool _messagesPush = true;
-  bool _messagesEmail = false;
-  bool _remindersPush = true;
-  bool _promotionsEmail = true;
-  bool _policyEmail = true;
+  // Toggles
+  late bool _messagesPush;
+  late bool _messagesEmail;
+  late bool _remindersPush;
+  late bool _promotionsEmail;
+  late bool _policyEmail;
+
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromSession();
+  }
+
+  void _loadFromSession() {
+    final raw = UserSession.instance.rawUser;
+    final ns = raw?['notificationSettings'] as Map<String, dynamic>? ?? {};
+    _messagesPush   = ns['messages']       as bool? ?? true;
+    _messagesEmail  = ns['helpUpdates']    as bool? ?? false;
+    _remindersPush  = ns['bookingUpdates'] as bool? ?? true;
+    _promotionsEmail = ns['promotions']    as bool? ?? false;
+    _policyEmail    = ns['appUpdates']     as bool? ?? true;
+  }
+
+  String get _userEmail =>
+      UserSession.instance.currentUser?.email ?? '';
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final token = UserSession.instance.token;
+    if (token == null) { setState(() => _saving = false); return; }
+
+    try {
+      await http.put(
+        Uri.parse('${ApiConfig.baseUrl}/users/notification-settings'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'messagesPush':    _messagesPush,
+          'remindersPush':   _remindersPush,
+          'promotionsEmail': _promotionsEmail,
+        }),
+      );
+
+      // Update local session cache
+      final raw = Map<String, dynamic>.from(UserSession.instance.rawUser ?? {});
+      final ns = Map<String, dynamic>.from(raw['notificationSettings'] as Map<String, dynamic>? ?? {});
+      ns['messages']       = _messagesPush;
+      ns['bookingUpdates'] = _remindersPush;
+      ns['promotions']     = _promotionsEmail;
+      raw['notificationSettings'] = ns;
+      UserSession.instance.setUser(
+        UserSession.instance.currentUser!,
+        raw: raw,
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Preferences saved'),
+          backgroundColor: Color(0xFF006972),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,23 +114,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         color: const Color(0xFFFBF6EF),
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF006972),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(30),
-            ),
+            disabledBackgroundColor: const Color(0xFF006972).withValues(alpha: 0.5),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
             padding: const EdgeInsets.symmetric(vertical: 16),
           ),
-          child: const Text(
-            'Update All Preferences',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontFamily: 'HankenGrotesk',
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          child: _saving
+              ? const SizedBox(
+                  height: 20, width: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Text(
+                  'Update All Preferences',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontFamily: 'HankenGrotesk',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
         ),
       ),
       body: SingleChildScrollView(
@@ -63,7 +142,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Description
             const Text(
               'Choose how you\'d like to be notified about your upcoming Algerian adventures and community \nupdates.',
               style: TextStyle(
@@ -76,10 +154,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 28),
 
             // Messages section
-            _SectionHeader(
-              icon: Icons.chat_bubble_outline,
-              title: 'Messages',
-            ),
+            _SectionHeader(icon: Icons.chat_bubble_outline, title: 'Messages'),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -98,7 +173,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   _ToggleItem(
                     title: 'Email',
-                    subtitle: 'Sent to sidi.ahmed@example.dz',
+                    subtitle: _userEmail.isNotEmpty
+                        ? 'Sent to $_userEmail'
+                        : 'No email on file',
                     value: _messagesEmail,
                     onChanged: (val) => setState(() => _messagesEmail = val),
                     showDivider: false,
@@ -109,10 +186,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 28),
 
             // Reminders section
-            _SectionHeader(
-              icon: Icons.notifications_outlined,
-              title: 'Reminders',
-            ),
+            _SectionHeader(icon: Icons.notifications_outlined, title: 'Reminders'),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -131,10 +205,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 28),
 
             // Promotions & Tips section
-            _SectionHeader(
-              icon: Icons.auto_awesome_outlined,
-              title: 'Promotions & Tips',
-            ),
+            _SectionHeader(icon: Icons.auto_awesome_outlined, title: 'Promotions & Tips'),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -153,10 +224,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             const SizedBox(height: 28),
 
             // Policy updates section
-            _SectionHeader(
-              icon: Icons.policy_outlined,
-              title: 'Policy updates',
-            ),
+            _SectionHeader(icon: Icons.policy_outlined, title: 'Policy updates'),
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
@@ -201,7 +269,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 class _SectionHeader extends StatelessWidget {
   final IconData icon;
   final String title;
-
   const _SectionHeader({required this.icon, required this.title});
 
   @override
@@ -277,11 +344,7 @@ class _ToggleItem extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(
-            height: 1,
-            thickness: 0.7,
-            color: Color(0xFFD3C3BD),
-          ),
+          const Divider(height: 1, thickness: 0.7, color: Color(0xFFD3C3BD)),
       ],
     );
   }
@@ -290,7 +353,6 @@ class _ToggleItem extends StatelessWidget {
 class _CustomToggle extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
-
   const _CustomToggle({required this.value, required this.onChanged});
 
   @override
@@ -305,13 +367,7 @@ class _CustomToggle extends StatelessWidget {
           borderRadius: BorderRadius.circular(9999),
           color: value ? const Color(0xFF006972) : const Color(0xFFEFE6D6),
           boxShadow: value
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF006972).withOpacity(0.30),
-                    blurRadius: 8,
-                    spreadRadius: 0,
-                  ),
-                ]
+              ? [BoxShadow(color: const Color(0xFF006972).withValues(alpha: 0.30), blurRadius: 8)]
               : [],
         ),
         child: AnimatedAlign(
@@ -324,13 +380,7 @@ class _CustomToggle extends StatelessWidget {
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
               color: Colors.white,
-              boxShadow: [
-                BoxShadow(
-                  color: Color.fromRGBO(0, 0, 0, 0.12),
-                  blurRadius: 4,
-                  offset: Offset(0, 1),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.12), blurRadius: 4, offset: Offset(0, 1))],
             ),
           ),
         ),

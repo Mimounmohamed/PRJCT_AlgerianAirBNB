@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import '../../services/listing_service.dart'; // adjust path to match your project structure
-import '../../models/listing_detail_model.dart'; // adjust path to match your project structure
+import '../../services/listing_service.dart';
+import '../../models/listing_detail_model.dart';
+import '../../services/auth_service.dart';
+import '../../services/user_session.dart';
+import '../../chat/conversation.dart';
 import '../widgets/detail_image_carousel.dart';
 import '../widgets/host_section.dart';
-import 'host_profile_page.dart'; // adjust path if you placed this elsewhere
-import 'booking_page.dart'; // adjust path if you placed this elsewhere
-import 'reviews_page.dart'; // adjust path if you placed this elsewhere
-import '../widgets/share_sheet.dart'; // adjust path to match your project structure
+import 'host_profile_page.dart';
+import 'booking_page.dart';
+import 'reviews_page.dart';
+import '../widgets/share_sheet.dart';
 import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
@@ -27,11 +30,65 @@ class ListingDetailPage extends StatefulWidget {
 class _ListingDetailPageState extends State<ListingDetailPage> {
   late Future<ListingDetailModel> _future;
   bool _descriptionExpanded = false;
+  bool _openingChat = false;
 
   @override
   void initState() {
     super.initState();
     _future = ListingService.fetchListingById(widget.listingId);
+  }
+
+  Future<void> _openChat(ListingDetailModel listing) async {
+    // Don't allow messaging yourself
+    final myId = UserSession.instance.currentUser?.id ?? '';
+    if (listing.hostId.isEmpty || listing.hostId == myId) return;
+
+    setState(() => _openingChat = true);
+    try {
+      final token = UserSession.instance.token ?? '';
+      final result = await AuthService.startConversation(
+        token: token,
+        recipientId: listing.hostId,
+        listingId: listing.id,
+        content: 'Hi, I\'m interested in your listing "${listing.title}".',
+      );
+
+      final conv = result['conversation'] as Map<String, dynamic>? ?? result;
+      final conversationId = (conv['_id'] ?? conv['id'] ?? '').toString();
+
+      if (!mounted) return;
+
+      // Build initials from host name
+      final nameParts = listing.hostName.trim().split(' ');
+      final initials = nameParts.length >= 2
+          ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
+          : listing.hostName.isNotEmpty
+              ? listing.hostName[0].toUpperCase()
+              : '?';
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            otherUserName: listing.hostName,
+            otherUserInitials: initials,
+            listingName: listing.title,
+            listingLocation: '${listing.city}, Algeria',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open chat: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
   }
 
   @override
@@ -175,9 +232,10 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             hostName: listing.hostName,
                             hostProfilePhotoUrl: listing.hostProfilePhotoUrl,
                             hostSinceLabel: listing.hostSinceLabel,
-                            onMessageTap: () {
-                              // TODO: wire messaging flow
-                            },
+                            onMessageTap: _openingChat
+                                ? null
+                                : () => _openChat(listing),
+                            isChatLoading: _openingChat,
                             onHostTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => HostProfilePage(

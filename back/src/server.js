@@ -11,6 +11,9 @@ const cors       = require('cors');
 const jwt        = require('jsonwebtoken');
 require('dotenv').config();
 
+// ─── Initialize Firebase Admin SDK (must happen before any push is sent) ──
+require('./config/firebaseAdmin');
+
 const app    = express();
 const server = http.createServer(app);
 const io     = new Server(server, {
