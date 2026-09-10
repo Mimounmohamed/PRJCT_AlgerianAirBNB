@@ -32,7 +32,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   static const Color _dark = Color(0xFF2A1B12);
   static const Color _teal = Color(0xFF006972);
   static const Color _tealTint = Color(0xFFE3F0F1);
-  static const Color _muted = Color(0xFF8A7B6E);
+  static const Color _muted = Color(0xFF4F4540);
   static const Color _border = Color(0xFFE7DCCB);
 
   Future<HostListingDetailModel>? _future;
@@ -728,22 +728,22 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   Widget _settingsRow({required IconData icon, required String title, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 21),
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: _border)),
         ),
         child: Row(
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(color: _tealTint, shape: BoxShape.circle),
-              child: Icon(icon, size: 17, color: _teal),
+              child: Icon(icon, size: 24, color: _teal),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(title, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w600))),
+            Expanded(child: Text(title, style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w500))),
             const Icon(Icons.chevron_right, size: 18, color: _muted),
           ],
         ),
@@ -752,8 +752,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8, top: 24),
-        child: Text(text.toUpperCase(), style: const TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+        padding: const EdgeInsets.only(left: 10, right: 20, bottom: 8, top: 24),
+        child: Text(text.toUpperCase(), style: const TextStyle(color: _muted, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
       );
 
   @override
@@ -798,40 +798,40 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Current listing card ─────────────
+                                          // ── Current listing card ─────────────
                       Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: _border)),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: _border)),
                         child: Row(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
                               child: SizedBox(
-                                width: 60,
-                                height: 60,
+                                width: 92,
+                                height: 92,
                                 child: _coverPhotoUrl != null
                                     ? Image.network(_coverPhotoUrl!, fit: BoxFit.cover)
                                     : Container(color: _border),
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                                  const SizedBox(height: 3),
+                                  const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                                  const SizedBox(height: 6),
                                   Text(
                                     _title,
-                                    style: const TextStyle(color: _dark, fontSize: 17, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
+                                    style: const TextStyle(color: _dark, fontSize: 24, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 14)),
                                 ],
                               ),
                             ),
@@ -848,26 +848,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                             _settingsRow(icon: Icons.vpn_key_outlined, title: 'Check-in instructions', onTap: _openCheckInInstructionsSheet),
                             _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesSheet),
                             _settingsRow(icon: Icons.policy_outlined, title: 'Cancellation policy', onTap: _openCancellationPolicySheet),
-                            InkWell(
-                              onTap: _openVisibilitySheet,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
-                                      child: const Icon(Icons.visibility_outlined, size: 17, color: _teal),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    const Expanded(child: Text('Visibility', style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w600))),
-                                    const Icon(Icons.chevron_right, size: 18, color: _muted),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            _settingsRow(icon: Icons.visibility_outlined, title: 'Visibility', onTap: _openVisibilitySheet),
+                           
                           ],
                         ),
                       ),
@@ -876,7 +858,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                padding: const EdgeInsets.fromLTRB(35, 24, 35, 30),
                 decoration: const BoxDecoration(color: _cream, border: Border(top: BorderSide(color: _border))),
                 child: SizedBox(
                   width: double.infinity,
@@ -890,7 +872,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                     ),
                     child: _isSaving
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                        : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18)),
                   ),
                 ),
               ),
