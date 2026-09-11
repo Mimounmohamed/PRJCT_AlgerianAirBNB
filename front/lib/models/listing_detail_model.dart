@@ -46,6 +46,13 @@ class ListingDetailModel {
   final String? hostPhoneCountryCode;
   final String? hostPhoneNumber;
 
+  final String checkInTimeFrom;
+  final String checkInTimeTo;
+  final String checkOutTime;
+  final bool instantBook;
+  final int minStayNights;
+  final int maxStayNights;
+
   ListingDetailModel({
     required this.id,
     required this.title,
@@ -78,6 +85,12 @@ class ListingDetailModel {
     required this.hostCreatedAt,
     required this.hostPhoneCountryCode,
     required this.hostPhoneNumber,
+    this.checkInTimeFrom = '14:00',
+    this.checkInTimeTo = '22:00',
+    this.checkOutTime = '11:00',
+    this.instantBook = false,
+    this.minStayNights = 1,
+    this.maxStayNights = 365,
   });
 
   factory ListingDetailModel.fromJson(Map<String, dynamic> json) {
@@ -91,6 +104,7 @@ class ListingDetailModel {
     final photos = json['photos'] as List<dynamic>? ?? [];
     final amenitiesRaw = json['amenities'] as List<dynamic>? ?? [];
     final categoriesRaw = json['categories'] as List<dynamic>? ?? [];
+    final bookingPreferences = json['bookingPreferences'] as Map<String, dynamic>? ?? {};
 
     // hostId is populated by the backend with a subset of User fields
     // (see listing.routes.js: .populate('hostId', 'fullName profilePhoto isSuperhost hostSince createdAt phone'))
@@ -133,6 +147,12 @@ class ListingDetailModel {
       hostCreatedAt: host['createdAt'] as String?,
       hostPhoneCountryCode: (host['phone'] as Map<String, dynamic>?)?['countryCode'] as String?,
       hostPhoneNumber: (host['phone'] as Map<String, dynamic>?)?['number'] as String?,
+      checkInTimeFrom: bookingPreferences['checkInTimeFrom'] as String? ?? '14:00',
+      checkInTimeTo: bookingPreferences['checkInTimeTo'] as String? ?? '22:00',
+      checkOutTime: bookingPreferences['checkOutTime'] as String? ?? '11:00',
+      instantBook: bookingPreferences['instantBook'] as bool? ?? false,
+      minStayNights: (bookingPreferences['minStayNights'] as num?)?.toInt() ?? 1,
+      maxStayNights: (bookingPreferences['maxStayNights'] as num?)?.toInt() ?? 365,
     );
   }
 

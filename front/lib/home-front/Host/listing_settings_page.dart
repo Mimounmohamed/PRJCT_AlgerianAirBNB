@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/host_service.dart'; // adjust path to match your project structure
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
+import 'booking_preferences_page.dart'; // adjust path to match your project structure
 
 /// "Listing Settings" — reached from Manage Listing's "Listing settings"
 /// quick action. Groups five real, backend-backed settings:
 /// bookingPreferences, checkInInstructions, houseRules,
-/// cancellationPolicy, and visibility — each opens in a bottom sheet
-/// (same technique as Edit Listing Details' amenities sheet), and one
-/// "Save Changes" button commits everything in a single PUT.
+/// cancellationPolicy, and visibility.
+///
+/// Booking preferences is its own full page (BookingPreferencesPage,
+/// pushed via Navigator) rather than a bottom sheet, with its own
+/// dedicated Save Preferences button that PUTs just that section.
+/// The other four still open in a bottom sheet, and one page-level
+/// "Save Changes" button commits everything else in a single PUT.
 ///
 /// Deliberately does NOT include a "Deactivate Listing" control — pause
 /// / resume / delete already live on the Manage Listing page's Advanced
@@ -109,7 +114,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     return listing;
   }
 
-  // ── Time helpers ─────────────────────────────────────────
+  // ── Time helpers (still used by curfew in House Rules sheet) ──────────
 
   TimeOfDay _parseTime(String value) {
     final parts = value.split(':');
@@ -128,7 +133,39 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     return _parseTime(curfewTime.split(' - ')[1]);
   }
 
-  // ── Save (whole page) ─────────────────────────────────────
+  // ── Navigate to Booking Preferences page ──────────────────
+
+  Future<void> _openBookingPreferencesPage() async {
+    final result = await Navigator.of(context).push<BookingPreferencesResult>(
+      MaterialPageRoute(
+        builder: (_) => BookingPreferencesPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          instantBook: _instantBook,
+          advanceNoticeHours: _advanceNoticeHours,
+          minStayNights: _minStayNights,
+          maxStayNights: _maxStayNights,
+          checkInTimeFrom: _checkInTimeFrom,
+          checkInTimeTo: _checkInTimeTo,
+          checkOutTime: _checkOutTime,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _instantBook = result.instantBook;
+        _minStayNights = result.minStayNights;
+        _maxStayNights = result.maxStayNights;
+        _checkInTimeFrom = result.checkInTimeFrom;
+        _checkInTimeTo = result.checkInTimeTo;
+        _checkOutTime = result.checkOutTime;
+      });
+    }
+  }
+
+  // ── Save (page-level — everything except booking preferences,
+  // which now saves itself from its own page) ────────────────
 
   Future<void> _save() async {
     setState(() => _isSaving = true);
@@ -174,34 +211,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     }
   }
 
-  // ── Save (booking preferences sheet only) ─────────────────
-
-  Future<void> _saveBookingPreferences(BuildContext sheetContext) async {
-    try {
-      await HostService.updateListingDetails(
-        authToken: widget.authToken,
-        listingId: widget.listingId,
-        updates: {
-          'bookingPreferences': {
-            'instantBook': _instantBook,
-            'advanceNoticeHours': _advanceNoticeHours,
-            'minStayNights': _minStayNights,
-            'maxStayNights': _maxStayNights,
-            'checkInTimeFrom': _checkInTimeFrom,
-            'checkInTimeTo': _checkInTimeTo,
-            'checkOutTime': _checkOutTime,
-          },
-        },
-      );
-      if (!mounted) return;
-      Navigator.of(sheetContext).pop();
-      await _showSavedPopup();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    }
-  }
-
   Future<void> _showSavedPopup() {
     return showDialog<void>(
       context: context,
@@ -234,7 +243,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     );
   }
 
-  // ── Shared bottom-sheet chrome (used by every sheet except Booking Preferences) ──
+  // ── Shared bottom-sheet chrome (used by Check-in/House Rules/Cancellation/Visibility) ──
 
   Future<void> _openSheet({required String title, required Widget Function(BuildContext, StateSetter) contentBuilder}) {
     return showModalBottomSheet<void>(
@@ -354,262 +363,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
         ),
       ),
     );
-  }
-
-  // ── Stepper card + button (Minimum/Maximum Stay in Booking Preferences) ──
-
-  Widget _stayStepperCard({
-    required String label,
-    required int value,
-    required VoidCallback onDecrement,
-    required VoidCallback onIncrement,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-          const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _stepperButton(icon: Icons.remove, onTap: onDecrement),
-              Column(
-                children: [
-                  Text('$value', style: const TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  const Text('NIGHTS', style: TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-                ],
-              ),
-              _stepperButton(icon: Icons.add, onTap: onIncrement),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _stepperButton({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: _border), color: Colors.white),
-        child: Icon(icon, size: 18, color: _teal),
-      ),
-    );
-  }
-
-  // ── Sheet: Booking preferences (custom full-height layout, matches design) ──
-
-  void _openBookingPreferencesSheet() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.92,
-          minChildSize: 0.5,
-          maxChildSize: 0.96,
-          expand: false,
-          builder: (context, scrollController) {
-            return StatefulBuilder(
-              builder: (context, sheetSetState) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: _cream,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(width: 36, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(4))),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(4, 10, 20, 10),
-                        child: Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back, color: _dark),
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                            ),
-                            const SizedBox(width: 2),
-                            const Text(
-                              'Booking preferences',
-                              style: TextStyle(color: _dark, fontSize: 24, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Instant Book
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('Instant Book', style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            _instantBook
-                                                ? 'Guests can book your place instantly without sending a request. This usually increases your booking rate.'
-                                                : 'Guests must send a request before booking your place.',
-                                            style: const TextStyle(color: _muted, fontSize: 12, height: 1.35),
-                                          ),
-                                          const SizedBox(height: 6),
-                                          const Text(
-                                            'Any change you make here needs admin approval before it goes live — once approved, your listing keeps its Verified badge.',
-                                            style: TextStyle(color: _teal, fontSize: 11, height: 1.3, fontWeight: FontWeight.w600),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Switch(
-                                      value: _instantBook,
-                                      onChanged: (v) => sheetSetState(() => setState(() => _instantBook = v)),
-                                      activeColor: Colors.white,
-                                      activeTrackColor: _teal,
-                                      inactiveTrackColor: _border,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Minimum stay
-                              _stayStepperCard(
-                                label: 'MINIMUM STAY',
-                                value: _minStayNights,
-                                onDecrement: () => sheetSetState(() => setState(() {
-                                      if (_minStayNights > 1) _minStayNights--;
-                                      if (_maxStayNights < _minStayNights) _maxStayNights = _minStayNights;
-                                    })),
-                                onIncrement: () => sheetSetState(() => setState(() {
-                                      _minStayNights++;
-                                      if (_maxStayNights < _minStayNights) _maxStayNights = _minStayNights;
-                                    })),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Maximum stay
-                              _stayStepperCard(
-                                label: 'MAXIMUM STAY',
-                                value: _maxStayNights,
-                                onDecrement: () => sheetSetState(() => setState(() {
-                                      if (_maxStayNights > _minStayNights) _maxStayNights--;
-                                    })),
-                                onIncrement: () => sheetSetState(() => setState(() {
-                                      _maxStayNights++;
-                                    })),
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Check-in window
-                              const Text('CHECK-IN WINDOW', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _timePickerField(
-                                      label: 'From',
-                                      time: _checkInTimeFrom,
-                                      onTap: () async {
-                                        final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkInTimeFrom));
-                                        if (picked != null) sheetSetState(() => setState(() => _checkInTimeFrom = _fmtTime(picked)));
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: _timePickerField(
-                                      label: 'To',
-                                      time: _checkInTimeTo,
-                                      onTap: () async {
-                                        final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkInTimeTo));
-                                        if (picked != null) sheetSetState(() => setState(() => _checkInTimeTo = _fmtTime(picked)));
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-
-                              // Check-out time
-                              const Text('CHECK-OUT TIME', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-                              const SizedBox(height: 6),
-                              _timePickerField(
-                                label: 'Check-out',
-                                time: _checkOutTime,
-                                onTap: () async {
-                                  final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkOutTime));
-                                  if (picked != null) sheetSetState(() => setState(() => _checkOutTime = _fmtTime(picked)));
-                                },
-                              ),
-                              const SizedBox(height: 20),
-
-                              // Info note
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(color: _tealTint, borderRadius: BorderRadius.circular(14)),
-                                child: const Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Icon(Icons.info_outline, size: 18, color: _teal),
-                                    SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        'Setting a minimum stay of 2-3 nights can help reduce cleaning costs and turn-over frequency in your Algerian home.',
-                                        style: TextStyle(color: _dark, fontSize: 12, height: 1.35),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 24),
-
-                              // Save
-                              SizedBox(
-                                width: double.infinity,
-                                child: ElevatedButton(
-                                  onPressed: () => _saveBookingPreferences(sheetContext),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: _teal,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
-                                  ),
-                                  child: const Text('Save Preferences', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 16)),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    ).then((_) {
-      if (mounted) setState(() {});
-    });
   }
 
   // ── Sheet: Check-in instructions ──────────────────────────
@@ -1013,7 +766,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
                         child: Column(
                           children: [
-                            _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesSheet),
+                            _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesPage),
                             _settingsRow(icon: Icons.vpn_key_outlined, title: 'Check-in instructions', onTap: _openCheckInInstructionsSheet),
                             _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesSheet),
                             _settingsRow(icon: Icons.policy_outlined, title: 'Cancellation policy', onTap: _openCancellationPolicySheet),
@@ -1053,7 +806,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 }
 
 /// Tiny convenience extension so `x?.let(fn)` reads like a null-safe
-/// map — used only for formatting a nullable TimeOfDay above.
+/// map — used only for formatting a nullable TimeOfDay above (curfew).
 extension _Let<T> on T {
   R let<R>(R Function(T) fn) => fn(this);
 }

@@ -332,6 +332,70 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             const SizedBox(height: 24),
                           ],
 
+                          const Divider(height: 1, color: Color(0xFFE7DCCB)),
+                          const SizedBox(height: 24),
+
+                          // ── Check-in & Check-out schedule ──
+                          const Text(
+                            'Check-in & Check-out',
+                            style: TextStyle(
+                              color: Color(0xFF2A1B12),
+                              fontSize: 24,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'CormorantGaramond',
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Check-in window
+                          const Text(
+                            'CHECK-IN WINDOW',
+                            style: TextStyle(
+                              color: Color(0xFF006972),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _scheduleTimeCard(
+                                  label: 'From',
+                                  time: listing.checkInTimeFrom,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _scheduleTimeCard(
+                                  label: 'To',
+                                  time: listing.checkInTimeTo,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Check-out time
+                          const Text(
+                            'CHECK-OUT TIME',
+                            style: TextStyle(
+                              color: Color(0xFF006972),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.4,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          _scheduleTimeCard(
+                            label: 'Check-out',
+                            time: listing.checkOutTime,
+                          ),
+                          const SizedBox(height: 24),
+                          const Divider(height: 1, color: Color(0xFFE7DCCB)),
+                          const SizedBox(height: 24),
+
                           LocationMapPreview(
                             locationLabel: locationLabel,
                             latitude: listing.latitude,
@@ -370,6 +434,9 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                         maxGuests: listing.guests,
                         hostPhoneCountryCode: listing.hostPhoneCountryCode,
                         hostPhoneNumber: listing.hostPhoneNumber,
+                        checkInTimeFrom: listing.checkInTimeFrom,
+                        checkInTimeTo: listing.checkInTimeTo,
+                        checkOutTime: listing.checkOutTime,
                       ),
                     ),
                   ),
@@ -378,6 +445,41 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _scheduleTimeCard({required String label, required String time}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFBF3E7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE7DCCB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF61564D),
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'HenkenGrotesk',
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            time,
+            style: const TextStyle(
+              color: Color(0xFF2A1B12),
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'HenkenGrotesk',
+            ),
+          ),
+        ],
       ),
     );
   }

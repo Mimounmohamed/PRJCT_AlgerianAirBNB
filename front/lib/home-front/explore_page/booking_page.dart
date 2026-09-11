@@ -27,6 +27,9 @@ class BookingPage extends StatefulWidget {
   final int maxGuests;
   final String? hostPhoneCountryCode;
   final String? hostPhoneNumber;
+  final String checkInTimeFrom;
+  final String checkInTimeTo;
+  final String checkOutTime;
 
   const BookingPage({
     super.key,
@@ -43,6 +46,9 @@ class BookingPage extends StatefulWidget {
     required this.maxGuests,
     this.hostPhoneCountryCode,
     this.hostPhoneNumber,
+    this.checkInTimeFrom = '14:00',
+    this.checkInTimeTo = '22:00',
+    this.checkOutTime = '11:00',
   });
 
   @override
@@ -465,6 +471,17 @@ class _BookingPageState extends State<BookingPage> {
                     child: const Text('Edit', style: TextStyle(color: _teal, fontWeight: FontWeight.w600)),
                   ),
                 ),
+                const Divider(height: 1, color: Color(0xFFE7DCCB), indent: 16, endIndent: 16),
+                ListTile(
+                  title: const Text('CHECK-IN / CHECK-OUT', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: 1.0)),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'Check-in: ${widget.checkInTimeFrom} – ${widget.checkInTimeTo}\nCheck-out: ${widget.checkOutTime}',
+                      style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -522,7 +539,7 @@ class _BookingPageState extends State<BookingPage> {
                   label: const Text('Call', style: TextStyle(color: Colors.white,fontSize: 16, fontWeight: FontWeight.w700)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _teal,
-                    disabledBackgroundColor: _teal.withOpacity(0.4),
+                    disabledBackgroundColor: _teal.withValues(alpha: 0.4),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),

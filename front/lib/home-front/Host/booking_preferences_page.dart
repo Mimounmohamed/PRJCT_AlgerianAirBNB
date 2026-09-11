@@ -205,7 +205,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
               _stepperButton(icon: Icons.remove, onTap: onDecrement),
               Column(
                 children: [
-                  Text('$value', style: const TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700)),
+                  Text('$value', style: const TextStyle(color: _dark, fontSize: 32, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700)),
                   const SizedBox(height: 2),
                   const Text('NIGHTS', style: TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
                 ],
