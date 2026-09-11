@@ -261,11 +261,15 @@ class _LandingPageState extends State<LandingPage> {
         currentIndex: _currentIndex,
         hasUnreadMessages: _hasUnreadMessages,
         onTap: (i) {
+          final cameFromHost = _currentIndex == 2;
           setState(() {
             _currentIndex = i;
             // Clear badge when user opens Messages
             if (i == 3) _hasUnreadMessages = false;
           });
+          if (i == 0 && cameFromHost) {
+            _fetchListings();
+          }
         },
       ),
     );
