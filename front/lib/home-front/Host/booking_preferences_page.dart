@@ -11,6 +11,8 @@ class BookingPreferencesResult {
   final int maxStayNights;
   final String checkInTimeFrom;
   final String checkInTimeTo;
+  final String checkOutTimeFrom;
+  final String checkOutTimeTo;
   final String checkOutTime;
 
   const BookingPreferencesResult({
@@ -19,13 +21,15 @@ class BookingPreferencesResult {
     required this.maxStayNights,
     required this.checkInTimeFrom,
     required this.checkInTimeTo,
-    required this.checkOutTime,
+    required this.checkOutTimeFrom,
+    required this.checkOutTimeTo,
+    this.checkOutTime = '11:00',
   });
 }
 
 /// "Booking preferences" — its own full page (pushed from Listing
 /// Settings), not a bottom sheet. Edits instantBook, minStayNights,
-/// maxStayNights, checkInTimeFrom/To, checkOutTime. advanceNoticeHours
+/// maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To. advanceNoticeHours
 /// is no longer editable here but is still sent back unchanged on save
 /// so the field isn't wiped by the backend's shallow-merge PUT.
 class BookingPreferencesPage extends StatefulWidget {
@@ -37,6 +41,8 @@ class BookingPreferencesPage extends StatefulWidget {
   final int maxStayNights;
   final String checkInTimeFrom;
   final String checkInTimeTo;
+  final String checkOutTimeFrom;
+  final String checkOutTimeTo;
   final String checkOutTime;
 
   const BookingPreferencesPage({
@@ -49,7 +55,9 @@ class BookingPreferencesPage extends StatefulWidget {
     required this.maxStayNights,
     required this.checkInTimeFrom,
     required this.checkInTimeTo,
-    required this.checkOutTime,
+    this.checkOutTimeFrom = '11:00',
+    this.checkOutTimeTo = '12:00',
+    this.checkOutTime = '11:00',
   });
 
   @override
@@ -69,7 +77,8 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
   late int _maxStayNights;
   late String _checkInTimeFrom;
   late String _checkInTimeTo;
-  late String _checkOutTime;
+  late String _checkOutTimeFrom;
+  late String _checkOutTimeTo;
   bool _isSaving = false;
 
   @override
@@ -80,7 +89,8 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
     _maxStayNights = widget.maxStayNights;
     _checkInTimeFrom = widget.checkInTimeFrom;
     _checkInTimeTo = widget.checkInTimeTo;
-    _checkOutTime = widget.checkOutTime;
+    _checkOutTimeFrom = widget.checkOutTimeFrom.isNotEmpty ? widget.checkOutTimeFrom : widget.checkOutTime;
+    _checkOutTimeTo = widget.checkOutTimeTo.isNotEmpty ? widget.checkOutTimeTo : '12:00';
   }
 
   // ── Time helpers ─────────────────────────────────────────
@@ -108,7 +118,9 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
             'maxStayNights': _maxStayNights,
             'checkInTimeFrom': _checkInTimeFrom,
             'checkInTimeTo': _checkInTimeTo,
-            'checkOutTime': _checkOutTime,
+            'checkOutTimeFrom': _checkOutTimeFrom,
+            'checkOutTimeTo': _checkOutTimeTo,
+            'checkOutTime': _checkOutTimeFrom,
           },
         },
       );
@@ -122,7 +134,9 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
           maxStayNights: _maxStayNights,
           checkInTimeFrom: _checkInTimeFrom,
           checkInTimeTo: _checkInTimeTo,
-          checkOutTime: _checkOutTime,
+          checkOutTimeFrom: _checkOutTimeFrom,
+          checkOutTimeTo: _checkOutTimeTo,
+          checkOutTime: _checkOutTimeFrom,
         ),
       );
     } catch (e) {
@@ -348,16 +362,33 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // Check-out time
-                  const Text('CHECK-OUT TIME', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                  // Check-out window
+                  const Text('CHECK-OUT WINDOW', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
                   const SizedBox(height: 6),
-                  _timePickerField(
-                    label: 'Check-out',
-                    time: _checkOutTime,
-                    onTap: () async {
-                      final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkOutTime));
-                      if (picked != null) setState(() => _checkOutTime = _fmtTime(picked));
-                    },
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _timePickerField(
+                          label: 'From',
+                          time: _checkOutTimeFrom,
+                          onTap: () async {
+                            final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkOutTimeFrom));
+                            if (picked != null) setState(() => _checkOutTimeFrom = _fmtTime(picked));
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _timePickerField(
+                          label: 'To',
+                          time: _checkOutTimeTo,
+                          onTap: () async {
+                            final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkOutTimeTo));
+                            if (picked != null) setState(() => _checkOutTimeTo = _fmtTime(picked));
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 20),
 

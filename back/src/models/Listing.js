@@ -105,6 +105,8 @@ const listingSchema = new mongoose.Schema(
       maxStayNights:      { type: Number, default: 365 },
       checkInTimeFrom:    { type: String, default: '14:00' },
       checkInTimeTo:      { type: String, default: '22:00' },
+      checkOutTimeFrom:   { type: String, default: '11:00' },
+      checkOutTimeTo:     { type: String, default: '12:00' },
       checkOutTime:       { type: String, default: '11:00' },
     },
 

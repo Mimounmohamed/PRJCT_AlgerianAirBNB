@@ -51,6 +51,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   late int _maxStayNights;
   late String _checkInTimeFrom;
   late String _checkInTimeTo;
+  late String _checkOutTimeFrom;
+  late String _checkOutTimeTo;
   late String _checkOutTime;
 
   late String? _checkInInstructions;
@@ -89,6 +91,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       _maxStayNights = listing.maxStayNights;
       _checkInTimeFrom = listing.checkInTimeFrom;
       _checkInTimeTo = listing.checkInTimeTo;
+      _checkOutTimeFrom = listing.checkOutTimeFrom;
+      _checkOutTimeTo = listing.checkOutTimeTo;
       _checkOutTime = listing.checkOutTime;
 
       _checkInInstructions = listing.checkInInstructions;
@@ -147,6 +151,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
           maxStayNights: _maxStayNights,
           checkInTimeFrom: _checkInTimeFrom,
           checkInTimeTo: _checkInTimeTo,
+          checkOutTimeFrom: _checkOutTimeFrom,
+          checkOutTimeTo: _checkOutTimeTo,
           checkOutTime: _checkOutTime,
         ),
       ),
@@ -159,6 +165,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
         _maxStayNights = result.maxStayNights;
         _checkInTimeFrom = result.checkInTimeFrom;
         _checkInTimeTo = result.checkInTimeTo;
+        _checkOutTimeFrom = result.checkOutTimeFrom;
+        _checkOutTimeTo = result.checkOutTimeTo;
         _checkOutTime = result.checkOutTime;
       });
     }
@@ -181,7 +189,9 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             'maxStayNights': _maxStayNights,
             'checkInTimeFrom': _checkInTimeFrom,
             'checkInTimeTo': _checkInTimeTo,
-            'checkOutTime': _checkOutTime,
+            'checkOutTimeFrom': _checkOutTimeFrom,
+            'checkOutTimeTo': _checkOutTimeTo,
+            'checkOutTime': _checkOutTimeFrom,
           },
           if (_checkInInstructions != null) 'checkInInstructions': _checkInInstructions,
           'houseRules': {

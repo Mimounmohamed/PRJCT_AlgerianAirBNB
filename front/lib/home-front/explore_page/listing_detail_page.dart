@@ -377,9 +377,9 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Check-out time
+                          // Check-out window
                           const Text(
-                            'CHECK-OUT TIME',
+                            'CHECK-OUT WINDOW',
                             style: TextStyle(
                               color: Color(0xFF006972),
                               fontSize: 11,
@@ -388,9 +388,22 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                             ),
                           ),
                           const SizedBox(height: 6),
-                          _scheduleTimeCard(
-                            label: 'Check-out',
-                            time: listing.checkOutTime,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _scheduleTimeCard(
+                                  label: 'From',
+                                  time: listing.checkOutTimeFrom,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: _scheduleTimeCard(
+                                  label: 'To',
+                                  time: listing.checkOutTimeTo,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: 24),
                           const Divider(height: 1, color: Color(0xFFE7DCCB)),
@@ -436,7 +449,9 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                         hostPhoneNumber: listing.hostPhoneNumber,
                         checkInTimeFrom: listing.checkInTimeFrom,
                         checkInTimeTo: listing.checkInTimeTo,
-                        checkOutTime: listing.checkOutTime,
+                        checkOutTimeFrom: listing.checkOutTimeFrom,
+                        checkOutTimeTo: listing.checkOutTimeTo,
+                        checkOutTime: listing.checkOutTimeFrom,
                       ),
                     ),
                   ),

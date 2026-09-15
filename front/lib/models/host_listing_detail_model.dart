@@ -42,6 +42,8 @@ class HostListingDetailModel {
   final int maxStayNights;
   final String checkInTimeFrom;
   final String checkInTimeTo;
+  final String checkOutTimeFrom;
+  final String checkOutTimeTo;
   final String checkOutTime;
 
   final String cancellationPolicy; // 'Flexible' | 'Moderate' | 'Firm'
@@ -89,7 +91,9 @@ class HostListingDetailModel {
     required this.maxStayNights,
     required this.checkInTimeFrom,
     required this.checkInTimeTo,
-    required this.checkOutTime,
+    this.checkOutTimeFrom = '11:00',
+    this.checkOutTimeTo = '12:00',
+    this.checkOutTime = '11:00',
     required this.cancellationPolicy,
     required this.checkInInstructions,
     required this.totalEarnings,
@@ -157,7 +161,9 @@ class HostListingDetailModel {
       maxStayNights: (bookingPreferences['maxStayNights'] as num?)?.toInt() ?? 365,
       checkInTimeFrom: bookingPreferences['checkInTimeFrom'] as String? ?? '14:00',
       checkInTimeTo: bookingPreferences['checkInTimeTo'] as String? ?? '22:00',
-      checkOutTime: bookingPreferences['checkOutTime'] as String? ?? '11:00',
+      checkOutTimeFrom: bookingPreferences['checkOutTimeFrom'] as String? ?? (bookingPreferences['checkOutTime'] as String? ?? '11:00'),
+      checkOutTimeTo: bookingPreferences['checkOutTimeTo'] as String? ?? '12:00',
+      checkOutTime: bookingPreferences['checkOutTime'] as String? ?? (bookingPreferences['checkOutTimeFrom'] as String? ?? '11:00'),
       cancellationPolicy: json['cancellationPolicy'] as String? ?? 'Moderate',
       checkInInstructions: json['checkInInstructions'] as String?,
       totalEarnings: (stats['totalEarnings'] as num?)?.toDouble() ?? 0,

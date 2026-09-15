@@ -48,6 +48,8 @@ class ListingDetailModel {
 
   final String checkInTimeFrom;
   final String checkInTimeTo;
+  final String checkOutTimeFrom;
+  final String checkOutTimeTo;
   final String checkOutTime;
   final bool instantBook;
   final int minStayNights;
@@ -87,6 +89,8 @@ class ListingDetailModel {
     required this.hostPhoneNumber,
     this.checkInTimeFrom = '14:00',
     this.checkInTimeTo = '22:00',
+    this.checkOutTimeFrom = '11:00',
+    this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
     this.instantBook = false,
     this.minStayNights = 1,
@@ -149,7 +153,9 @@ class ListingDetailModel {
       hostPhoneNumber: (host['phone'] as Map<String, dynamic>?)?['number'] as String?,
       checkInTimeFrom: bookingPreferences['checkInTimeFrom'] as String? ?? '14:00',
       checkInTimeTo: bookingPreferences['checkInTimeTo'] as String? ?? '22:00',
-      checkOutTime: bookingPreferences['checkOutTime'] as String? ?? '11:00',
+      checkOutTimeFrom: bookingPreferences['checkOutTimeFrom'] as String? ?? (bookingPreferences['checkOutTime'] as String? ?? '11:00'),
+      checkOutTimeTo: bookingPreferences['checkOutTimeTo'] as String? ?? '12:00',
+      checkOutTime: bookingPreferences['checkOutTime'] as String? ?? (bookingPreferences['checkOutTimeFrom'] as String? ?? '11:00'),
       instantBook: bookingPreferences['instantBook'] as bool? ?? false,
       minStayNights: (bookingPreferences['minStayNights'] as num?)?.toInt() ?? 1,
       maxStayNights: (bookingPreferences['maxStayNights'] as num?)?.toInt() ?? 365,

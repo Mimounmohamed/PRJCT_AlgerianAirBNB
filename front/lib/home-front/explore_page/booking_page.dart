@@ -29,6 +29,8 @@ class BookingPage extends StatefulWidget {
   final String? hostPhoneNumber;
   final String checkInTimeFrom;
   final String checkInTimeTo;
+  final String checkOutTimeFrom;
+  final String checkOutTimeTo;
   final String checkOutTime;
 
   const BookingPage({
@@ -48,6 +50,8 @@ class BookingPage extends StatefulWidget {
     this.hostPhoneNumber,
     this.checkInTimeFrom = '14:00',
     this.checkInTimeTo = '22:00',
+    this.checkOutTimeFrom = '11:00',
+    this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
   });
 
@@ -477,7 +481,7 @@ class _BookingPageState extends State<BookingPage> {
                   subtitle: Padding(
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
-                      'Check-in: ${widget.checkInTimeFrom} – ${widget.checkInTimeTo}\nCheck-out: ${widget.checkOutTime}',
+                      'Check-in: ${widget.checkInTimeFrom} – ${widget.checkInTimeTo}\nCheck-out: ${widget.checkOutTimeFrom} – ${widget.checkOutTimeTo}',
                       style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 15, fontWeight: FontWeight.w600, height: 1.35),
                     ),
                   ),
