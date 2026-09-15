@@ -134,14 +134,126 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
     return 'Quiet hours (${_fmt12(start)} - ${_fmt12(end)})';
   }
 
-  Future<void> _editCurfewTimes() async {
-    final start = _curfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
-    final pickedStart = await showTimePicker(context: context, initialTime: start);
-    if (pickedStart == null || !mounted) return;
-    final end = _curfewEnd(_curfewTime) ?? const TimeOfDay(hour: 7, minute: 0);
-    final pickedEnd = await showTimePicker(context: context, initialTime: end);
-    if (pickedEnd == null || !mounted) return;
-    setState(() => _curfewTime = '${_fmt24(pickedStart)} - ${_fmt24(pickedEnd)}');
+  /// The "Quiet hours" popup dialog: its own Enable toggle + From/To time
+  /// fields + Cancel/Save, all scoped to the dialog until Save is tapped.
+  Future<void> _openQuietHoursDialog() async {
+    bool dialogCurfew = _curfew;
+    TimeOfDay dialogStart = _curfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
+    TimeOfDay dialogEnd = _curfewEnd(_curfewTime) ?? const TimeOfDay(hour: 8, minute: 0);
+
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, dialogSetState) {
+            Widget timeBox({required String label, required TimeOfDay time, required VoidCallback onTap}) {
+              return Expanded(
+                child: GestureDetector(
+                  onTap: onTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: const TextStyle(color: _muted, fontSize: 11, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        Text(_fmt24(time), style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w700)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+
+            return Dialog(
+              backgroundColor: _cream,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Quiet hours', style: TextStyle(color: _dark, fontSize: 19, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Ask guests to keep noise down during these hours.',
+                      style: TextStyle(color: _muted, fontSize: 13, height: 1.35),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text('Enable quiet hours', style: TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
+                        ),
+                        Switch(
+                          value: dialogCurfew,
+                          onChanged: (v) => dialogSetState(() => dialogCurfew = v),
+                          activeColor: Colors.white,
+                          activeTrackColor: _teal,
+                          inactiveTrackColor: _border,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        timeBox(
+                          label: 'From',
+                          time: dialogStart,
+                          onTap: () async {
+                            final picked = await showTimePicker(context: context, initialTime: dialogStart);
+                            if (picked != null) dialogSetState(() => dialogStart = picked);
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        timeBox(
+                          label: 'To',
+                          time: dialogEnd,
+                          onTap: () async {
+                            final picked = await showTimePicker(context: context, initialTime: dialogEnd);
+                            if (picked != null) dialogSetState(() => dialogEnd = picked);
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.of(dialogContext).pop(),
+                          child: const Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _curfew = dialogCurfew;
+                              _curfewTime = '${_fmt24(dialogStart)} - ${_fmt24(dialogEnd)}';
+                            });
+                            Navigator.of(dialogContext).pop();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _teal,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          ),
+                          child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 
   // ── Save ─────────────────────────────────────────────────
@@ -225,7 +337,6 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
     required String title,
     required bool value,
     required ValueChanged<bool> onChanged,
-    VoidCallback? onTitleTap,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -241,10 +352,7 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: GestureDetector(
-              onTap: onTitleTap,
-              child: Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
-            ),
+            child: Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
           ),
           Switch(
             value: value,
@@ -258,16 +366,51 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
     );
   }
 
-  Widget _photoTile(String? url) {
-    return Expanded(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: url != null
-              ? Image.network(url, fit: BoxFit.cover)
-              : Container(color: _border, child: const Icon(Icons.image_outlined, color: _muted)),
+  /// Quiet hours gets its own row style — the whole card opens the
+  /// "Quiet hours" popup dialog instead of toggling inline.
+  Widget _quietHoursCard() {
+    return InkWell(
+      onTap: _openQuietHoursDialog,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
+              child: const Icon(Icons.nightlight_outlined, size: 18, color: _teal),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Quiet hours', style: TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(
+                    _curfew ? _quietHoursLabel.replaceFirst('Quiet hours ', '') : 'Off',
+                    style: const TextStyle(color: _muted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, size: 18, color: _muted),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _photoTile(String url) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Image.network(url, fit: BoxFit.cover, width: double.infinity),
       ),
     );
   }
@@ -275,7 +418,6 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
   @override
   Widget build(BuildContext context) {
     final photo1 = widget.photoUrls.isNotEmpty ? widget.photoUrls[0] : null;
-    final photo2 = widget.photoUrls.length > 1 ? widget.photoUrls[1] : null;
 
     return Scaffold(
       backgroundColor: _cream,
@@ -321,19 +463,19 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
                     value: _eventsAllowed,
                     onChanged: (v) => setState(() => _eventsAllowed = v),
                   ),
-                  _ruleCard(
-                    icon: Icons.nightlight_outlined,
-                    title: _quietHoursLabel,
-                    value: _curfew,
-                    onTitleTap: _curfew ? _editCurfewTimes : null,
-                    onChanged: (v) => setState(() {
-                      _curfew = v;
-                      if (v && _curfewTime == null) _curfewTime = '22:00 - 07:00';
-                    }),
-                  ),
+                  _quietHoursCard(),
 
                   const SizedBox(height: 12),
-                  const Text('Additional rules', style: TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w700)),
+                  const Text(
+                    'Additional rules',
+                    style: TextStyle(
+                      color: Color(0xFF3A271D),
+                      fontFamily: 'CormorantGaramond',
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2, // 28.8px line-height at 24px
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Container(
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
@@ -345,13 +487,19 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
                       maxLength: 500,
                       onChanged: (_) => setState(() {}),
                       style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: InputBorder.none,
                         isDense: true,
-                        contentPadding: EdgeInsets.symmetric(vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 14),
                         hintText: 'Add anything else guests should know, like rules about footwear indoors or Casbah heritage preservation...',
-                        hintStyle: TextStyle(color: _muted),
-                        counterStyle: TextStyle(color: _muted, fontSize: 11),
+                        hintStyle: const TextStyle(
+                          color: Color.fromRGBO(129, 117, 111, 0.5),
+                          fontFamily: 'HankenGrotesk',
+                          fontSize: 15,
+                          fontWeight: FontWeight.w400,
+                          height: 1.5, // 22.5px line-height at 15px
+                        ),
+                        counterStyle: const TextStyle(color: _muted, fontSize: 11),
                       ),
                     ),
                   ),
@@ -377,14 +525,10 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
                   ),
                   const SizedBox(height: 14),
 
-                  Row(
-                    children: [
-                      _photoTile(photo1),
-                      const SizedBox(width: 10),
-                      _photoTile(photo2),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
+                  if (photo1 != null) ...[
+                    _photoTile(photo1),
+                    const SizedBox(height: 14),
+                  ],
 
                   Container(
                     width: double.infinity,
