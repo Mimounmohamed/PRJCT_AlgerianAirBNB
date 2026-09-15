@@ -3,17 +3,21 @@ import '../../authentication-front/widgets/app_bar.dart'; // adjust path to matc
 import '../../services/host_service.dart'; // adjust path to match your project structure
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
 import 'booking_preferences_page.dart'; // adjust path to match your project structure
+import 'house_rules_page.dart'; // adjust path to match your project structure
 
 /// "Listing Settings" — reached from Manage Listing's "Listing settings"
-/// quick action. Groups five real, backend-backed settings:
-/// bookingPreferences, checkInInstructions, houseRules,
-/// cancellationPolicy, and visibility.
+/// quick action. Groups four real, backend-backed settings:
+/// bookingPreferences, houseRules, cancellationPolicy, and visibility.
 ///
-/// Booking preferences is its own full page (BookingPreferencesPage,
-/// pushed via Navigator) rather than a bottom sheet, with its own
-/// dedicated Save Preferences button that PUTs just that section.
-/// The other four still open in a bottom sheet, and one page-level
-/// "Save Changes" button commits everything else in a single PUT.
+/// Booking preferences and House rules are each their own full page
+/// (pushed via Navigator) rather than bottom sheets, each with its own
+/// dedicated Save button that PUTs just that section. Cancellation
+/// policy and Visibility still open in a bottom sheet, and one
+/// page-level "Save Changes" button commits everything in a single PUT
+/// (including booking preferences / house rules again, using whatever
+/// values are currently in this page's state — so nothing is lost if
+/// the host only opens this page and taps Save Changes without visiting
+/// those two sub-pages).
 ///
 /// Deliberately does NOT include a "Deactivate Listing" control — pause
 /// / resume / delete already live on the Manage Listing page's Advanced
@@ -55,8 +59,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   late String _checkOutTimeTo;
   late String _checkOutTime;
 
-  late String? _checkInInstructions;
-
   late bool _petsAllowed;
   late bool _smokingAllowed;
   late bool _eventsAllowed;
@@ -95,8 +97,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       _checkOutTimeTo = listing.checkOutTimeTo;
       _checkOutTime = listing.checkOutTime;
 
-      _checkInInstructions = listing.checkInInstructions;
-
       _petsAllowed = listing.petsAllowed;
       _smokingAllowed = listing.smokingAllowed;
       _eventsAllowed = listing.eventsAllowed;
@@ -116,25 +116,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       _isLoaded = true;
     }
     return listing;
-  }
-
-  // ── Time helpers (still used by curfew in House Rules sheet) ──────────
-
-  TimeOfDay _parseTime(String value) {
-    final parts = value.split(':');
-    return TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0);
-  }
-
-  String _fmtTime(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
-
-  TimeOfDay? _parseCurfewStart(String? curfewTime) {
-    if (curfewTime == null || !curfewTime.contains(' - ')) return null;
-    return _parseTime(curfewTime.split(' - ')[0]);
-  }
-
-  TimeOfDay? _parseCurfewEnd(String? curfewTime) {
-    if (curfewTime == null || !curfewTime.contains(' - ')) return null;
-    return _parseTime(curfewTime.split(' - ')[1]);
   }
 
   // ── Navigate to Booking Preferences page ──────────────────
@@ -172,8 +153,42 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     }
   }
 
-  // ── Save (page-level — everything except booking preferences,
-  // which now saves itself from its own page) ────────────────
+  // ── Navigate to House Rules page ──────────────────────────
+
+  Future<void> _openHouseRulesPage() async {
+    final result = await Navigator.of(context).push<HouseRulesResult>(
+      MaterialPageRoute(
+        builder: (_) => HouseRulesPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          petsAllowed: _petsAllowed,
+          smokingAllowed: _smokingAllowed,
+          eventsAllowed: _eventsAllowed,
+          adultOnly: _adultOnly,
+          familyBookletRequired: _familyBookletRequired,
+          curfew: _curfew,
+          curfewTime: _curfewTime,
+          additionalRules: _additionalRules,
+          photoUrls: _coverPhotoUrl != null ? [_coverPhotoUrl!] : const [],
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _petsAllowed = result.petsAllowed;
+        _smokingAllowed = result.smokingAllowed;
+        _eventsAllowed = result.eventsAllowed;
+        _curfew = result.curfew;
+        _curfewTime = result.curfewTime;
+        _additionalRules = result.additionalRules;
+      });
+    }
+  }
+
+  // ── Save (page-level — everything, including booking preferences and
+  // house rules again using current state, so nothing is lost if the
+  // host never opens those sub-pages) ────────────────────────
 
   Future<void> _save() async {
     setState(() => _isSaving = true);
@@ -191,9 +206,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             'checkInTimeTo': _checkInTimeTo,
             'checkOutTimeFrom': _checkOutTimeFrom,
             'checkOutTimeTo': _checkOutTimeTo,
-            'checkOutTime': _checkOutTimeFrom,
+            'checkOutTime': _checkOutTime,
           },
-          if (_checkInInstructions != null) 'checkInInstructions': _checkInInstructions,
           'houseRules': {
             'petsAllowed': _petsAllowed,
             'smokingAllowed': _smokingAllowed,
@@ -253,7 +267,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     );
   }
 
-  // ── Shared bottom-sheet chrome (used by Check-in/House Rules/Cancellation/Visibility) ──
+  // ── Shared bottom-sheet chrome (used by Cancellation/Visibility) ──
 
   Future<void> _openSheet({required String title, required Widget Function(BuildContext, StateSetter) contentBuilder}) {
     return showModalBottomSheet<void>(
@@ -309,232 +323,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     ).then((_) {
       if (mounted) setState(() {});
     });
-  }
-
-  // ── Shared toggle row (same pattern as create_listing_review_page.dart) ──
-
-  Widget _toggleRow({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    bool showDivider = true,
-  }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: _dark),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(color: _muted, fontSize: 12, height: 1.3)),
-                    ],
-                  ],
-                ),
-              ),
-              Switch(
-                value: value,
-                onChanged: onChanged,
-                activeColor: Colors.white,
-                activeTrackColor: _teal,
-                inactiveTrackColor: _border,
-              ),
-            ],
-          ),
-        ),
-        if (showDivider) const Divider(height: 1, color: _border),
-      ],
-    );
-  }
-
-  Widget _timePickerField({required String label, required String time, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text(time, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Sheet: Check-in instructions ──────────────────────────
-
-  void _openCheckInInstructionsSheet() {
-    final controller = TextEditingController(text: _checkInInstructions ?? '');
-    _openSheet(
-      title: 'Check-in instructions',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tell guests how to get in — key lockbox code, doorman, building access, etc.',
-              style: TextStyle(color: _muted, fontSize: 12, height: 1.3),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: TextField(
-                controller: controller,
-                maxLines: 6,
-                minLines: 4,
-                onChanged: (v) => setState(() => _checkInInstructions = v),
-                style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                  hintText: 'e.g. The key is in a lockbox by the door, code 4821...',
-                  hintStyle: TextStyle(color: _muted),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ── Sheet: House rules ─────────────────────────────────────
-
-  void _openHouseRulesSheet() {
-    final rulesController = TextEditingController(text: _additionalRules ?? '');
-    _openSheet(
-      title: 'House rules',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _toggleRow(
-              icon: Icons.pets_outlined,
-              title: 'Pets allowed',
-              value: _petsAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _petsAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.smoking_rooms_outlined,
-              title: 'Smoking allowed',
-              value: _smokingAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _smokingAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.celebration_outlined,
-              title: 'Events allowed',
-              value: _eventsAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _eventsAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.no_adult_content,
-              title: 'Adults only',
-              value: _adultOnly,
-              onChanged: (v) => sheetSetState(() => setState(() => _adultOnly = v)),
-            ),
-            _toggleRow(
-              icon: Icons.family_restroom_outlined,
-              title: 'Family booklet required',
-              subtitle: 'Only married couples can book without providing a family booklet.',
-              value: _familyBookletRequired,
-              onChanged: (v) => sheetSetState(() => setState(() => _familyBookletRequired = v)),
-              showDivider: false,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.nightlight_outlined, size: 20, color: _dark),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('Quiet hours', style: TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600))),
-                Switch(
-                  value: _curfew,
-                  activeColor: Colors.white,
-                  activeTrackColor: _teal,
-                  inactiveTrackColor: _border,
-                  onChanged: (v) => sheetSetState(() => setState(() {
-                    _curfew = v;
-                    if (v && _curfewTime == null) _curfewTime = '22:00 - 08:00';
-                  })),
-                ),
-              ],
-            ),
-            if (_curfew) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _timePickerField(
-                      label: 'From',
-                      time: _parseCurfewStart(_curfewTime)?.let(_fmtTime) ?? '22:00',
-                      onTap: () async {
-                        final start = _parseCurfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
-                        final picked = await showTimePicker(context: context, initialTime: start);
-                        if (picked != null) {
-                          final end = _parseCurfewEnd(_curfewTime) ?? const TimeOfDay(hour: 8, minute: 0);
-                          sheetSetState(() => setState(() => _curfewTime = '${_fmtTime(picked)} - ${_fmtTime(end)}'));
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _timePickerField(
-                      label: 'To',
-                      time: _parseCurfewEnd(_curfewTime)?.let(_fmtTime) ?? '08:00',
-                      onTap: () async {
-                        final end = _parseCurfewEnd(_curfewTime) ?? const TimeOfDay(hour: 8, minute: 0);
-                        final picked = await showTimePicker(context: context, initialTime: end);
-                        if (picked != null) {
-                          final start = _parseCurfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
-                          sheetSetState(() => setState(() => _curfewTime = '${_fmtTime(start)} - ${_fmtTime(picked)}'));
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 20),
-            const Text('ADDITIONAL RULES', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-            const SizedBox(height: 6),
-            Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: TextField(
-                controller: rulesController,
-                maxLines: 4,
-                minLines: 2,
-                onChanged: (v) => setState(() => _additionalRules = v),
-                style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                  hintText: 'Anything else guests should know...',
-                  hintStyle: TextStyle(color: _muted),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // ── Sheet: Cancellation policy ─────────────────────────────
@@ -777,8 +565,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                         child: Column(
                           children: [
                             _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesPage),
-                            _settingsRow(icon: Icons.vpn_key_outlined, title: 'Check-in instructions', onTap: _openCheckInInstructionsSheet),
-                            _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesSheet),
+                            _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesPage),
                             _settingsRow(icon: Icons.policy_outlined, title: 'Cancellation policy', onTap: _openCancellationPolicySheet),
                             _settingsRow(icon: Icons.visibility_outlined, title: 'Visibility', onTap: _openVisibilitySheet),
                           ],
@@ -813,10 +600,4 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       ),
     );
   }
-}
-
-/// Tiny convenience extension so `x?.let(fn)` reads like a null-safe
-/// map — used only for formatting a nullable TimeOfDay above (curfew).
-extension _Let<T> on T {
-  R let<R>(R Function(T) fn) => fn(this);
 }
