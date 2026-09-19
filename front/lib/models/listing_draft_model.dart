@@ -73,6 +73,8 @@ class ListingDraft {
   int maxStayNights = 365;
   String checkInTimeFrom = '14:00';
   String checkInTimeTo = '22:00';
+  String checkOutTimeFrom = '11:00';
+  String checkOutTimeTo = '12:00';
   String checkOutTime = '11:00';
 
   String cancellationPolicy = 'Moderate';
@@ -237,7 +239,9 @@ class ListingDraft {
         'maxStayNights': maxStayNights,
         'checkInTimeFrom': checkInTimeFrom,
         'checkInTimeTo': checkInTimeTo,
-        'checkOutTime': checkOutTime,
+        'checkOutTimeFrom': checkOutTimeFrom,
+        'checkOutTimeTo': checkOutTimeTo,
+        'checkOutTime': checkOutTimeFrom,
       },
       'cancellationPolicy': cancellationPolicy,
       if (checkInInstructions != null) 'checkInInstructions': checkInInstructions,

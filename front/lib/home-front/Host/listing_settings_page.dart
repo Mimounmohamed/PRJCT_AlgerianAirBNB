@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/host_service.dart'; // adjust path to match your project structure
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
+import 'booking_preferences_page.dart'; // adjust path to match your project structure
+import 'house_rules_page.dart'; // adjust path to match your project structure
 
 /// "Listing Settings" — reached from Manage Listing's "Listing settings"
-/// quick action. Groups five real, backend-backed settings:
-/// bookingPreferences, checkInInstructions, houseRules,
-/// cancellationPolicy, and visibility — each opens in a bottom sheet
-/// (same technique as Edit Listing Details' amenities sheet), and one
-/// "Save Changes" button commits everything in a single PUT.
+/// quick action. Groups four real, backend-backed settings:
+/// bookingPreferences, houseRules, cancellationPolicy, and visibility.
+///
+/// Booking preferences and House rules are each their own full page
+/// (pushed via Navigator) rather than bottom sheets, each with its own
+/// dedicated Save button that PUTs just that section. Cancellation
+/// policy and Visibility still open in a bottom sheet, and one
+/// page-level "Save Changes" button commits everything in a single PUT
+/// (including booking preferences / house rules again, using whatever
+/// values are currently in this page's state — so nothing is lost if
+/// the host only opens this page and taps Save Changes without visiting
+/// those two sub-pages).
 ///
 /// Deliberately does NOT include a "Deactivate Listing" control — pause
 /// / resume / delete already live on the Manage Listing page's Advanced
@@ -32,7 +41,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   static const Color _dark = Color(0xFF2A1B12);
   static const Color _teal = Color(0xFF006972);
   static const Color _tealTint = Color(0xFFE3F0F1);
-  static const Color _muted = Color(0xFF8A7B6E);
+  static const Color _muted = Color(0xFF4F4540);
   static const Color _border = Color(0xFFE7DCCB);
 
   Future<HostListingDetailModel>? _future;
@@ -46,9 +55,9 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   late int _maxStayNights;
   late String _checkInTimeFrom;
   late String _checkInTimeTo;
+  late String _checkOutTimeFrom;
+  late String _checkOutTimeTo;
   late String _checkOutTime;
-
-  late String? _checkInInstructions;
 
   late bool _petsAllowed;
   late bool _smokingAllowed;
@@ -84,9 +93,9 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       _maxStayNights = listing.maxStayNights;
       _checkInTimeFrom = listing.checkInTimeFrom;
       _checkInTimeTo = listing.checkInTimeTo;
+      _checkOutTimeFrom = listing.checkOutTimeFrom;
+      _checkOutTimeTo = listing.checkOutTimeTo;
       _checkOutTime = listing.checkOutTime;
-
-      _checkInInstructions = listing.checkInInstructions;
 
       _petsAllowed = listing.petsAllowed;
       _smokingAllowed = listing.smokingAllowed;
@@ -109,26 +118,77 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     return listing;
   }
 
-  // ── Time helpers ─────────────────────────────────────────
+  // ── Navigate to Booking Preferences page ──────────────────
 
-  TimeOfDay _parseTime(String value) {
-    final parts = value.split(':');
-    return TimeOfDay(hour: int.tryParse(parts[0]) ?? 0, minute: int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0);
+  Future<void> _openBookingPreferencesPage() async {
+    final result = await Navigator.of(context).push<BookingPreferencesResult>(
+      MaterialPageRoute(
+        builder: (_) => BookingPreferencesPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          instantBook: _instantBook,
+          advanceNoticeHours: _advanceNoticeHours,
+          minStayNights: _minStayNights,
+          maxStayNights: _maxStayNights,
+          checkInTimeFrom: _checkInTimeFrom,
+          checkInTimeTo: _checkInTimeTo,
+          checkOutTimeFrom: _checkOutTimeFrom,
+          checkOutTimeTo: _checkOutTimeTo,
+          checkOutTime: _checkOutTime,
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _instantBook = result.instantBook;
+        _minStayNights = result.minStayNights;
+        _maxStayNights = result.maxStayNights;
+        _checkInTimeFrom = result.checkInTimeFrom;
+        _checkInTimeTo = result.checkInTimeTo;
+        _checkOutTimeFrom = result.checkOutTimeFrom;
+        _checkOutTimeTo = result.checkOutTimeTo;
+        _checkOutTime = result.checkOutTime;
+      });
+    }
   }
 
-  String _fmtTime(TimeOfDay t) => '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+  // ── Navigate to House Rules page ──────────────────────────
 
-  TimeOfDay? _parseCurfewStart(String? curfewTime) {
-    if (curfewTime == null || !curfewTime.contains(' - ')) return null;
-    return _parseTime(curfewTime.split(' - ')[0]);
+  Future<void> _openHouseRulesPage() async {
+    final result = await Navigator.of(context).push<HouseRulesResult>(
+      MaterialPageRoute(
+        builder: (_) => HouseRulesPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          petsAllowed: _petsAllowed,
+          smokingAllowed: _smokingAllowed,
+          eventsAllowed: _eventsAllowed,
+          adultOnly: _adultOnly,
+          familyBookletRequired: _familyBookletRequired,
+          curfew: _curfew,
+          curfewTime: _curfewTime,
+          additionalRules: _additionalRules,
+          photoUrls: _coverPhotoUrl != null ? [_coverPhotoUrl!] : const [],
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _petsAllowed = result.petsAllowed;
+        _smokingAllowed = result.smokingAllowed;
+        _eventsAllowed = result.eventsAllowed;
+        _curfew = result.curfew;
+        _curfewTime = result.curfewTime;
+        _additionalRules = result.additionalRules;
+      });
+    }
   }
 
-  TimeOfDay? _parseCurfewEnd(String? curfewTime) {
-    if (curfewTime == null || !curfewTime.contains(' - ')) return null;
-    return _parseTime(curfewTime.split(' - ')[1]);
-  }
-
-  // ── Save ─────────────────────────────────────────────────
+  // ── Save (page-level — everything, including booking preferences and
+  // house rules again using current state, so nothing is lost if the
+  // host never opens those sub-pages) ────────────────────────
 
   Future<void> _save() async {
     setState(() => _isSaving = true);
@@ -144,9 +204,10 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             'maxStayNights': _maxStayNights,
             'checkInTimeFrom': _checkInTimeFrom,
             'checkInTimeTo': _checkInTimeTo,
+            'checkOutTimeFrom': _checkOutTimeFrom,
+            'checkOutTimeTo': _checkOutTimeTo,
             'checkOutTime': _checkOutTime,
           },
-          if (_checkInInstructions != null) 'checkInInstructions': _checkInInstructions,
           'houseRules': {
             'petsAllowed': _petsAllowed,
             'smokingAllowed': _smokingAllowed,
@@ -206,7 +267,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     );
   }
 
-  // ── Shared bottom-sheet chrome ────────────────────────────
+  // ── Shared bottom-sheet chrome (used by Cancellation/Visibility) ──
 
   Future<void> _openSheet({required String title, required Widget Function(BuildContext, StateSetter) contentBuilder}) {
     return showModalBottomSheet<void>(
@@ -262,347 +323,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     ).then((_) {
       if (mounted) setState(() {});
     });
-  }
-
-  // ── Shared toggle row (same pattern as create_listing_review_page.dart) ──
-
-  Widget _toggleRow({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-    bool showDivider = true,
-  }) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(icon, size: 20, color: _dark),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 2),
-                      Text(subtitle, style: const TextStyle(color: _muted, fontSize: 12, height: 1.3)),
-                    ],
-                  ],
-                ),
-              ),
-              Switch(
-                value: value,
-                onChanged: onChanged,
-                activeColor: Colors.white,
-                activeTrackColor: _teal,
-                inactiveTrackColor: _border,
-              ),
-            ],
-          ),
-        ),
-        if (showDivider) const Divider(height: 1, color: _border),
-      ],
-    );
-  }
-
-  Widget _numberField({required String label, required int value, required ValueChanged<int> onChanged}) {
-    final controller = TextEditingController(text: value.toString());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
-          child: TextField(
-            controller: controller,
-            keyboardType: TextInputType.number,
-            onChanged: (v) {
-              final parsed = int.tryParse(v);
-              if (parsed != null) onChanged(parsed);
-            },
-            style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
-            decoration: const InputDecoration(border: InputBorder.none, isDense: true, contentPadding: EdgeInsets.symmetric(vertical: 14)),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _timePickerField({required String label, required String time, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: _border)),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(color: _muted, fontSize: 10, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text(time, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ── Sheet: Booking preferences ────────────────────────────
-
-  void _openBookingPreferencesSheet() {
-    _openSheet(
-      title: 'Booking preferences',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _toggleRow(
-              icon: Icons.flash_on_outlined,
-              title: 'Instant Book',
-              subtitle: 'Guests can book without waiting for approval.',
-              value: _instantBook,
-              onChanged: (v) => sheetSetState(() => setState(() => _instantBook = v)),
-              showDivider: false,
-            ),
-            const SizedBox(height: 16),
-            const Text('ADVANCE NOTICE (HOURS)', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-            const SizedBox(height: 6),
-            _numberField(
-              label: '',
-              value: _advanceNoticeHours,
-              onChanged: (v) => sheetSetState(() => setState(() => _advanceNoticeHours = v)),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _numberField(
-                    label: 'MIN NIGHTS',
-                    value: _minStayNights,
-                    onChanged: (v) => sheetSetState(() => setState(() => _minStayNights = v)),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _numberField(
-                    label: 'MAX NIGHTS',
-                    value: _maxStayNights,
-                    onChanged: (v) => sheetSetState(() => setState(() => _maxStayNights = v)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text('CHECK-IN WINDOW', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: _timePickerField(
-                    label: 'From',
-                    time: _checkInTimeFrom,
-                    onTap: () async {
-                      final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkInTimeFrom));
-                      if (picked != null) sheetSetState(() => setState(() => _checkInTimeFrom = _fmtTime(picked)));
-                    },
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _timePickerField(
-                    label: 'To',
-                    time: _checkInTimeTo,
-                    onTap: () async {
-                      final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkInTimeTo));
-                      if (picked != null) sheetSetState(() => setState(() => _checkInTimeTo = _fmtTime(picked)));
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Text('CHECK-OUT TIME', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-            const SizedBox(height: 6),
-            _timePickerField(
-              label: 'Check-out',
-              time: _checkOutTime,
-              onTap: () async {
-                final picked = await showTimePicker(context: context, initialTime: _parseTime(_checkOutTime));
-                if (picked != null) sheetSetState(() => setState(() => _checkOutTime = _fmtTime(picked)));
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ── Sheet: Check-in instructions ──────────────────────────
-
-  void _openCheckInInstructionsSheet() {
-    final controller = TextEditingController(text: _checkInInstructions ?? '');
-    _openSheet(
-      title: 'Check-in instructions',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Tell guests how to get in — key lockbox code, doorman, building access, etc.',
-              style: TextStyle(color: _muted, fontSize: 12, height: 1.3),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: TextField(
-                controller: controller,
-                maxLines: 6,
-                minLines: 4,
-                onChanged: (v) => setState(() => _checkInInstructions = v),
-                style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                  hintText: 'e.g. The key is in a lockbox by the door, code 4821...',
-                  hintStyle: TextStyle(color: _muted),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // ── Sheet: House rules ─────────────────────────────────────
-
-  void _openHouseRulesSheet() {
-    final rulesController = TextEditingController(text: _additionalRules ?? '');
-    _openSheet(
-      title: 'House rules',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _toggleRow(
-              icon: Icons.pets_outlined,
-              title: 'Pets allowed',
-              value: _petsAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _petsAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.smoking_rooms_outlined,
-              title: 'Smoking allowed',
-              value: _smokingAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _smokingAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.celebration_outlined,
-              title: 'Events allowed',
-              value: _eventsAllowed,
-              onChanged: (v) => sheetSetState(() => setState(() => _eventsAllowed = v)),
-            ),
-            _toggleRow(
-              icon: Icons.no_adult_content,
-              title: 'Adults only',
-              value: _adultOnly,
-              onChanged: (v) => sheetSetState(() => setState(() => _adultOnly = v)),
-            ),
-            _toggleRow(
-              icon: Icons.family_restroom_outlined,
-              title: 'Family booklet required',
-              subtitle: 'Only married couples can book without providing a family booklet.',
-              value: _familyBookletRequired,
-              onChanged: (v) => sheetSetState(() => setState(() => _familyBookletRequired = v)),
-              showDivider: false,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.nightlight_outlined, size: 20, color: _dark),
-                const SizedBox(width: 12),
-                const Expanded(child: Text('Quiet hours', style: TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w600))),
-                Switch(
-                  value: _curfew,
-                  activeColor: Colors.white,
-                  activeTrackColor: _teal,
-                  inactiveTrackColor: _border,
-                  onChanged: (v) => sheetSetState(() => setState(() {
-                    _curfew = v;
-                    if (v && _curfewTime == null) _curfewTime = '22:00 - 08:00';
-                  })),
-                ),
-              ],
-            ),
-            if (_curfew) ...[
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: _timePickerField(
-                      label: 'From',
-                      time: _parseCurfewStart(_curfewTime)?.let(_fmtTime) ?? '22:00',
-                      onTap: () async {
-                        final start = _parseCurfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
-                        final picked = await showTimePicker(context: context, initialTime: start);
-                        if (picked != null) {
-                          final end = _parseCurfewEnd(_curfewTime) ?? const TimeOfDay(hour: 8, minute: 0);
-                          sheetSetState(() => setState(() => _curfewTime = '${_fmtTime(picked)} - ${_fmtTime(end)}'));
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _timePickerField(
-                      label: 'To',
-                      time: _parseCurfewEnd(_curfewTime)?.let(_fmtTime) ?? '08:00',
-                      onTap: () async {
-                        final end = _parseCurfewEnd(_curfewTime) ?? const TimeOfDay(hour: 8, minute: 0);
-                        final picked = await showTimePicker(context: context, initialTime: end);
-                        if (picked != null) {
-                          final start = _parseCurfewStart(_curfewTime) ?? const TimeOfDay(hour: 22, minute: 0);
-                          sheetSetState(() => setState(() => _curfewTime = '${_fmtTime(start)} - ${_fmtTime(picked)}'));
-                        }
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 20),
-            const Text('ADDITIONAL RULES', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
-            const SizedBox(height: 6),
-            Container(
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: _border)),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: TextField(
-                controller: rulesController,
-                maxLines: 4,
-                minLines: 2,
-                onChanged: (v) => setState(() => _additionalRules = v),
-                style: const TextStyle(color: _dark, fontSize: 14, height: 1.4),
-                decoration: const InputDecoration(
-                  border: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                  hintText: 'Anything else guests should know...',
-                  hintStyle: TextStyle(color: _muted),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // ── Sheet: Cancellation policy ─────────────────────────────
@@ -728,22 +448,22 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   Widget _settingsRow({required IconData icon, required String title, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(24),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 21),
         decoration: const BoxDecoration(
           border: Border(bottom: BorderSide(color: _border)),
         ),
         child: Row(
           children: [
             Container(
-              width: 34,
-              height: 34,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(color: _tealTint, shape: BoxShape.circle),
-              child: Icon(icon, size: 17, color: _teal),
+              child: Icon(icon, size: 24, color: _teal),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(title, style: const TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w600))),
+            Expanded(child: Text(title, style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w500))),
             const Icon(Icons.chevron_right, size: 18, color: _muted),
           ],
         ),
@@ -752,8 +472,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   }
 
   Widget _sectionLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8, top: 24),
-        child: Text(text.toUpperCase(), style: const TextStyle(color: _muted, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+        padding: const EdgeInsets.only(left: 10, right: 20, bottom: 8, top: 24),
+        child: Text(text.toUpperCase(), style: const TextStyle(color: _muted, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
       );
 
   @override
@@ -798,40 +518,40 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             children: [
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // ── Current listing card ─────────────
                       Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: _border)),
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: _border)),
                         child: Row(
                           children: [
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(16),
                               child: SizedBox(
-                                width: 60,
-                                height: 60,
+                                width: 92,
+                                height: 92,
                                 child: _coverPhotoUrl != null
                                     ? Image.network(_coverPhotoUrl!, fit: BoxFit.cover)
                                     : Container(color: _border),
                               ),
                             ),
-                            const SizedBox(width: 14),
+                            const SizedBox(width: 18),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-                                  const SizedBox(height: 3),
+                                  const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                                  const SizedBox(height: 6),
                                   Text(
                                     _title,
-                                    style: const TextStyle(color: _dark, fontSize: 17, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
+                                    style: const TextStyle(color: _dark, fontSize: 24, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 12)),
+                                  const SizedBox(height: 4),
+                                  Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 14)),
                                 ],
                               ),
                             ),
@@ -844,30 +564,10 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
                         child: Column(
                           children: [
-                            _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesSheet),
-                            _settingsRow(icon: Icons.vpn_key_outlined, title: 'Check-in instructions', onTap: _openCheckInInstructionsSheet),
-                            _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesSheet),
+                            _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesPage),
+                            _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesPage),
                             _settingsRow(icon: Icons.policy_outlined, title: 'Cancellation policy', onTap: _openCancellationPolicySheet),
-                            InkWell(
-                              onTap: _openVisibilitySheet,
-                              borderRadius: BorderRadius.circular(16),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
-                                      child: const Icon(Icons.visibility_outlined, size: 17, color: _teal),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    const Expanded(child: Text('Visibility', style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w600))),
-                                    const Icon(Icons.chevron_right, size: 18, color: _muted),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            _settingsRow(icon: Icons.visibility_outlined, title: 'Visibility', onTap: _openVisibilitySheet),
                           ],
                         ),
                       ),
@@ -876,7 +576,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+                padding: const EdgeInsets.fromLTRB(35, 24, 35, 30),
                 decoration: const BoxDecoration(color: _cream, border: Border(top: BorderSide(color: _border))),
                 child: SizedBox(
                   width: double.infinity,
@@ -890,7 +590,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                     ),
                     child: _isSaving
                         ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                        : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18)),
                   ),
                 ),
               ),
@@ -900,10 +600,4 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       ),
     );
   }
-}
-
-/// Tiny convenience extension so `x?.let(fn)` reads like a null-safe
-/// map — used only for formatting a nullable TimeOfDay above.
-extension _Let<T> on T {
-  R let<R>(R Function(T) fn) => fn(this);
 }
