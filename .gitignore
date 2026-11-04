@@ -1,0 +1,23 @@
+# Root .gitignore. front/ and back/ keep their own .gitignore files.
+
+# ── graphify knowledge graph ─────────────────────────────────────────
+# Shared with the team (committed):
+#   graphify-out/graph.json            graph data (agents and `graphify query` read this)
+#   graphify-out/GRAPH_REPORT.md       readable summary: god nodes, communities, questions
+#   graphify-out/graph.html            interactive viewer, opens in a browser without installing anything
+#   graphify-out/manifest.json         per-file hashes, so `graphify --update` re-extracts only changed files
+#   graphify-out/.graphify_labels.json community names, reused on rebuilds
+#
+# Local only (ignored): machine-specific paths, caches, temp files, cost log.
+graphify-out/cache/
+graphify-out/cost.json
+graphify-out/.needs_update
+graphify-out/.graphify_*
+!graphify-out/.graphify_labels.json
+
+# ── Editor / OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.swp
