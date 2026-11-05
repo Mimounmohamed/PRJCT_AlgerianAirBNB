@@ -173,17 +173,36 @@ class ListingDraft {
     photos.add({'url': url, 'caption': '', 'order': photos.length});
   }
 
+  /// Removes a photo. The cover star stays on the same photo it was on:
+  /// removing a photo BEFORE the cover shifts the cover one slot left, so
+  /// its index has to follow. Removing the cover itself makes the photo
+  /// now first the cover.
   void removePhotoAt(int index) {
     photos.removeAt(index);
-    if (coverPhotoIndex >= photos.length) {
-      coverPhotoIndex = photos.isEmpty ? 0 : photos.length - 1;
+    if (photos.isEmpty || index == coverPhotoIndex) {
+      coverPhotoIndex = 0;
+    } else if (index < coverPhotoIndex) {
+      coverPhotoIndex--;
     }
+    _renumberPhotos();
+  }
+
+  /// Makes a photo the cover by moving it to the front — so it's both the
+  /// photo on the Discover card (coverPhotoIndex) and the first photo in
+  /// the listing's gallery (photo order).
+  void setCoverPhoto(int index) {
+    if (index <= 0 || index >= photos.length) return;
+    final photo = photos.removeAt(index);
+    photos.insert(0, photo);
+    coverPhotoIndex = 0;
+    _renumberPhotos();
+  }
+
+  void _renumberPhotos() {
     for (var i = 0; i < photos.length; i++) {
       photos[i]['order'] = i;
     }
   }
-
-  void setCoverPhoto(int index) => coverPhotoIndex = index;
 
   /// Builds the POST /api/listings request body. Note: hostId and
   /// status are forced server-side (see listing.routes.js), so status

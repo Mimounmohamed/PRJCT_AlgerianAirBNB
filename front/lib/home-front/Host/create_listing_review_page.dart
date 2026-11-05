@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'create_listing_exit.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
@@ -134,21 +135,45 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                 ),
               ),
             ),
+            // Star on every photo: filled on the cover, outlined on the
+            // others (tap the photo to make it the cover).
+            Positioned(
+              left: 4,
+              top: 4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isCover ? _teal : Colors.black.withValues(alpha: 0.45),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(isCover ? Icons.star : Icons.star_border, size: 12, color: Colors.white),
+              ),
+            ),
             if (isCover)
               Positioned(
-                left: 4,
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(color: _teal, shape: BoxShape.circle),
-                  child: const Icon(Icons.star, size: 12, color: Colors.white),
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    color: _teal,
+                    alignment: Alignment.center,
+                    child: const Text('COVER', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                  ),
                 ),
               ),
             Positioned(
               right: 4,
               top: 4,
               child: GestureDetector(
-                onTap: () => setState(() => widget.draft.removePhotoAt(index)),
+                onTap: () {
+                  // Never published — delete the upload from Cloudinary too.
+                  final url = photo['url'] as String?;
+                  setState(() => widget.draft.removePhotoAt(index));
+                  if (url != null) discardDraftPhotos([url]);
+                },
                 child: Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
@@ -586,6 +611,18 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   // ── Publish ──────────────────────────────────────────────
 
   Future<void> _publish() async {
+    if (_isUploadingPhotos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait for your photos to finish uploading.')),
+      );
+      return;
+    }
+    if (widget.draft.photos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one photo of your place.')),
+      );
+      return;
+    }
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please give your place a title.')),
@@ -697,6 +734,15 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           _addPhotosTile(),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.draft.photos.isEmpty
+                          ? 'Add at least one photo of your place.'
+                          : widget.draft.photos.length == 1
+                              ? 'This photo is your cover — the one guests see first in Discover.'
+                              : 'Tap a photo to make it your cover — the one guests see first in Discover and in your listing.',
+                      style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 12, height: 1.35),
                     ),
                     const SizedBox(height: 24),
 
@@ -947,7 +993,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: _isPublishing ? null : () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    onPressed: (_isPublishing || _isUploadingPhotos) ? null : () => exitCreateListingFlow(context, widget.draft),
                     child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(

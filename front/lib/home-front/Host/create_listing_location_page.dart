@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'create_listing_exit.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -679,7 +680,7 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                   TextButton(
                     // Matches property-type/basics pages: exits the whole
                     // wizard back to the Host dashboard (tab shell root).
-                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    onPressed: () => exitCreateListingFlow(context, widget.draft),
                     child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(
