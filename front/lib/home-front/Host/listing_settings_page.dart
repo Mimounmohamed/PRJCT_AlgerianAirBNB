@@ -4,19 +4,17 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
 import 'booking_preferences_page.dart'; // adjust path to match your project structure
 import 'house_rules_page.dart'; // adjust path to match your project structure
+import 'cancellation_policy_page.dart';
+import 'listing_visibility_page.dart';
 
 /// "Listing Settings" — reached from Manage Listing's "Listing settings"
-/// quick action. Groups four real, backend-backed settings:
-/// bookingPreferences, houseRules, cancellationPolicy, and visibility.
+/// quick action. A menu of four real, backend-backed settings, each on its
+/// own full page with its own Save (each PUTs only its own section):
+/// Booking preferences, House rules, Cancellation policy, Visibility.
 ///
-/// Booking preferences and House rules are each their own full page with
-/// their own Save (each PUTs just its section). Cancellation policy and
-/// Visibility open in a bottom sheet and are committed by this page's
-/// "Save Changes" button, which sends only those two fields and is
-/// disabled until one of them actually changed.
-///
-/// Pops with `true` whenever anything was saved — from this page or from
-/// either sub-page — so Manage Listing knows to reload.
+/// This page keeps an in-memory copy of every value so a sub-page always
+/// opens with the latest saved state, and pops with `true` once any
+/// sub-page saved, so Manage Listing knows to reload.
 ///
 /// Deliberately does NOT include a "Deactivate Listing" control — pause
 /// / resume / delete already live on the Manage Listing page's Advanced
@@ -43,11 +41,16 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   static const Color _muted = Color(0xFF4F4540);
   static const Color _border = Color(0xFFE7DCCB);
 
+  static const List<String> _months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
   Future<HostListingDetailModel>? _future;
   bool _isLoaded = false;
-  bool _isSaving = false;
+  // True once any sub-page saved — reported back to Manage Listing.
+  bool _changed = false;
 
-  // ── Working copies of everything this page edits ────────
+  // ── Latest saved values, handed to each sub-page ────────
   late bool _autoPublish;
   late bool _instantBook;
   late int _advanceNoticeHours;
@@ -70,19 +73,8 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
   late String _cancellationPolicy;
   late String _visibility;
-
-  // What's saved on the server — Save Changes is only enabled when the
-  // two fields this page owns differ from these.
-  late String _savedCancellationPolicy;
-  late String _savedVisibility;
-  // Listing status — visibility only applies to an 'active' listing.
+  DateTime? _snoozedUntil;
   String _status = 'active';
-  // True once a sub-page (booking preferences / house rules) saved.
-  bool _subPageSaved = false;
-
-  bool get _isLive => _status == 'active';
-  bool get _hasPageChanges =>
-      _cancellationPolicy != _savedCancellationPolicy || (_isLive && _visibility != _savedVisibility);
 
   String _title = '';
   String? _coverPhotoUrl;
@@ -122,8 +114,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
       _cancellationPolicy = listing.cancellationPolicy;
       _visibility = listing.visibility;
-      _savedCancellationPolicy = _cancellationPolicy;
-      _savedVisibility = _visibility;
+      _snoozedUntil = listing.snoozedUntil;
       _status = listing.status;
 
       _title = listing.title;
@@ -135,7 +126,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     return listing;
   }
 
-  // ── Navigate to Booking Preferences page ──────────────────
+  // ── Sub-pages ────────────────────────────────────────────
 
   Future<void> _openBookingPreferencesPage() async {
     final result = await Navigator.of(context).push<BookingPreferencesResult>(
@@ -159,7 +150,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
     if (result != null && mounted) {
       setState(() {
-        _subPageSaved = true;
+        _changed = true;
         _autoPublish = result.autoPublish;
         _instantBook = result.instantBook;
         _advanceNoticeHours = result.advanceNoticeHours;
@@ -173,8 +164,6 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       });
     }
   }
-
-  // ── Navigate to House Rules page ──────────────────────────
 
   Future<void> _openHouseRulesPage() async {
     final result = await Navigator.of(context).push<HouseRulesResult>(
@@ -197,7 +186,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
     if (result != null && mounted) {
       setState(() {
-        _subPageSaved = true;
+        _changed = true;
         _petsAllowed = result.petsAllowed;
         _smokingAllowed = result.smokingAllowed;
         _eventsAllowed = result.eventsAllowed;
@@ -210,272 +199,66 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     }
   }
 
-  // ── Save (page-level — only the two fields this page itself edits;
-  // booking preferences and house rules are saved by their own pages) ──
+  Future<void> _openCancellationPolicyPage() async {
+    final result = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => CancellationPolicyPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          cancellationPolicy: _cancellationPolicy,
+        ),
+      ),
+    );
 
-  Future<void> _save() async {
-    if (!_hasPageChanges) return;
-    setState(() => _isSaving = true);
-    try {
-      await HostService.updateListingDetails(
-        authToken: widget.authToken,
-        listingId: widget.listingId,
-        updates: {
-          'cancellationPolicy': _cancellationPolicy,
-          if (_isLive) 'visibility': _visibility,
-        },
-      );
-
-      if (!mounted) return;
-      _savedCancellationPolicy = _cancellationPolicy;
-      _savedVisibility = _visibility;
-      await _showSavedPopup();
-      if (!mounted) return;
-      Navigator.of(context).pop(true); // true = Manage Listing should refresh
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
+    if (result != null && mounted) {
+      setState(() {
+        _changed = true;
+        _cancellationPolicy = result;
+      });
     }
   }
 
-  Future<void> _showSavedPopup() {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        Future.delayed(const Duration(milliseconds: 1400), () {
-          if (Navigator.of(dialogContext).canPop()) Navigator.of(dialogContext).pop();
-        });
-        return Dialog(
-          backgroundColor: _cream,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: const BoxDecoration(color: _teal, shape: BoxShape.circle),
-                  child: const Icon(Icons.check, color: Colors.white, size: 32),
-                ),
-                const SizedBox(height: 16),
-                const Text('Changes saved', style: TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w700)),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  // ── Shared bottom-sheet chrome (used by Cancellation/Visibility) ──
-
-  Future<void> _openSheet({required String title, required Widget Function(BuildContext, StateSetter) contentBuilder}) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return DraggableScrollableSheet(
-          initialChildSize: 0.6,
-          minChildSize: 0.35,
-          maxChildSize: 0.92,
-          expand: false,
-          builder: (context, scrollController) {
-            return StatefulBuilder(
-              builder: (context, sheetSetState) {
-                return Container(
-                  decoration: const BoxDecoration(
-                    color: _cream,
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(width: 36, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(4))),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(title, style: const TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700)),
-                            TextButton(
-                              onPressed: () => Navigator.of(sheetContext).pop(),
-                              child: const Text('Done', style: TextStyle(color: _teal, fontWeight: FontWeight.w700)),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: SingleChildScrollView(
-                          controller: scrollController,
-                          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                          child: contentBuilder(context, sheetSetState),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
-        );
-      },
-    ).then((_) {
-      if (mounted) setState(() {});
-    });
-  }
-
-  // ── Sheet: Cancellation policy ─────────────────────────────
-
-  Widget _cancellationCard({required String value, required String title, required String description, required StateSetter sheetSetState}) {
-    final selected = _cancellationPolicy == value;
-    return GestureDetector(
-      onTap: () => sheetSetState(() => setState(() => _cancellationPolicy = value)),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: selected ? _tealTint : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? _teal : _border, width: selected ? 1.6 : 1),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? _teal : _muted, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(description, style: const TextStyle(color: _muted, fontSize: 12, height: 1.3)),
-                ],
-              ),
-            ),
-          ],
+  Future<void> _openVisibilityPage() async {
+    final result = await Navigator.of(context).push<ListingVisibilityResult>(
+      MaterialPageRoute(
+        builder: (_) => ListingVisibilityPage(
+          authToken: widget.authToken,
+          listingId: widget.listingId,
+          status: _status,
+          visibility: _visibility,
+          snoozedUntil: _snoozedUntil,
         ),
       ),
     );
+
+    if (result != null && mounted) {
+      setState(() {
+        _changed = true;
+        _visibility = result.visibility;
+        _snoozedUntil = result.snoozedUntil;
+      });
+    }
   }
 
-  void _openCancellationPolicySheet() {
-    _openSheet(
-      title: 'Cancellation policy',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _cancellationCard(value: 'Flexible', title: 'Flexible', description: 'Full refund 1 day prior to arrival.', sheetSetState: sheetSetState),
-            _cancellationCard(value: 'Moderate', title: 'Moderate', description: 'Full refund 5 days prior to arrival.', sheetSetState: sheetSetState),
-            _cancellationCard(value: 'Firm', title: 'Firm', description: 'Full refund if cancelled within 48 hours of booking.', sheetSetState: sheetSetState),
-          ],
-        );
-      },
-    );
-  }
+  // ── Current-value subtitles for the rows ─────────────────
 
-  // ── Sheet: Visibility ───────────────────────────────────────
-
-  Widget _visibilityCard({required String value, required String title, required String description, required IconData icon, required StateSetter sheetSetState}) {
-    final selected = _visibility == value;
-    return GestureDetector(
-      onTap: _isLive ? () => sheetSetState(() => setState(() => _visibility = value)) : null,
-      child: Opacity(
-        opacity: _isLive ? 1 : 0.45,
-        child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: selected ? _tealTint : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: selected ? _teal : _border, width: selected ? 1.6 : 1),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: selected ? _teal : _muted, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(description, style: const TextStyle(color: _muted, fontSize: 12, height: 1.3)),
-                ],
-              ),
-            ),
-            Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? _teal : _muted, size: 20),
-          ],
-        ),
-        ),
-      ),
-    );
-  }
-
-  String get _statusExplanation {
-    switch (_status) {
-      case 'pending_review':
-        return "Your listing is waiting for the AKRILI team's review, so it isn't in search results yet. "
-            'Visibility can be changed once it\'s approved and live.';
-      case 'inactive':
-        return "Your listing is paused, so it's hidden from search. Resume it from Manage Listing first — "
-            'visibility can be changed once it\'s live again.';
-      case 'rejected':
-        return "Your listing wasn't approved, so it can't appear in search. Visibility can be changed once it's live.";
+  String get _visibilitySummary {
+    if (_status != 'active') return 'Hidden — listing not live';
+    switch (_visibility) {
+      case 'listed':
+        return 'Listed';
+      case 'snoozed':
+        final until = _snoozedUntil;
+        if (until == null || !until.isAfter(DateTime.now())) return 'Listed';
+        return 'Snoozed until ${_months[until.month - 1]} ${until.day}';
       default:
-        return "Your listing isn't live yet. Visibility can be changed once it is.";
+        return 'Unlisted';
     }
-  }
-
-  void _openVisibilitySheet() {
-    _openSheet(
-      title: 'Visibility',
-      contentBuilder: (context, sheetSetState) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: _isLive ? _tealTint : _border, borderRadius: BorderRadius.circular(12)),
-              child: Text(
-                _isLive
-                    ? 'Your listing is live. Unlisting hides it from search without pausing it.'
-                    : _statusExplanation,
-                style: const TextStyle(color: _dark, fontSize: 12, height: 1.35),
-              ),
-            ),
-            const SizedBox(height: 12),
-            _visibilityCard(
-              value: 'listed',
-              title: 'Listed',
-              description: 'Guests can find it in search results and book it.',
-              icon: Icons.visibility_outlined,
-              sheetSetState: sheetSetState,
-            ),
-            _visibilityCard(
-              value: 'unlisted',
-              title: 'Unlisted',
-              description: "Hidden from search results. Guests who already saved it, or have it in a conversation with you, can still open it.",
-              icon: Icons.visibility_off_outlined,
-              sheetSetState: sheetSetState,
-            ),
-          ],
-        );
-      },
-    );
   }
 
   // ── Rows ─────────────────────────────────────────────────
 
-  Widget _settingsRow({required IconData icon, required String title, required VoidCallback onTap}) {
+  Widget _settingsRow({required IconData icon, required String title, String? subtitle, required VoidCallback onTap}) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(24),
@@ -489,11 +272,22 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             Container(
               width: 42,
               height: 42,
-              decoration: BoxDecoration(color: _tealTint, shape: BoxShape.circle),
+              decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
               child: Icon(icon, size: 24, color: _teal),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(title, style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w500))),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: const TextStyle(color: _dark, fontSize: 16, fontWeight: FontWeight.w500)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle, style: const TextStyle(color: _teal, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ],
+              ),
+            ),
             const Icon(Icons.chevron_right, size: 18, color: _muted),
           ],
         ),
@@ -508,137 +302,117 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Back (app bar or system) reports whether a sub-page saved, so
-    // Manage Listing reloads even if this page's own Save wasn't used.
+    // Back (app bar or system) reports whether anything was saved.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) Navigator.of(context).pop(_subPageSaved);
+        if (!didPop) Navigator.of(context).pop(_changed);
       },
-      child: _buildScaffold(context),
-    );
-  }
-
-  Widget _buildScaffold(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _cream,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(kToolbarHeight),
-        child: Container(
-          decoration: BoxDecoration(
-            color: _cream,
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+      child: Scaffold(
+        backgroundColor: _cream,
+        appBar: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight),
+          child: Container(
+            decoration: BoxDecoration(
+              color: _cream,
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2))],
+            ),
+            child: AkriliAppBar(title: 'Listing Settings', onBack: () => Navigator.of(context).maybePop()),
           ),
-          child: AkriliAppBar(title: 'Listing Settings', onBack: () => Navigator.of(context).maybePop()),
         ),
-      ),
-      body: FutureBuilder<HostListingDetailModel>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: _teal));
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text("Couldn't load this listing.", style: TextStyle(color: _dark, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 8),
-                    Text('${snapshot.error}', textAlign: TextAlign.center, style: const TextStyle(color: _muted, fontSize: 12)),
-                    const SizedBox(height: 16),
-                    TextButton(onPressed: () => setState(() => _future = _load()), child: const Text('Retry', style: TextStyle(color: _teal))),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          return Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
+        body: FutureBuilder<HostListingDetailModel>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: _teal));
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // ── Current listing card ─────────────
-                      Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: _border)),
-                        child: Row(
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(16),
-                              child: SizedBox(
-                                width: 92,
-                                height: 92,
-                                child: _coverPhotoUrl != null
-                                    ? Image.network(_coverPhotoUrl!, fit: BoxFit.cover)
-                                    : Container(color: _border),
-                              ),
-                            ),
-                            const SizedBox(width: 18),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _title,
-                                    style: const TextStyle(color: _dark, fontSize: 24, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 14)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      _sectionLabel('Guest experience'),
-                      Container(
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
-                        child: Column(
-                          children: [
-                            _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesPage),
-                            _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesPage),
-                            _settingsRow(icon: Icons.policy_outlined, title: 'Cancellation policy', onTap: _openCancellationPolicySheet),
-                            _settingsRow(icon: Icons.visibility_outlined, title: 'Visibility', onTap: _openVisibilitySheet),
-                          ],
-                        ),
-                      ),
+                      const Text("Couldn't load this listing.", style: TextStyle(color: _dark, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
+                      Text('${snapshot.error}', textAlign: TextAlign.center, style: const TextStyle(color: _muted, fontSize: 12)),
+                      const SizedBox(height: 16),
+                      TextButton(onPressed: () => setState(() => _future = _load()), child: const Text('Retry', style: TextStyle(color: _teal))),
                     ],
                   ),
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(35, 24, 35, 30),
-                decoration: const BoxDecoration(color: _cream, border: Border(top: BorderSide(color: _border))),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: (_isSaving || !_hasPageChanges) ? null : _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _teal,
-                      disabledBackgroundColor: _teal.withValues(alpha: 0.4),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+              );
+            }
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 36, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Current listing card ─────────────
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: _border)),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: SizedBox(
+                            width: 92,
+                            height: 92,
+                            child: _coverPhotoUrl != null
+                                ? Image.network(_coverPhotoUrl!, fit: BoxFit.cover)
+                                : Container(color: _border),
+                          ),
+                        ),
+                        const SizedBox(width: 18),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('CURRENT LISTING', style: TextStyle(color: Color(0xFFB3261E), fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                              const SizedBox(height: 6),
+                              Text(
+                                _title,
+                                style: const TextStyle(color: _dark, fontSize: 24, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w700),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(_shortLocation, style: const TextStyle(color: _muted, fontSize: 14)),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    child: _isSaving
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18)),
                   ),
-                ),
+
+                  _sectionLabel('Guest experience'),
+                  Container(
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+                    child: Column(
+                      children: [
+                        _settingsRow(icon: Icons.event_available_outlined, title: 'Booking preferences', onTap: _openBookingPreferencesPage),
+                        _settingsRow(icon: Icons.rule_outlined, title: 'House rules', onTap: _openHouseRulesPage),
+                        _settingsRow(
+                          icon: Icons.policy_outlined,
+                          title: 'Cancellation policy',
+                          subtitle: _cancellationPolicy,
+                          onTap: _openCancellationPolicyPage,
+                        ),
+                        _settingsRow(
+                          icon: Icons.visibility_outlined,
+                          title: 'Visibility',
+                          subtitle: _visibilitySummary,
+                          onTap: _openVisibilityPage,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

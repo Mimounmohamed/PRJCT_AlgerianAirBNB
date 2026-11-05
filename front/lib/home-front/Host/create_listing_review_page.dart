@@ -919,17 +919,17 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                     _cancellationCard(
                       value: 'Flexible',
                       title: 'Flexible',
-                      description: 'Full refund 1 day prior to arrival.',
+                      description: 'Full refund if cancelled at least 24 hours before check-in.',
                     ),
                     _cancellationCard(
                       value: 'Moderate',
                       title: 'Moderate',
-                      description: 'Full refund 5 days prior to arrival.',
+                      description: 'Full refund if cancelled at least 5 days before check-in.',
                     ),
                     _cancellationCard(
                       value: 'Firm',
                       title: 'Firm',
-                      description: 'Full refund if cancelled within 48 hours of booking.',
+                      description: 'Full refund if cancelled at least 30 days before check-in.',
                     ),
                     const SizedBox(height: 10),
 

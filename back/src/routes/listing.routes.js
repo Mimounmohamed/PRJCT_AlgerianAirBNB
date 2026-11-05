@@ -4,6 +4,7 @@ const { protect, optionalAuth, requireHost } = require('../middleware/auth.middl
 const Listing = require('../models/Listing');
 const ListingView = require('../models/ListingView');
 const { destroyImagesInBackground } = require('../config/cloudinary');
+const { MAX_SNOOZE_DAYS, listedFilter } = require('../utils/snooze');
 
 // GET /api/listings — Browse all active listings (public)
 router.get('/', async (req, res) => {
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
       limit = 20,
     } = req.query;
 
-    const filter = { status: 'active', visibility: 'listed', isDeleted: { $ne: true } };
+    const filter = { status: 'active', isDeleted: { $ne: true }, ...listedFilter() };
 
     if (category)     filter.categories = category;
     if (propertyType) filter.propertyType = propertyType;
@@ -121,6 +122,7 @@ const HOST_EDITABLE_FIELDS = [
   'cancellationPolicy',
   'checkInInstructions',
   'visibility',
+  'snoozedUntil',
 ];
 
 // price is handled per sub-field: the host controls their own price and
@@ -192,12 +194,28 @@ router.put('/:id', protect, requireHost, async (req, res) => {
     const oldPhotoUrls = listing.photos.map((p) => p.url);
 
     const { price, ...rest } = pickHostEditable(req.body);
+
     // Visibility only means something for a live listing — a listing
     // that's paused, pending review or rejected stays unlisted until it's
-    // active again (resume/admin approval set it then).
-    if (rest.visibility !== undefined && listing.status !== 'active') {
+    // active again (resume/admin approval set it then). snoozedUntil only
+    // travels together with visibility.
+    if (rest.visibility === undefined || listing.status !== 'active') {
       delete rest.visibility;
+      delete rest.snoozedUntil;
+    } else if (rest.visibility === 'snoozed') {
+      const until = new Date(rest.snoozedUntil);
+      const now = Date.now();
+      if (Number.isNaN(until.getTime()) || until.getTime() <= now) {
+        return res.status(400).json({ error: 'Pick a snooze end date in the future.' });
+      }
+      if (until.getTime() > now + MAX_SNOOZE_DAYS * 24 * 60 * 60 * 1000) {
+        return res.status(400).json({ error: `A listing can be snoozed for at most ${MAX_SNOOZE_DAYS} days.` });
+      }
+      rest.snoozedUntil = until;
+    } else {
+      rest.snoozedUntil = null;
     }
+
     listing.set(rest);
     if (price) {
       for (const [key, value] of Object.entries(price)) {

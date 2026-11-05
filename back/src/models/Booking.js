@@ -38,7 +38,9 @@ const bookingSchema = new mongoose.Schema(
 
     cancellationPolicy: {
       type: String,
-      enum: ['Flexible', 'Moderate', 'Strict'],
+      // Copied from Listing.cancellationPolicy at booking time, so it must
+      // accept the same values. 'Strict' is kept only for old documents.
+      enum: ['Flexible', 'Moderate', 'Firm', 'Strict'],
     },
     cancellationReason: { type: String },
     cancelledAt:        { type: Date },

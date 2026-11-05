@@ -125,11 +125,17 @@ const listingSchema = new mongoose.Schema(
     checkInInstructions: { type: String },
 
     // ── Status & Visibility ────────────────────────────────
+    // 'listed'   — in search results
+    // 'unlisted' — hidden from search; still opens by id (saved lists,
+    //              conversations, links) and existing bookings stand
+    // 'snoozed'  — hidden like unlisted until snoozedUntil, then it goes
+    //              back to 'listed' on its own (see utils/snooze.js)
     visibility: {
       type:    String,
-      enum:    ['listed', 'unlisted'],
+      enum:    ['listed', 'unlisted', 'snoozed'],
       default: 'unlisted',
     },
+    snoozedUntil: { type: Date, default: null }, // only set while visibility === 'snoozed'
     status: {
       type:    String,
       enum:    ['draft', 'pending_review', 'active', 'inactive', 'rejected'],

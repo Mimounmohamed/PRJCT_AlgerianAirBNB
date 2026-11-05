@@ -103,6 +103,7 @@ router.post('/listings/:id/pause', protect, requireHost, async (req, res) => {
 
     listing.status = 'inactive';
     listing.visibility = 'unlisted';
+    listing.snoozedUntil = null;
     await listing.save();
     res.json(listing);
   } catch (err) {
@@ -126,10 +127,12 @@ router.post('/listings/:id/resume', protect, requireHost, async (req, res) => {
     if (listing.bookingPreferences?.autoPublish === true) {
       listing.status = 'active';
       listing.visibility = 'listed';
+      listing.snoozedUntil = null;
       if (!listing.publishedAt) listing.publishedAt = new Date();
     } else {
       listing.status = 'pending_review';
       listing.visibility = 'unlisted';
+      listing.snoozedUntil = null;
     }
     await listing.save();
     res.json(listing);

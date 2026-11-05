@@ -53,6 +53,8 @@ class HostListingDetailModel {
   final String checkOutTime;
 
   final String cancellationPolicy; // 'Flexible' | 'Moderate' | 'Firm'
+  /// End of the snooze while visibility == 'snoozed', else null.
+  final DateTime? snoozedUntil;
   final String? checkInInstructions;
 
   final double totalEarnings;
@@ -103,6 +105,7 @@ class HostListingDetailModel {
     this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
     required this.cancellationPolicy,
+    this.snoozedUntil,
     required this.checkInInstructions,
     required this.totalEarnings,
     required this.totalViews,
@@ -175,6 +178,7 @@ class HostListingDetailModel {
       checkOutTimeTo: bookingPreferences['checkOutTimeTo'] as String? ?? '12:00',
       checkOutTime: bookingPreferences['checkOutTime'] as String? ?? (bookingPreferences['checkOutTimeFrom'] as String? ?? '11:00'),
       cancellationPolicy: json['cancellationPolicy'] as String? ?? 'Moderate',
+      snoozedUntil: DateTime.tryParse(json['snoozedUntil']?.toString() ?? '')?.toLocal(),
       checkInInstructions: json['checkInInstructions'] as String?,
       totalEarnings: (stats['totalEarnings'] as num?)?.toDouble() ?? 0,
       totalViews: (stats['totalViews'] as num?)?.toInt() ?? 0,
