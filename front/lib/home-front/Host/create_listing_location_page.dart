@@ -51,6 +51,14 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
   double _zoom = 13;
   bool _isGeocoding = false;
   Timer? _debounce;
+  // The in-flight reverse geocode — Next waits for it so the draft never
+  // carries the previous spot's commune/street.
+  Future<void>? _pendingGeocode;
+  // Bumped on every new lookup AND on every manual Wilaya/Baladiya pick —
+  // an older lookup that finishes late is ignored instead of overwriting
+  // a newer pin position or the host's own choice.
+  int _geocodeRequestId = 0;
+  bool _isContinuing = false;
 
   List<AlgeriaCommune> _communes = [];
   bool _isLoadingDataset = true;
@@ -104,12 +112,24 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
     );
     if (result == null) return;
 
+    _geocodeRequestId++; // the host's pick wins over any lookup still running
     setState(() {
       widget.draft.wilaya = result;
       // Changing the wilaya invalidates whatever baladiya was picked
-      // under the previous wilaya.
+      // under the previous wilaya, and the street/neighborhood with it.
       widget.draft.city = null;
+      widget.draft.neighborhood = null;
+      _isGeocoding = false; // any running lookup is now ignored
     });
+
+    // Center the map on the wilaya (average of its communes) so the pin
+    // starts in the right region.
+    final communes = AlgeriaLocationData.communesForWilaya(_communes, result);
+    if (communes.isNotEmpty) {
+      final lat = communes.map((c) => c.lat).reduce((a, b) => a + b) / communes.length;
+      final lng = communes.map((c) => c.lng).reduce((a, b) => a + b) / communes.length;
+      _moveMapTo(LatLng(lat, lng), zoom: 10);
+    }
   }
 
   Future<void> _pickBaladiya() async {
@@ -138,8 +158,11 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
     // globally, which also fills in the wilaya from whichever commune matched.
     commune ??= AlgeriaLocationData.findByCommuneName(_communes, result);
 
+    _geocodeRequestId++; // the host's pick wins over any lookup still running
     setState(() {
       widget.draft.city = result;
+      widget.draft.neighborhood = null;
+      _isGeocoding = false; // any running lookup is now ignored
       if (commune != null) widget.draft.wilaya = commune.wilayaNameFr;
     });
     if (commune != null) {
@@ -155,31 +178,55 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
         widget.draft.lat = center.latitude;
         widget.draft.lng = center.longitude;
       });
-      _debounce?.cancel();
-      _debounce = Timer(const Duration(milliseconds: 600), () => _reverseGeocode(center));
+      _scheduleReverseGeocode(center, const Duration(milliseconds: 600));
     }
   }
 
+  void _scheduleReverseGeocode(LatLng point, Duration delay) {
+    _debounce?.cancel();
+    _debounce = Timer(delay, () => _startReverseGeocode(point));
+  }
+
+  /// Starts a lookup and tracks it in [_pendingGeocode] so Next can wait.
+  Future<void> _startReverseGeocode(LatLng point) {
+    final lookup = _reverseGeocode(point);
+    _pendingGeocode = lookup;
+    unawaited(lookup.whenComplete(() {
+      if (identical(_pendingGeocode, lookup)) _pendingGeocode = null;
+    }));
+    return lookup;
+  }
+
   /// GET https://nominatim.openstreetmap.org/reverse — free, no API key.
-  /// Result is matched against the local commune dataset (case-insensitive
-  /// exact match on commune name) to keep the Wilaya/Baladiya dropdowns in
-  /// sync with wherever the pin lands. If no exact match is found, the
-  /// dropdowns are left as-is — only the pin/coordinates move.
+  /// The place name is matched against the local commune dataset
+  /// (preferring a commune in the same wilaya as the nearest one, since
+  /// several wilayas share commune names). When nothing matches — or the
+  /// request fails — the nearest commune by coordinates is used, so the
+  /// Wilaya/Baladiya always follow the pin and are always names from the
+  /// app's own list.
   Future<void> _reverseGeocode(LatLng point) async {
+    final requestId = ++_geocodeRequestId;
     setState(() => _isGeocoding = true);
     try {
-      final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse'
-        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}&accept-language=fr',
-      );
-      final response = await http.get(
-        uri,
-        headers: {'User-Agent': 'Akrili/1.0 (contact: om_mimoun@esi.dz)'},
-      );
-      if (response.statusCode != 200) return;
+      final communes = _communes.isNotEmpty ? _communes : await AlgeriaLocationData.load();
+      final nearest = AlgeriaLocationData.nearestCommune(communes, point.latitude, point.longitude);
 
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final address = body['address'] as Map<String, dynamic>? ?? {};
+      Map<String, dynamic> address = {};
+      try {
+        final uri = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}&accept-language=fr',
+        );
+        final response = await http
+            .get(uri, headers: {'User-Agent': 'Akrili/1.0 (contact: om_mimoun@esi.dz)'})
+            .timeout(const Duration(seconds: 8));
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          address = body['address'] as Map<String, dynamic>? ?? {};
+        }
+      } catch (_) {
+        // Offline / slow — the nearest-commune fallback below still applies.
+      }
 
       final candidates = [
         address['city'],
@@ -189,11 +236,20 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
         address['suburb'],
       ].whereType<String>();
 
+      final sameWilaya = nearest == null
+          ? const <AlgeriaCommune>[]
+          : AlgeriaLocationData.communesForWilaya(communes, nearest.wilayaNameFr);
       AlgeriaCommune? match;
       for (final candidate in candidates) {
-        match = AlgeriaLocationData.findByCommuneNameLoose(_communes, candidate);
+        final normalized = candidate.trim().toLowerCase();
+        match = sameWilaya.where((c) => c.communeNameFr.toLowerCase() == normalized).firstOrNull ??
+            AlgeriaLocationData.findByCommuneNameLoose(communes, candidate);
         if (match != null) break;
       }
+      match ??= nearest;
+
+      final neighborhoodGuess =
+          (address['neighbourhood'] ?? address['quarter'] ?? address['suburb'] ?? address['hamlet']) as String?;
 
       // Street — Nominatim's 'road' field, with the house number prefixed
       // when available (e.g. "12 Rue Larbi Ben M'hidi"). Refreshes on
@@ -208,7 +264,8 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
           ? null
           : (houseNumber != null ? '$houseNumber $road' : road);
 
-      if (!mounted) return;
+      // A newer pan or a manual Wilaya/Baladiya pick happened meanwhile.
+      if (!mounted || requestId != _geocodeRequestId) return;
       final currentText = _streetController.text.trim();
       final isUntouchedByHost = currentText.isEmpty || currentText == _lastAutoFilledStreet;
       setState(() {
@@ -216,8 +273,14 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
           widget.draft.city = match.communeNameFr;
           widget.draft.wilaya = match.wilayaNameFr;
         }
-        if (streetGuess != null && isUntouchedByHost) {
-          _streetController.text = streetGuess;
+        widget.draft.neighborhood =
+            (neighborhoodGuess != null && neighborhoodGuess.toLowerCase() != widget.draft.city?.toLowerCase())
+                ? neighborhoodGuess
+                : null;
+        if (isUntouchedByHost) {
+          // An auto-filled street from the previous spot is wrong here —
+          // replace it, or clear it if this spot has no street name.
+          _streetController.text = streetGuess ?? '';
           widget.draft.fullAddress = streetGuess;
           _lastAutoFilledStreet = streetGuess;
         }
@@ -225,7 +288,46 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
     } catch (_) {
       // Silent fail — host can still pick Wilaya/Baladiya manually.
     } finally {
-      if (mounted) setState(() => _isGeocoding = false);
+      if (mounted && requestId == _geocodeRequestId) setState(() => _isGeocoding = false);
+    }
+  }
+
+  /// Next: finish any lookup still running for the current pin, make sure
+  /// the pin and Wilaya/Baladiya are set, then go to the next step.
+  Future<void> _continue() async {
+    if (_isContinuing) return;
+    setState(() => _isContinuing = true);
+    try {
+      // A pan that hasn't been looked up yet (still in its debounce).
+      if (_debounce?.isActive ?? false) {
+        _debounce!.cancel();
+        unawaited(_startReverseGeocode(_center));
+      }
+      final pending = _pendingGeocode;
+      if (pending != null) {
+        try {
+          await pending.timeout(const Duration(seconds: 10));
+        } catch (_) {}
+      }
+      if (!mounted) return;
+
+      // The pin is always somewhere — store it even if the host never
+      // moved the map (otherwise the listing would be saved at 0,0).
+      widget.draft.lat ??= _center.latitude;
+      widget.draft.lng ??= _center.longitude;
+
+      if (widget.draft.wilaya == null || widget.draft.city == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please choose your Wilaya and Baladiya, or move the pin to your place.')),
+        );
+        return;
+      }
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => CreateListingAmenitiesPage(draft: widget.draft)),
+      );
+    } finally {
+      if (mounted) setState(() => _isContinuing = false);
     }
   }
 
@@ -328,10 +430,13 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
       },
     );
 
+    if (!mounted) return;
+    // Opening and closing the big map without panning isn't a move.
+    final moved = (expandedCenter.latitude - _center.latitude).abs() > 1e-5 ||
+        (expandedCenter.longitude - _center.longitude).abs() > 1e-5;
     // Sync whatever the dialog ended up centered on back into the page.
     _moveMapTo(expandedCenter, zoom: expandedZoom);
-    _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 300), () => _reverseGeocode(expandedCenter));
+    if (moved) _scheduleReverseGeocode(expandedCenter, const Duration(milliseconds: 300));
   }
 
   Widget _dropdownField({
@@ -478,7 +583,7 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                                         child: CircularProgressIndicator(strokeWidth: 2, color: _teal),
                                       )
                                     : const Icon(Icons.refresh, color: _teal, size: 20),
-                                onPressed: _isGeocoding ? null : () => _reverseGeocode(_center),
+                                onPressed: _isGeocoding ? null : () => _startReverseGeocode(_center),
                               ),
                             ),
                           ],
@@ -578,19 +683,16 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
                     child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => CreateListingAmenitiesPage(draft: widget.draft),
-                        ),
-                      );
-                    },
+                    onPressed: _isContinuing ? null : _continue,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,
+                      disabledBackgroundColor: _teal.withValues(alpha: 0.5),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                     ),
-                    child: const Text('Next', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                    child: _isContinuing
+                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Next', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),

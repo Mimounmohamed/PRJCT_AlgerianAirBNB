@@ -5,17 +5,20 @@ import '../widgets/create_listing_pattern_background.dart'; // adjust path if yo
 // path/constructor — "Preview my listing" pushes to it below.
 import '../explore_page/listing_detail_page.dart';
 
-/// Shown after Publish for listings that are NOT instant-book — i.e.
-/// ones that go into 'pending_review' and need admin approval before
-/// they go live. Instant-book listings skip this page entirely and go
-/// straight back to the Host dashboard (see create_listing_review_page's
-/// _publish()).
+/// Shown after Publish, for both outcomes:
+///  - [isLive] true  → Auto-publish was on: the listing skipped the
+///    AKRILI team's review and is already in search results.
+///  - [isLive] false → it went to 'pending_review' and an admin has to
+///    approve it before it goes live.
+/// Also tells the host how guest bookings will work ([instantBook]).
 class CreateListingConfirmationPage extends StatelessWidget {
   final String listingId;
   final String title;
   final String? city;
   final String? wilaya;
   final String? coverPhotoUrl;
+  final bool isLive;
+  final bool instantBook;
 
   const CreateListingConfirmationPage({
     super.key,
@@ -24,6 +27,8 @@ class CreateListingConfirmationPage extends StatelessWidget {
     this.city,
     this.wilaya,
     this.coverPhotoUrl,
+    this.isLive = false,
+    this.instantBook = false,
   });
 
   static const Color _dark = Color(0xFF2A1B12);
@@ -69,6 +74,40 @@ class CreateListingConfirmationPage extends StatelessWidget {
     );
   }
 
+  Widget _settingRow({required IconData icon, required String title, required String body}) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
+            child: Icon(icon, size: 18, color: _teal),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: _dark, fontSize: 14, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 3),
+                Text(body, style: const TextStyle(color: _muted, fontSize: 12, height: 1.35)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -97,13 +136,13 @@ class CreateListingConfirmationPage extends StatelessWidget {
                   height: 80,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(color: _tealTint, shape: BoxShape.circle),
-                  child: const Icon(Icons.check, color: _teal, size: 36),
+                  child: Icon(isLive ? Icons.celebration_outlined : Icons.check, color: _teal, size: 36),
                 ),
                 const SizedBox(height: 20),
-                const Text(
-                  'Your listing is in review',
+                Text(
+                  isLive ? 'Your listing is live!' : 'Your listing is in review',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: _dark,
                     fontSize: 24,
                     fontFamily: 'CormorantGaramond',
@@ -114,11 +153,16 @@ class CreateListingConfirmationPage extends StatelessWidget {
                 Text.rich(
                   TextSpan(
                     style: const TextStyle(color: _muted, fontSize: 14, height: 1.5),
-                    children: [
-                      const TextSpan(text: "We're reviewing "),
-                      TextSpan(text: "'$title'", style: const TextStyle(fontWeight: FontWeight.w700, color: _dark)),
-                      const TextSpan(text: ". You'll hear from us within 24 hours."),
-                    ],
+                    children: isLive
+                        ? [
+                            TextSpan(text: "'$title'", style: const TextStyle(fontWeight: FontWeight.w700, color: _dark)),
+                            const TextSpan(text: ' is published and guests can already find it in search.'),
+                          ]
+                        : [
+                            const TextSpan(text: "We're reviewing "),
+                            TextSpan(text: "'$title'", style: const TextStyle(fontWeight: FontWeight.w700, color: _dark)),
+                            const TextSpan(text: ". You'll hear from us within 24 hours."),
+                          ],
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -184,9 +228,9 @@ class CreateListingConfirmationPage extends StatelessWidget {
                                 color: _tealTint,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: const Text(
-                                'STATUS: IN REVIEW',
-                                style: TextStyle(color: _teal, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.3),
+                              child: Text(
+                                isLive ? 'STATUS: LIVE' : 'STATUS: IN REVIEW',
+                                style: const TextStyle(color: _teal, fontSize: 10, fontWeight: FontWeight.w700, letterSpacing: 0.3),
                               ),
                             ),
                           ],
@@ -195,10 +239,35 @@ class CreateListingConfirmationPage extends StatelessWidget {
                     ],
                   ),
                 ),
+                const SizedBox(height: 14),
+
+                // ── How publishing / bookings work for this listing ──
+                _settingRow(
+                  icon: Icons.publish_outlined,
+                  title: isLive ? 'Auto-publish is on' : 'Auto-publish is off',
+                  body: isLive
+                      ? 'Your listing skipped the AKRILI review. If you pause and resume it later, it goes straight back live.'
+                      : 'The AKRILI team reviews your listing before it goes live, and again whenever you resume it after a pause.',
+                ),
+                const SizedBox(height: 10),
+                _settingRow(
+                  icon: Icons.flash_on_outlined,
+                  title: instantBook ? 'Instant Book is on' : 'Instant Book is off',
+                  body: instantBook
+                      ? 'Guests can book right away — their bookings are confirmed automatically.'
+                      : 'Guests send a request, and you accept or decline each booking.',
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 6, left: 2),
+                  child: Text(
+                    'You can change both anytime in Manage Listing → Listing settings → Booking preferences.',
+                    style: TextStyle(color: _muted, fontSize: 11, height: 1.35),
+                  ),
+                ),
                 const SizedBox(height: 28),
 
                 // ── Next steps ─────────────────────────────
-                Align(
+                const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     'NEXT STEPS',
@@ -206,9 +275,15 @@ class CreateListingConfirmationPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                _stepRow(context, number: 1, text: 'We verify your property details and identity.'),
-                _stepRow(context, number: 2, text: 'Your listing goes live on the AKRILI marketplace.'),
-                _stepRow(context, number: 3, text: 'Start welcoming guests and sharing your space.'),
+                if (isLive) ...[
+                  _stepRow(context, number: 1, text: 'Open your calendar and block any dates you\'re not available.'),
+                  _stepRow(context, number: 2, text: 'Keep an eye on messages and booking requests.'),
+                  _stepRow(context, number: 3, text: 'Start welcoming guests and sharing your space.'),
+                ] else ...[
+                  _stepRow(context, number: 1, text: 'We verify your property details and identity.'),
+                  _stepRow(context, number: 2, text: 'Your listing goes live on the AKRILI marketplace.'),
+                  _stepRow(context, number: 3, text: 'Start welcoming guests and sharing your space.'),
+                ],
                 const SizedBox(height: 24),
 
                 // ── Actions ─────────────────────────────────

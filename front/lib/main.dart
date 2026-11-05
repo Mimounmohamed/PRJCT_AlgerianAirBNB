@@ -27,7 +27,16 @@ class MyApp extends StatelessWidget {
       title: 'Algerian AirBNB',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // AKRILI teal — also what default widgets (date/time pickers,
+        // dialogs, chips without explicit colors) pick up.
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF006972)),
+        // Material 3 tints and shades an app bar once content scrolls under
+        // it, which turned every cream app bar a muddy grey/purple. Keep
+        // app bars exactly the color each screen sets.
+        appBarTheme: const AppBarTheme(
+          scrolledUnderElevation: 0,
+          surfaceTintColor: Colors.transparent,
+        ),
       ),
       home: const SplashScreen(),
     );

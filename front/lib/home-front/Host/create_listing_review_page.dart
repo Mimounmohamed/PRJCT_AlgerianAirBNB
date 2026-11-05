@@ -614,26 +614,23 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       );
       if (!mounted) return;
 
-      if (widget.draft.autoPublish) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Listing published!')),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => CreateListingConfirmationPage(
-              listingId: listingId,
-              title: widget.draft.title,
-              city: widget.draft.city,
-              wilaya: widget.draft.wilaya,
-              coverPhotoUrl: widget.draft.photos.isNotEmpty
-                  ? widget.draft.photos[widget.draft.coverPhotoIndex]['url'] as String?
-                  : null,
-            ),
+      // Both outcomes get the confirmation page: live right away
+      // (Auto-publish on) or sent to the AKRILI team for review.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => CreateListingConfirmationPage(
+            listingId: listingId,
+            title: widget.draft.title,
+            city: widget.draft.city,
+            wilaya: widget.draft.wilaya,
+            coverPhotoUrl: widget.draft.photos.isNotEmpty
+                ? widget.draft.photos[widget.draft.coverPhotoIndex.clamp(0, widget.draft.photos.length - 1)]['url'] as String?
+                : null,
+            isLive: widget.draft.autoPublish,
+            instantBook: widget.draft.instantBook,
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
