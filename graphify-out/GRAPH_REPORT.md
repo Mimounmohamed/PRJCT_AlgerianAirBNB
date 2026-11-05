@@ -1,14 +1,19 @@
-# Graph Report - PRJCT_AlgerianAirBNB  (2026-11-04)
+# Graph Report - PRJCT_AlgerianAirBNB  (2026-11-05)
 
 ## Corpus Check
-- 248 files · ~146,549 words
+- 178 files · ~147,514 words
 - Verdict: corpus is large enough that graph structure adds value.
-- Unclassified: 58 file(s) not represented in the graph (top: (none) 11, .xcconfig 8, .xml 7)
+- Unclassified: 59 file(s) not represented in the graph (top: (none) 12, .xcconfig 8, .xml 7)
 
 ## Summary
-- 2566 nodes · 3319 edges · 147 communities (118 shown, 29 thin omitted)
+- 2578 nodes · 3331 edges · 153 communities (126 shown, 27 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 61 edges (avg confidence: 0.87)
-- Token cost: 301,398 input · 0 output
+- Token cost: 0 input · 0 output
+
+## Graph Freshness
+- Built from commit: `7552b987`
+- Run `git rev-parse HEAD` and compare to check if the graph is stale.
+- Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
 - Edit Listing Details Page
@@ -19,7 +24,7 @@
 - Host Listing Detail Model
 - OTP Code Input Widget
 - Birthday Field & Calendar
-- Amenities Page & Sheet
+- app_search_sheet_picker.dart
 - App Bootstrap & Push Setup
 - Listing Detail Model
 - Guest Booking Page
@@ -50,16 +55,16 @@
 - Two-Step Verification Screen
 - Listing Detail Page
 - OTP & Pending Signup Models
-- Safety Guide Screen
+- Settings.dart
 - Login & Security Screen
 - Sign-Up Step 3 (Photo)
 - Bottom Nav Bar
 - Notification Settings
 - Host Dashboard Page
 - Win32 Window Impl
-- Host Stats & Progress Widgets
-- User Session State
-- Listing/Booking/Availability Models
+- host_stats_grid.dart
+- listing.routes.js
+- Seedlistings.js
 - Create Listing Basics Page
 - Email/Phone Login Screen
 - Account OTP Verify Screen
@@ -107,7 +112,7 @@
 - Reviews Page
 - Host Listing Summary Model
 - Win32 Message Handling
-- Push Notifications & Message Routes
+- message.routes.js
 - Create Listing Intro Page
 - Sign-In Progress Bar
 - Host Section Widget
@@ -124,7 +129,7 @@
 - Dart Analyzer Config
 - Maghrebi Heritage Imagery
 - Project Docs & Web Entry
-- Profile Dialog State
+- List
 - Landing App Bar
 - SMS Service
 - Maghrebi Architecture Imagery
@@ -134,15 +139,15 @@
 - Android MainActivity
 - Profile Illustration SVGs
 - Hospitality Interior Images
-- Notifications Screen State
+- IconData
 - Shield Trust Icons
 - Discover Landscape Images
 - Location Page State
 - Review Page State
 - Edit Listing State
 - Manage Calendar State
-- Info Field State
-- Personal Info State
+- birthday_field.dart
+- amenities_page.dart
 - Decorative Orbit SVG
 - Discover Compass SVG
 - Experience House SVG
@@ -151,51 +156,57 @@
 - Mountains Icon SVG
 - Kasbah Icon SVG
 - Default Avatar Image
+- DateTime
+- FlutterWindow
+- algeria_wilayas_data.dart
+- package:flutter/material.dart
+- create_listing_progress_dots.dart
+- Point
 
 ## God Nodes (most connected - your core abstractions)
-1. `mongoose` - 21 edges
-2. `Win32Window` - 21 edges
+1. `Win32Window` - 21 edges
+2. `mongoose` - 21 edges
 3. `dependencies` - 17 edges
 4. `Flutter Default App Icon (Flutter logo)` - 17 edges
 5. `express` - 15 edges
 6. `iOS AppIcon Set (default Flutter logo)` - 15 edges
-7. `protect()` - 12 edges
-8. `FlutterWindow` - 10 edges
-9. `WindowClassRegistrar` - 9 edges
+7. `FlutterWindow` - 10 edges
+8. `WindowClassRegistrar` - 9 edges
+9. `protect()` - 9 edges
 10. `_MyApplication` - 7 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `wWinMain()` --calls--> `CreateAndAttachConsole()`  [INFERRED]
   front/windows/runner/main.cpp → front/windows/runner/utils.cpp
-- `APPLY_STANDARD_SETTINGS (Linux)` --semantically_similar_to--> `APPLY_STANDARD_SETTINGS (Windows)`  [INFERRED] [semantically similar]
-  front/linux/CMakeLists.txt → front/windows/CMakeLists.txt
-- `flutter_assemble (Linux)` --semantically_similar_to--> `flutter_assemble (Windows)`  [INFERRED] [semantically similar]
-  front/linux/flutter/CMakeLists.txt → front/windows/flutter/CMakeLists.txt
-- `Windows Runner Executable (WIN32)` --implements--> `Windows aairbnb Binary`  [INFERRED]
-  front/windows/runner/CMakeLists.txt → front/windows/CMakeLists.txt
-- `confidence.svg - Shield with Checkmark (Trust)` --semantically_similar_to--> `security.svg - Shield with User (Account Security)`  [INFERRED] [semantically similar]
-  front/assets/icons/confidence.svg → front/assets/icons/security.svg
+- `marhaban.png - Moorish Courtyard Welcome Art` --semantically_similar_to--> `w.png - Riad Doorway Through Shutters`  [INFERRED] [semantically similar]
+  front/assets/images/marhaban.png → front/assets/images/w.png
+- `courtyard.png - Ornate arched wooden door between orange trees (login courtyard screen)` --semantically_similar_to--> `google.png - Ornate arched doorway background (Google sign-in screen)`  [INFERRED] [semantically similar]
+  front/assets/images/courtyard.png → front/assets/images/google.png
+- `logo for main.png - Splash Logo (Four-Point Star)` --semantically_similar_to--> `logo.png - App Icon Logo`  [INFERRED] [semantically similar]
+  front/assets/images/logo for main.png → front/assets/images/logo.png
+- `authentic_stays.png - Traditional salon seating with tea set (used in create_listing_basics_page.dart)` --semantically_similar_to--> `hospitality.png - Warm vaulted sitting room with arched window (onboarding hospitality screen)`  [INFERRED] [semantically similar]
+  front/assets/images/authentic_stays.png → front/assets/images/hospitality.png
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
+- **Android launcher icon density variants** — front_android_app_src_main_res_mipmap_mdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_hdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xhdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xxhdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xxxhdpi_ic_launcher_icon [EXTRACTED 1.00]
+- **iOS Launch Image resolution variants** — front_ios_runner_assets_xcassets_launchimage_imageset_launchimage, front_ios_runner_assets_xcassets_launchimage_imageset_launchimage_2x, front_ios_runner_assets_xcassets_launchimage_imageset_launchimage_3x [EXTRACTED 1.00]
 - **Linux desktop Flutter build pipeline** — front_linux_cmakelists_aairbnb_binary, front_linux_runner_cmakelists_runner_executable, front_linux_flutter_cmakelists_flutter_library, front_linux_flutter_cmakelists_flutter_assemble, front_linux_cmakelists_install_bundle [EXTRACTED 1.00]
+- **macOS AppIcon.appiconset size variants** — front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_16_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_32_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_64_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_128_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_256_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_512_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_1024_icon [EXTRACTED 1.00]
 - **Windows desktop Flutter build pipeline** — front_windows_cmakelists_aairbnb_binary, front_windows_runner_cmakelists_runner_executable, front_windows_flutter_cmakelists_flutter_library, front_windows_flutter_cmakelists_flutter_wrapper_app, front_windows_flutter_cmakelists_flutter_assemble, front_windows_cmakelists_install_bundle [EXTRACTED 1.00]
-- **Mar7aban welcome screen Algerian heritage icons (mosque, mountains, kasbah)** — front_assets_icons_icon__1__icon, front_assets_icons_icon__2__icon, front_assets_icons_icon__3__icon [INFERRED 0.95]
-- **How-it-works settings page feature icons (discover, confidence, experience)** — front_assets_icons_discover_icon, front_assets_icons_confidence_icon, front_assets_icons_experience_icon [INFERRED 0.95]
-- **Profile illustration composition (central avatar, orbit ring, floating badges)** — front_assets_icons_central_avatar_base_icon, front_assets_icons_decorative_orbit_icon, front_assets_icons_background_icon, front_assets_icons_floating_element_reprentingprofile_icon [INFERRED 0.75]
-- **Onboarding carousel full-bleed backgrounds (discover, authentically, hospitality)** — front_assets_images_discover_image, front_assets_images_authentically_image, front_assets_images_hospitality_image [INFERRED 0.85]
-- **Login / sign-up screen imagery (courtyard, google, default avatar)** — front_assets_images_courtyard_image, front_assets_images_google_image, front_assets_images_default_avatar_image [INFERRED 0.75]
 - **How it works page imagery (discoverAlgeria, authentically)** — front_assets_images_discoveralgeria_image, front_assets_images_authentically_image, front_assets_images_authentically_traditional_architecture_concept [INFERRED 0.65]
+- **Login / sign-up screen imagery (courtyard, google, default avatar)** — front_assets_images_courtyard_image, front_assets_images_google_image, front_assets_images_default_avatar_image [INFERRED 0.75]
+- **Profile illustration composition (central avatar, orbit ring, floating badges)** — front_assets_icons_central_avatar_base_icon, front_assets_icons_decorative_orbit_icon, front_assets_icons_background_icon, front_assets_icons_floating_element_reprentingprofile_icon [INFERRED 0.75]
 - **Four-Point Star Brand Identity Assets** — front_assets_images_logo_image, front_assets_images_logo_for_main_image, front_assets_images_phonenumber_image, front_assets_images_brand_star_motif [INFERRED 0.85]
 - **Maghrebi Riad Hospitality Imagery** — front_assets_images_marhaban_image, front_assets_images_w_image, front_assets_images_safehousing_image, front_assets_images_maghrebi_heritage_aesthetic [INFERRED 0.85]
-- **Android launcher icon density variants** — front_android_app_src_main_res_mipmap_mdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_hdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xhdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xxhdpi_ic_launcher_icon, front_android_app_src_main_res_mipmap_xxxhdpi_ic_launcher_icon [EXTRACTED 1.00]
-- **macOS AppIcon.appiconset size variants** — front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_16_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_32_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_64_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_128_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_256_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_512_icon, front_macos_runner_assets_xcassets_appicon_appiconset_app_icon_1024_icon [EXTRACTED 1.00]
+- **Onboarding carousel full-bleed backgrounds (discover, authentically, hospitality)** — front_assets_images_discover_image, front_assets_images_authentically_image, front_assets_images_hospitality_image [INFERRED 0.85]
+- **How-it-works settings page feature icons (discover, confidence, experience)** — front_assets_icons_discover_icon, front_assets_icons_confidence_icon, front_assets_icons_experience_icon [INFERRED 0.95]
+- **Mar7aban welcome screen Algerian heritage icons (mosque, mountains, kasbah)** — front_assets_icons_icon__1__icon, front_assets_icons_icon__2__icon, front_assets_icons_icon__3__icon [INFERRED 0.95]
 - **Web favicon and PWA icon set** — front_web_favicon_icon, front_web_icons_icon_192_icon, front_web_icons_icon_512_icon, front_web_icons_icon_maskable_192_icon, front_web_icons_icon_maskable_512_icon [INFERRED 0.95]
-- **iOS Launch Image resolution variants** — front_ios_runner_assets_xcassets_launchimage_imageset_launchimage, front_ios_runner_assets_xcassets_launchimage_imageset_launchimage_2x, front_ios_runner_assets_xcassets_launchimage_imageset_launchimage_3x [EXTRACTED 1.00]
 
-## Communities (147 total, 29 thin omitted)
+## Communities (153 total, 27 thin omitted)
 
 ### Community 0 - "Edit Listing Details Page"
 Cohesion: 0.02
@@ -207,11 +218,11 @@ Nodes (59): _addButtonKey, _AvatarWithBadge, border, borderRadius, build, _C, ca
 
 ### Community 2 - "Listing Draft Model"
 Cohesion: 0.04
-Nodes (53): addCustomAmenity, additionalRules, addPhoto, adultOnly, advanceNoticeHours, amenities, bathrooms, bedrooms (+45 more)
+Nodes (54): addCustomAmenity, additionalRules, addPhoto, adultOnly, advanceNoticeHours, amenities, autoPublish, bathrooms (+46 more)
 
 ### Community 3 - "Listing Settings Page"
 Cohesion: 0.04
-Nodes (50): _additionalRules, _adultOnly, _advanceNoticeHours, authToken, _border, build, _cancellationCard, _cancellationPolicy (+42 more)
+Nodes (51): _additionalRules, _adultOnly, _advanceNoticeHours, authToken, _autoPublish, _border, build, _cancellationCard (+43 more)
 
 ### Community 4 - "Create Listing Review Page"
 Cohesion: 0.04
@@ -219,19 +230,19 @@ Nodes (47): _addPhotosTile, _border, build, _cancellationCard, color, _cream, cr
 
 ### Community 5 - "Host Listing Detail Model"
 Cohesion: 0.04
-Nodes (48): additionalRules, adultOnly, advanceNoticeHours, amenities, cancellationPolicy, categories, checkInInstructions, checkInTimeFrom (+40 more)
+Nodes (49): additionalRules, adultOnly, advanceNoticeHours, amenities, autoPublish, cancellationPolicy, categories, checkInInstructions (+41 more)
 
 ### Community 6 - "OTP Code Input Widget"
 Cohesion: 0.04
 Nodes (41): build, _controllers, createState, dispose, errorText, fillColor, _focusNodes, length (+33 more)
 
 ### Community 7 - "Birthday Field & Calendar"
-Cohesion: 0.05
-Nodes (40): BirthdayField, build, errorText, _format, hint, label, onDateSelected, _pickDate (+32 more)
+Cohesion: 0.08
+Nodes (26): AvailabilityCalendar, _AvailabilityCalendarState, _blockedBg, _bookedBg, build, _changeMonth, _compactPrice, createState (+18 more)
 
-### Community 8 - "Amenities Page & Sheet"
-Cohesion: 0.05
-Nodes (38): amenities, AmenitiesPage, blurb, build, footerBlurb, _FooterCard, footerPhotoUrl, _groupByCategory (+30 more)
+### Community 8 - "app_search_sheet_picker.dart"
+Cohesion: 0.11
+Nodes (18): AppSearchSheetPicker, _border, build, createState, _dark, dispose, emptyMessage, _filtered (+10 more)
 
 ### Community 9 - "App Bootstrap & Push Setup"
 Cohesion: 0.05
@@ -259,7 +270,7 @@ Nodes (37): dependencies, cupertino_icons, dio, firebase_auth, firebase_core, fi
 
 ### Community 15 - "Backend Dependencies (npm)"
 Cohesion: 0.07
-Nodes (35): author, dependencies, cors@^2.8.6, dotenv@^16.6.1, express@^4.22.2, express-validator@^7.1.0, firebase-admin@^14.3.0, mongoose@^8.24.1 (+27 more)
+Nodes (34): author, dependencies, bcryptjs@^2.4.3, cors@^2.8.6, dotenv@^16.6.1, express-validator@^7.1.0, jsonwebtoken@^9.0.3, mongoose@^8.24.1 (+26 more)
 
 ### Community 16 - "Manage Listing Page"
 Cohesion: 0.06
@@ -278,8 +289,8 @@ Cohesion: 0.07
 Nodes (11): Cocoa, Flutter, FlutterMacOS, AppDelegate, SceneDelegate, RunnerTests, AppDelegate, MainFlutterWindow (+3 more)
 
 ### Community 20 - "Backend Auth Middleware & Routes"
-Cohesion: 0.09
-Nodes (24): generateToken(), jwt, optionalAuth(), protect(), requireHost(), express, router, express (+16 more)
+Cohesion: 0.11
+Nodes (17): express@^4.22.2, generateToken(), jwt, protect(), express, router, express, router (+9 more)
 
 ### Community 21 - "Personal Info Screen"
 Cohesion: 0.06
@@ -291,7 +302,7 @@ Nodes (32): AuthService, completeProfile, deactivateAccount, deleteAccountPerman
 
 ### Community 23 - "Booking Preferences Page"
 Cohesion: 0.06
-Nodes (31): advanceNoticeHours, authToken, BookingPreferencesPage, _BookingPreferencesPageState, BookingPreferencesResult, _border, build, checkInTimeFrom (+23 more)
+Nodes (32): advanceNoticeHours, authToken, autoPublish, BookingPreferencesPage, _BookingPreferencesPageState, BookingPreferencesResult, _border, build (+24 more)
 
 ### Community 24 - "Create Listing Amenities Page"
 Cohesion: 0.07
@@ -310,8 +321,8 @@ Cohesion: 0.07
 Nodes (17): build, _buildExploreTab, _buildHostTab, _buildTabBody, _checkUnread, createState, _currentIndex, dispose (+9 more)
 
 ### Community 28 - "Conversation Model & Seeds"
-Cohesion: 0.08
-Nodes (17): mongoose, mongoose, conversationSchema, mongoose, incidentSchema, mongoose, listingViewSchema, mongoose (+9 more)
+Cohesion: 0.09
+Nodes (15): mongoose, mongoose, conversationSchema, mongoose, incidentSchema, mongoose, messageSchema, mongoose (+7 more)
 
 ### Community 29 - "Report Incident Screen"
 Cohesion: 0.08
@@ -330,12 +341,12 @@ Cohesion: 0.08
 Nodes (23): conversationId, _conversations, _ConversationTile, createState, dispose, _error, _formatTime, hasUnread (+15 more)
 
 ### Community 33 - "Sign-Up Step 1"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (21): build, createState, dispose, _emailController, _emailError, _fullNameController, _fullNameError, _generalError (+13 more)
 
 ### Community 34 - "Wilaya Data & Help Center"
-Cohesion: 0.08
-Nodes (21): algeriaWilayas, baladiyas, code, name, toString, WilayaData, answer, build (+13 more)
+Cohesion: 0.12
+Nodes (15): answer, build, _CategoryCard, createState, _expandedItems, _FAQItem, HelpCenterScreen, _HelpCenterScreenState (+7 more)
 
 ### Community 35 - "Host All Listings Page"
 Cohesion: 0.09
@@ -347,19 +358,19 @@ Nodes (24): build, child, color, createState, _DashedBorderContainer, _emailEnab
 
 ### Community 37 - "Listing Detail Page"
 Cohesion: 0.09
-Nodes (11): createState, _descriptionExpanded, _future, initState, ListingDetailPage, _ListingDetailPageState, listingId, _openChat (+3 more)
+Nodes (10): createState, _descriptionExpanded, _future, initState, ListingDetailPage, _ListingDetailPageState, listingId, _openingChat (+2 more)
 
 ### Community 38 - "OTP & Pending Signup Models"
-Cohesion: 0.09
-Nodes (15): bcryptjs@^2.4.3, bcrypt, mongoose, otpVerificationSchema, mongoose, pendingSignupSchema, bcrypt, mongoose (+7 more)
+Cohesion: 0.11
+Nodes (10): bcrypt, mongoose, otpVerificationSchema, mongoose, pendingSignupSchema, express, jwt, mailTransporter (+2 more)
 
-### Community 39 - "Safety Guide Screen"
-Cohesion: 0.09
-Nodes (20): build, _DarkGuideItem, description, _GuideItem, icon, iconColor, label, _RuleChip (+12 more)
+### Community 39 - "Settings.dart"
+Cohesion: 0.17
+Nodes (10): build, icon, iconColor, onTap, _SettingsItem, SettingsScreen, showDivider, subtitle (+2 more)
 
 ### Community 40 - "Login & Security Screen"
-Cohesion: 0.09
-Nodes (20): confirmController, createState, icon, iconColor, initState, _isGoogleLinked, isLoading, _loadProfile (+12 more)
+Cohesion: 0.08
+Nodes (21): build, confirmController, createState, icon, iconColor, initState, _isGoogleLinked, isLoading (+13 more)
 
 ### Community 41 - "Sign-Up Step 3 (Photo)"
 Cohesion: 0.09
@@ -370,52 +381,48 @@ Cohesion: 0.09
 Nodes (22): _active, activeIcon, AkriliNavBar, build, _cornerRadius, createState, _currentIndex, hasUnreadMessages (+14 more)
 
 ### Community 43 - "Notification Settings"
-Cohesion: 0.09
-Nodes (21): build, createState, _CustomToggle, icon, initState, _loadFromSession, _messagesEmail, _messagesPush (+13 more)
+Cohesion: 0.05
+Nodes (36): AppUser, clear, copyWith, _currentUser, email, fromJson, id, instance (+28 more)
 
 ### Community 44 - "Host Dashboard Page"
 Cohesion: 0.10
 Nodes (16): authToken, build, createState, _dark, _dashboard, _error, _fetchAll, HostDashboardPage (+8 more)
 
 ### Community 45 - "Win32 Window Impl"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (8): EnableNonClientDpiScaling, Scale(), Win32Window::Win32Window(), WindowClassRegistrar, class_registered_, WindowClassRegistrar::GetWindowClass(), instance_, WindowClassRegistrar::UnregisterWindowClass()
 
-### Community 46 - "Host Stats & Progress Widgets"
-Cohesion: 0.10
-Nodes (14): build, CreateListingProgressDots, currentStep, totalSteps, activeListings, avgRating, build, formattedEarnings (+6 more)
+### Community 46 - "host_stats_grid.dart"
+Cohesion: 0.25
+Nodes (7): activeListings, avgRating, build, formattedEarnings, formattedViews, HostStatsGrid, _statBox
 
-### Community 47 - "User Session State"
-Cohesion: 0.10
-Nodes (15): AppUser, clear, copyWith, _currentUser, email, fromJson, id, instance (+7 more)
+### Community 47 - "listing.routes.js"
+Cohesion: 0.09
+Nodes (16): bookingSchema, mongoose, listingSchema, mongoose, photoSchema, listingViewSchema, mongoose, express (+8 more)
 
-### Community 48 - "Listing/Booking/Availability Models"
-Cohesion: 0.12
-Nodes (15): availabilitySchema, mongoose, bookingSchema, mongoose, listingSchema, mongoose, photoSchema, express (+7 more)
+### Community 48 - "Seedlistings.js"
+Cohesion: 0.24
+Nodes (8): availabilitySchema, mongoose, buildAvailabilityDocs(), daysFromNow(), dns, mongoose, sampleListings, seed()
 
 ### Community 49 - "Create Listing Basics Page"
-Cohesion: 0.11
-Nodes (17): _bathrooms, _bedrooms, _border, _counterRow, CreateListingBasicsPage, _CreateListingBasicsPageState, createState, _dark (+9 more)
+Cohesion: 0.10
+Nodes (18): _bathrooms, _bedrooms, _border, build, _counterRow, CreateListingBasicsPage, _CreateListingBasicsPageState, createState (+10 more)
 
 ### Community 50 - "Email/Phone Login Screen"
-Cohesion: 0.11
-Nodes (17): build, createState, dispose, _generalError, _identifierController, _identifierError, _isLoading, _labeledField (+9 more)
+Cohesion: 0.12
+Nodes (14): build, createState, dispose, _generalError, _identifierController, _identifierError, _isLoading, _labeledField (+6 more)
 
 ### Community 51 - "Account OTP Verify Screen"
 Cohesion: 0.11
 Nodes (18): build, _code, createState, _handleResend, _isEmail, _isLoading, _markAllRed, maskedContact (+10 more)
 
 ### Community 52 - "Complete Profile Dialog"
-Cohesion: 0.11
-Nodes (15): _browseApp, build, _buildBadge, _buildIllustration, _circle, _continueProfile, _controller, createState (+7 more)
+Cohesion: 0.09
+Nodes (19): _browseApp, build, _buildBadge, _buildIllustration, _circle, CompleteProfileDialog, _CompleteProfileDialogState, _continueProfile (+11 more)
 
 ### Community 53 - "Socket.IO Client Service"
-Cohesion: 0.11
+Cohesion: 0.10
 Nodes (13): _baseUrl, connect, disconnect, instance, isConnected, joinConversation, leaveConversation, offConversationUpdated (+5 more)
-
-### Community 54 - "Windows Flutter Window"
-Cohesion: 0.11
-Nodes (4): FlutterWindow, flutter_controller_, FlutterWindow::FlutterWindow(), project_
 
 ### Community 55 - "Default Flutter Icons (Android/macOS/Web)"
 Cohesion: 0.11
@@ -426,8 +433,8 @@ Cohesion: 0.12
 Nodes (16): build, _circleButton, _controller, createState, _currentPage, DetailImageCarousel, _DetailImageCarouselState, dispose (+8 more)
 
 ### Community 57 - "Win32 Geometry Types"
-Cohesion: 0.13
-Nodes (10): Point, x, y, Size, height, width, Win32Window, child_content_ (+2 more)
+Cohesion: 0.16
+Nodes (7): Size, height, width, Win32Window, child_content_, quit_on_close_, window_handle_
 
 ### Community 58 - "New Password Screen"
 Cohesion: 0.12
@@ -462,12 +469,12 @@ Cohesion: 0.13
 Nodes (13): build, createState, _goToVerifyCodeScreen, _isLoading, maskedEmail, maskedPhone, _onBack, _onSendCode (+5 more)
 
 ### Community 66 - "Listing & Availability Services"
-Cohesion: 0.15
+Cohesion: 0.16
 Nodes (7): AvailabilityService, fetchMonth, updateDates, createListing, fetchListingById, fetchListings, ListingService
 
 ### Community 67 - "Navigation Handlers"
-Cohesion: 0.13
-Nodes (14): _onContinue, _onContinue, _goToVerify, _openFullscreen, build, _buildListingsBody, build, build (+6 more)
+Cohesion: 0.12
+Nodes (16): _onForgotPassword, _onLogin, _onSignUp, _onContinue, _onContinue, _goToVerify, _openFullscreen, build (+8 more)
 
 ### Community 68 - "Safety & Trust Screen"
 Cohesion: 0.14
@@ -498,11 +505,11 @@ Cohesion: 0.15
 Nodes (10): BookingDetailsPage, _border, build, _cream, _dark, date, listingId, _muted (+2 more)
 
 ### Community 75 - "Express Server Entry"
-Cohesion: 0.15
-Nodes (11): jsonwebtoken@^9.0.3, app, cors, dns, express, http, io, jwt (+3 more)
+Cohesion: 0.18
+Nodes (9): app, cors, dns, express, http, io, jwt, mongoose (+1 more)
 
 ### Community 76 - "Host Tab Entry"
-Cohesion: 0.17
+Cohesion: 0.15
 Nodes (9): authToken, build, createState, _future, hostFirstName, HostTabEntry, _HostTabEntryState, initState (+1 more)
 
 ### Community 77 - "Windows Runner Entry"
@@ -522,8 +529,8 @@ Cohesion: 0.17
 Nodes (11): build, _controller, createState, dispose, ExploreSearchBar, _ExploreSearchBarState, initialLocation, initState (+3 more)
 
 ### Community 81 - "Listing Card Model"
-Cohesion: 0.15
-Nodes (12): city, coverPhotoUrl, currency, fromJson, id, isGuestFavorite, ListingModel, pricePerNight (+4 more)
+Cohesion: 0.17
+Nodes (11): city, coverPhotoUrl, currency, fromJson, id, isGuestFavorite, pricePerNight, ratingOverall (+3 more)
 
 ### Community 82 - "How It Works Screen"
 Cohesion: 0.15
@@ -539,7 +546,7 @@ Nodes (10): AmenityModel, catalogKey, category, description, fromJson, icon, ico
 
 ### Community 85 - "Host Service API"
 Cohesion: 0.17
-Nodes (9): becomeHost, deleteListing, fetchDashboard, fetchHostListings, fetchListingDetail, HostService, pauseListing, resumeListing (+1 more)
+Nodes (10): becomeHost, deleteListing, _errorFrom, fetchDashboard, fetchHostListings, fetchListingDetail, HostService, pauseListing (+2 more)
 
 ### Community 86 - "Privacy Policy Screen"
 Cohesion: 0.17
@@ -550,23 +557,23 @@ Cohesion: 0.18
 Nodes (8): _bodyStyle, build, _CheckItem, number, _SectionTitle, TermsOfServiceScreen, text, title
 
 ### Community 89 - "Listing Card Widget"
-Cohesion: 0.20
-Nodes (9): build, createState, initState, _isFavorite, listing, ListingCard, _ListingCardState, onFavoriteToggle (+1 more)
+Cohesion: 0.18
+Nodes (10): build, createState, initState, _isFavorite, listing, ListingCard, _ListingCardState, onFavoriteToggle (+2 more)
 
 ### Community 90 - "Web PWA Manifest"
 Cohesion: 0.18
 Nodes (10): background_color, description, display, icons, name, orientation, prefer_related_applications, short_name (+2 more)
 
 ### Community 91 - "Amenity Catalog Backend"
-Cohesion: 0.20
-Nodes (6): AMENITY_CATEGORIES, amenityCatalogSchema, mongoose, amenities, dns, mongoose
+Cohesion: 0.15
+Nodes (8): AMENITY_CATEGORIES, amenityCatalogSchema, mongoose, express, router, amenities, dns, mongoose
 
 ### Community 92 - "Mar7aban Welcome Screen"
 Cohesion: 0.20
 Nodes (8): build, _buildHeritageSection, _buildHero, _categoryCard, _onStartExploring, token, userName, WelcomeHomeScreen
 
 ### Community 93 - "Akrili App Bar"
-Cohesion: 0.20
+Cohesion: 0.22
 Nodes (6): AkriliAppBar, build, onBack, preferredSize, showBackButton, title
 
 ### Community 94 - "Reviews Page"
@@ -577,9 +584,9 @@ Nodes (9): _bar, build, label, listingTitle, _PlaceholderBreakdownRow, _Placehol
 Cohesion: 0.20
 Nodes (9): city, coverPhotoUrl, currency, fromJson, id, pricePerNight, propertyType, status (+1 more)
 
-### Community 97 - "Push Notifications & Message Routes"
-Cohesion: 0.25
-Nodes (5): { getApps }, { getMessaging }, sendPushNotification(), express, router
+### Community 97 - "message.routes.js"
+Cohesion: 0.12
+Nodes (12): firebase-admin@^14.3.0, { getAuth }, { initializeApp, cert, getApps }, { getApps }, { getMessaging }, sendPushNotification(), bcrypt, mongoose (+4 more)
 
 ### Community 98 - "Create Listing Intro Page"
 Cohesion: 0.22
@@ -618,8 +625,8 @@ Cohesion: 0.25
 Nodes (3): build, GoogleSignInScreen, _onContinueWithGoogle
 
 ### Community 108 - "Stateful Screen Classes"
-Cohesion: 0.25
-Nodes (7): ChatScreen, _ChatScreenState, _FullscreenVideo, _FullscreenVideoState, _VideoThumbnail, _VideoThumbnailState, NotificationsScreen
+Cohesion: 0.17
+Nodes (12): ChatScreen, _ChatScreenState, _FullscreenVideo, _FullscreenVideoState, _VideoThumbnail, _VideoThumbnailState, NotificationsScreen, _NotificationsScreenState (+4 more)
 
 ### Community 109 - "Booking Bottom Bar"
 Cohesion: 0.25
@@ -641,9 +648,9 @@ Nodes (6): incident.png - Safety First Banner, khayt.png - Stitched Leather Text
 Cohesion: 0.40
 Nodes (5): iOS Launch Screen Assets, aairbnb Flutter Project README, Flutter Framework, flutter_bootstrap.js loader, Flutter Web Entry Page (index.html)
 
-### Community 114 - "Profile Dialog State"
-Cohesion: 0.40
-Nodes (4): CompleteProfileDialog, _CompleteProfileDialogState, _SavedPopupContent, _SavedPopupContentState
+### Community 114 - "List"
+Cohesion: 0.14
+Nodes (10): amenities, _AmenitiesFullSheet, build, showAmenitiesFullSheet, showModalBottomSheet, amenities, AmenitiesSection, _amenityItem (+2 more)
 
 ### Community 115 - "Landing App Bar"
 Cohesion: 0.40
@@ -669,25 +676,61 @@ Nodes (3): Background.svg - Home/Buildings Icon in Beige Circle Badge, Central_a
 Cohesion: 1.00
 Nodes (3): authentic_stays.png - Traditional salon seating with tea set (used in create_listing_basics_page.dart), Authentic Algerian hospitality / traditional interiors, hospitality.png - Warm vaulted sitting room with arched window (onboarding hospitality screen)
 
+### Community 124 - "IconData"
+Cohesion: 0.17
+Nodes (10): build, _DarkGuideItem, description, _GuideItem, icon, iconColor, label, _RuleChip (+2 more)
+
+### Community 132 - "birthday_field.dart"
+Cohesion: 0.18
+Nodes (9): BirthdayField, build, errorText, _format, hint, label, onDateSelected, _pickDate (+1 more)
+
+### Community 133 - "amenities_page.dart"
+Cohesion: 0.18
+Nodes (10): amenities, AmenitiesPage, blurb, build, footerBlurb, _FooterCard, footerPhotoUrl, _groupByCategory (+2 more)
+
+### Community 147 - "DateTime"
+Cohesion: 0.25
+Nodes (5): AvailabilityDayModel, date, fromJson, priceOverride, status
+
+### Community 148 - "FlutterWindow"
+Cohesion: 0.25
+Nodes (3): FlutterWindow, flutter_controller_, project_
+
+### Community 149 - "algeria_wilayas_data.dart"
+Cohesion: 0.25
+Nodes (6): algeriaWilayas, baladiyas, code, name, toString, WilayaData
+
+### Community 150 - "package:flutter/material.dart"
+Cohesion: 0.25
+Nodes (3): build, ProfileSidePanel, main
+
+### Community 151 - "create_listing_progress_dots.dart"
+Cohesion: 0.40
+Nodes (4): build, CreateListingProgressDots, currentStep, totalSteps
+
+### Community 152 - "Point"
+Cohesion: 0.50
+Nodes (3): Point, x, y
+
 ## Knowledge Gaps
-- **1585 isolated node(s):** `_identifierController`, `_passwordController`, `_obscurePassword`, `_isLoading`, `_identifierError` (+1580 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1912 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **29 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **1590 isolated node(s):** `autoPublish`, `instantBook`, `minStayNights`, `maxStayNights`, `checkInTimeFrom` (+1585 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1924 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **27 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `HostDashboardModel` connect `Host Dashboard Model` to `Host Dashboard Page`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **What connects `_identifierController`, `_passwordController`, `_obscurePassword` to the rest of the system?**
-  _1585 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Why does `Win32Window` connect `Win32 Geometry Types` to `Win32 Message Handling`, `Win32 Window Impl`, `FlutterWindow`, `Windows Runner Headers`, `Point`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **What connects `autoPublish`, `instantBook`, `minStayNights` to the rest of the system?**
+  _1590 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Edit Listing Details Page` be split into smaller, more focused modules?**
   _Cohesion score 0.02247191011235955 - nodes in this community are weakly interconnected._
-- **Why does `ListingDraft` connect `Create Listing Basics Page` to `Create Listing Amenities Page`, `Listing Draft Model`, `Create Listing Location Page`, `Create Listing Review Page`?**
-  _High betweenness centrality (0.006) - this node is a cross-community bridge._
+- **Why does `HostDashboardModel` connect `Host Dashboard Model` to `Host Dashboard Page`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Should `Chat Conversation Screen` be split into smaller, more focused modules?**
   _Cohesion score 0.030303030303030304 - nodes in this community are weakly interconnected._
-- **Why does `HostListingDetailModel` connect `Manage Listing Page` to `Edit Listing Details Page`, `Listing Settings Page`, `Host Listing Detail Model`?**
-  _High betweenness centrality (0.004) - this node is a cross-community bridge._
+- **Why does `ListingDraft` connect `Create Listing Basics Page` to `Create Listing Amenities Page`, `Listing Draft Model`, `Create Listing Location Page`, `Create Listing Review Page`?**
+  _High betweenness centrality (0.010) - this node is a cross-community bridge._
 - **Should `Listing Draft Model` be split into smaller, more focused modules?**
-  _Cohesion score 0.03636363636363636 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03571428571428571 - nodes in this community are weakly interconnected._

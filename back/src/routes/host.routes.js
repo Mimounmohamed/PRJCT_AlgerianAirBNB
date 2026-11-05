@@ -4,6 +4,7 @@ const { protect, requireHost } = require('../middleware/auth.middleware');
 const User = require('../models/User');
 const Listing = require('../models/Listing');
 const Booking = require('../models/Booking');
+const { parseCloudinaryUrl, destroyImagesInBackground } = require('../config/cloudinary');
 
 // Every host-facing query excludes soft-deleted listings — "Delete" on the
 // Manage Listing page must make the listing disappear for the host too,
@@ -151,6 +152,34 @@ router.delete('/listings/:id', protect, requireHost, async (req, res) => {
     );
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
     res.json({ message: 'Listing deactivated.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/host/media/discard — { urls: [...] }
+// Called when a host uploads photos in Edit Listing and then leaves without
+// saving, so those uploads don't stay on Cloudinary forever.
+//
+// Uploads are unsigned (straight from the app), so the server can't prove
+// who uploaded a given image. To keep this safe it only deletes images
+// that are BOTH recent (Cloudinary's upload version timestamp, which can't
+// be faked, is under 6 hours old) AND not referenced by any document in
+// the app (checked inside destroyImageIfUnused).
+const DISCARD_MAX_AGE_SECONDS = 6 * 60 * 60;
+
+router.post('/media/discard', protect, requireHost, async (req, res) => {
+  try {
+    const urls = Array.isArray(req.body?.urls) ? req.body.urls.slice(0, 20) : [];
+    const now = Math.floor(Date.now() / 1000);
+
+    const deletable = urls.filter((url) => {
+      const parsed = parseCloudinaryUrl(url);
+      return parsed && now - parsed.version >= 0 && now - parsed.version <= DISCARD_MAX_AGE_SECONDS;
+    });
+
+    destroyImagesInBackground(deletable);
+    res.json({ message: `Queued ${deletable.length} image(s) for deletion.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

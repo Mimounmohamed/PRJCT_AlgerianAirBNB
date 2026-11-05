@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, optionalAuth, requireHost } = require('../middleware/auth.middleware');
 const Listing = require('../models/Listing');
 const ListingView = require('../models/ListingView');
+const { destroyImagesInBackground } = require('../config/cloudinary');
 
 // GET /api/listings — Browse all active listings (public)
 router.get('/', async (req, res) => {
@@ -188,6 +189,8 @@ router.put('/:id', protect, requireHost, async (req, res) => {
     });
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
 
+    const oldPhotoUrls = listing.photos.map((p) => p.url);
+
     const { price, ...rest } = pickHostEditable(req.body);
     listing.set(rest);
     if (price) {
@@ -197,6 +200,12 @@ router.put('/:id', protect, requireHost, async (req, res) => {
     }
 
     await listing.save();
+
+    // Photos the host removed are deleted from Cloudinary in the
+    // background (skipped if anything else still uses the same URL).
+    const newPhotoUrls = new Set(listing.photos.map((p) => p.url));
+    destroyImagesInBackground(oldPhotoUrls.filter((url) => !newPhotoUrls.has(url)));
+
     res.json(listing);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -112,6 +112,29 @@ class HostService {
     }
   }
 
+  /// POST /api/host/media/discard — photos uploaded in Edit Listing that
+  /// never got saved (host left without saving, or removed them before
+  /// saving). The backend deletes them from Cloudinary if they're recent
+  /// and unused. Best effort: never throws.
+  static Future<void> discardUploadedPhotos({
+    required String authToken,
+    required List<String> urls,
+  }) async {
+    if (urls.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/host/media/discard'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'urls': urls}),
+      );
+    } catch (_) {
+      // Leaving an orphan image behind isn't worth bothering the host about.
+    }
+  }
+
   /// Uses the backend's `{error: "..."}` message when there is one.
   static String _errorFrom(http.Response response, String fallback) {
     try {
