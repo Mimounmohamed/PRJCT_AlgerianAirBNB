@@ -36,6 +36,10 @@ class HostListingDetailModel {
   final bool familyBookletRequired;
 
   // ── Booking preferences ──────────────────────────────
+  /// Publishing: skip admin review — goes live directly on creation and
+  /// on resume after a pause.
+  final bool autoPublish;
+  /// Guest bookings: auto-confirmed without the host accepting them.
   final bool instantBook;
   final int advanceNoticeHours;
   final int minStayNights;
@@ -85,6 +89,7 @@ class HostListingDetailModel {
     required this.curfewTime,
     required this.additionalRules,
     required this.familyBookletRequired,
+    required this.autoPublish,
     required this.instantBook,
     required this.advanceNoticeHours,
     required this.minStayNights,
@@ -155,6 +160,7 @@ class HostListingDetailModel {
       curfewTime: houseRules['curfewTime'] as String?,
       additionalRules: houseRules['additionalRules'] as String?,
       familyBookletRequired: houseRules['familyBookletRequired'] as bool? ?? false,
+      autoPublish: bookingPreferences['autoPublish'] as bool? ?? false,
       instantBook: bookingPreferences['instantBook'] as bool? ?? false,
       advanceNoticeHours: (bookingPreferences['advanceNoticeHours'] as num?)?.toInt() ?? 24,
       minStayNights: (bookingPreferences['minStayNights'] as num?)?.toInt() ?? 1,

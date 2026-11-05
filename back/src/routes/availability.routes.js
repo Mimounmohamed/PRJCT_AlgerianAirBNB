@@ -29,7 +29,11 @@ router.get('/:listingId', async (req, res) => {
 // ownership check is added here explicitly).
 router.put('/:listingId', protect, requireHost, async (req, res) => {
   try {
-    const listing = await Listing.findOne({ _id: req.params.listingId, hostId: req.user._id });
+    const listing = await Listing.findOne({
+      _id: req.params.listingId,
+      hostId: req.user._id,
+      isDeleted: { $ne: true },
+    });
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
 
     const { dates, status, priceOverride } = req.body;

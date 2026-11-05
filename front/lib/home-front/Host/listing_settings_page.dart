@@ -49,6 +49,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   bool _isSaving = false;
 
   // ── Working copies of everything this page edits ────────
+  late bool _autoPublish;
   late bool _instantBook;
   late int _advanceNoticeHours;
   late int _minStayNights;
@@ -87,6 +88,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
       listingId: widget.listingId,
     );
     if (!_isLoaded) {
+      _autoPublish = listing.autoPublish;
       _instantBook = listing.instantBook;
       _advanceNoticeHours = listing.advanceNoticeHours;
       _minStayNights = listing.minStayNights;
@@ -126,6 +128,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
         builder: (_) => BookingPreferencesPage(
           authToken: widget.authToken,
           listingId: widget.listingId,
+          autoPublish: _autoPublish,
           instantBook: _instantBook,
           advanceNoticeHours: _advanceNoticeHours,
           minStayNights: _minStayNights,
@@ -141,6 +144,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
     if (result != null && mounted) {
       setState(() {
+        _autoPublish = result.autoPublish;
         _instantBook = result.instantBook;
         _minStayNights = result.minStayNights;
         _maxStayNights = result.maxStayNights;
@@ -198,6 +202,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
         listingId: widget.listingId,
         updates: {
           'bookingPreferences': {
+            'autoPublish': _autoPublish,
             'instantBook': _instantBook,
             'advanceNoticeHours': _advanceNoticeHours,
             'minStayNights': _minStayNights,

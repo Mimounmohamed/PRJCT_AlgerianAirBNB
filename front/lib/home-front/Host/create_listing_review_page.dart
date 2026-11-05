@@ -614,7 +614,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       );
       if (!mounted) return;
 
-      if (widget.draft.instantBook) {
+      if (widget.draft.autoPublish) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Listing published!')),
         );
@@ -836,9 +836,16 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                       child: Column(
                         children: [
                           _ruleRow(
+                            icon: Icons.publish_outlined,
+                            title: 'Auto-publish',
+                            subtitle: 'Go live directly, without waiting for the AKRILI team to review your listing.',
+                            value: widget.draft.autoPublish,
+                            onChanged: (v) => setState(() => widget.draft.autoPublish = v),
+                          ),
+                          _ruleRow(
                             icon: Icons.flash_on_outlined,
                             title: 'Instant Book',
-                            subtitle: 'Guests can book without waiting for approval.',
+                            subtitle: 'Guests can book without waiting for your approval.',
                             value: widget.draft.instantBook,
                             onChanged: (v) => setState(() => widget.draft.instantBook = v),
                             showDivider: false,

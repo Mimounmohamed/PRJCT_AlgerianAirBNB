@@ -6,6 +6,7 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 /// so it can keep its own in-memory copy of these fields in sync without
 /// re-fetching the whole listing.
 class BookingPreferencesResult {
+  final bool autoPublish;
   final bool instantBook;
   final int minStayNights;
   final int maxStayNights;
@@ -16,6 +17,7 @@ class BookingPreferencesResult {
   final String checkOutTime;
 
   const BookingPreferencesResult({
+    required this.autoPublish,
     required this.instantBook,
     required this.minStayNights,
     required this.maxStayNights,
@@ -28,13 +30,15 @@ class BookingPreferencesResult {
 }
 
 /// "Booking preferences" — its own full page (pushed from Listing
-/// Settings), not a bottom sheet. Edits instantBook, minStayNights,
+/// Settings), not a bottom sheet. Edits autoPublish (skip admin review),
+/// instantBook (auto-confirm guest bookings), minStayNights,
 /// maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To. advanceNoticeHours
 /// is no longer editable here but is still sent back unchanged on save
 /// so the field isn't wiped by the backend's shallow-merge PUT.
 class BookingPreferencesPage extends StatefulWidget {
   final String authToken;
   final String listingId;
+  final bool autoPublish;
   final bool instantBook;
   final int advanceNoticeHours;
   final int minStayNights;
@@ -49,6 +53,7 @@ class BookingPreferencesPage extends StatefulWidget {
     super.key,
     required this.authToken,
     required this.listingId,
+    required this.autoPublish,
     required this.instantBook,
     required this.advanceNoticeHours,
     required this.minStayNights,
@@ -72,6 +77,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
   static const Color _muted = Color(0xFF4F4540);
   static const Color _border = Color(0xFFE7DCCB);
 
+  late bool _autoPublish;
   late bool _instantBook;
   late int _minStayNights;
   late int _maxStayNights;
@@ -84,6 +90,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
   @override
   void initState() {
     super.initState();
+    _autoPublish = widget.autoPublish;
     _instantBook = widget.instantBook;
     _minStayNights = widget.minStayNights;
     _maxStayNights = widget.maxStayNights;
@@ -112,6 +119,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
         listingId: widget.listingId,
         updates: {
           'bookingPreferences': {
+            'autoPublish': _autoPublish,
             'instantBook': _instantBook,
             'advanceNoticeHours': widget.advanceNoticeHours,
             'minStayNights': _minStayNights,
@@ -129,6 +137,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
       if (!mounted) return;
       Navigator.of(context).pop(
         BookingPreferencesResult(
+          autoPublish: _autoPublish,
           instantBook: _instantBook,
           minStayNights: _minStayNights,
           maxStayNights: _maxStayNights,
@@ -266,7 +275,42 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Instant Book
+                  // Auto-publish (skip admin review)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Auto-publish', style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 4),
+                              Text(
+                                _autoPublish
+                                    ? 'Your listing goes live directly, without waiting for the AKRILI team to review it — including when you resume it after a pause.'
+                                    : 'The AKRILI team reviews your listing before it goes live — including when you resume it after a pause.',
+                                style: const TextStyle(color: _muted, fontSize: 12, height: 1.35),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Switch(
+                          value: _autoPublish,
+                          onChanged: (v) => setState(() => _autoPublish = v),
+                          activeColor: Colors.white,
+                          activeTrackColor: _teal,
+                          inactiveTrackColor: _border,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Instant Book (guest bookings auto-confirmed)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
@@ -284,11 +328,6 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
                                     ? 'Guests can book your place instantly without sending a request. This usually increases your booking rate.'
                                     : 'Guests must send a request before booking your place.',
                                 style: const TextStyle(color: _muted, fontSize: 12, height: 1.35),
-                              ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Any change you make here needs admin approval before it goes live — once approved, your listing keeps its Verified badge.',
-                                style: TextStyle(color: _teal, fontSize: 11, height: 1.3, fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),

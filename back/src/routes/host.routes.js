@@ -5,6 +5,11 @@ const User = require('../models/User');
 const Listing = require('../models/Listing');
 const Booking = require('../models/Booking');
 
+// Every host-facing query excludes soft-deleted listings — "Delete" on the
+// Manage Listing page must make the listing disappear for the host too,
+// not just from public search.
+const notDeleted = { isDeleted: { $ne: true } };
+
 // POST /api/host/become — Become a host
 router.post('/become', protect, async (req, res) => {
   try {
@@ -22,7 +27,7 @@ router.post('/become', protect, async (req, res) => {
 // GET /api/host/dashboard — Host dashboard overview
 router.get('/dashboard', protect, requireHost, async (req, res) => {
   try {
-    const listings = await Listing.find({ hostId: req.user._id });
+    const listings = await Listing.find({ hostId: req.user._id, ...notDeleted });
     const activeListings = listings.filter((l) => l.status === 'active').length;
     const totalEarnings = listings.reduce((sum, l) => sum + (l.stats.totalEarnings || 0), 0);
     const totalBookings = listings.reduce((sum, l) => sum + (l.stats.totalBookings || 0), 0);
@@ -58,7 +63,7 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
 // GET /api/host/listings — Get all host's listings
 router.get('/listings', protect, requireHost, async (req, res) => {
   try {
-    const listings = await Listing.find({ hostId: req.user._id }).sort({ createdAt: -1 });
+    const listings = await Listing.find({ hostId: req.user._id, ...notDeleted }).sort({ createdAt: -1 });
     res.json(listings);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -73,8 +78,57 @@ router.get('/listings', protect, requireHost, async (req, res) => {
 // other hosts' data.
 router.get('/listings/:id', protect, requireHost, async (req, res) => {
   try {
-    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id });
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id, ...notDeleted });
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+    res.json(listing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/host/listings/:id/pause — "Pause Listing" on the Manage
+// Listing page. Only an active listing can be paused (a listing that's
+// pending review or rejected isn't live, so there's nothing to pause —
+// and allowing it would let pause→resume skip the review).
+router.post('/listings/:id/pause', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id, ...notDeleted });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+    if (listing.status !== 'active') {
+      return res.status(400).json({ error: 'Only an active listing can be paused.' });
+    }
+
+    listing.status = 'inactive';
+    listing.visibility = 'unlisted';
+    await listing.save();
+    res.json(listing);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/host/listings/:id/resume — "Resume Listing" on the Manage
+// Listing page. Only a paused (inactive) listing can be resumed. Where it
+// goes depends on bookingPreferences.autoPublish:
+//   - autoPublish on  → straight back to 'active' / 'listed'
+//   - autoPublish off → 'pending_review' / 'unlisted', waiting for an admin
+router.post('/listings/:id/resume', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id, ...notDeleted });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+    if (listing.status !== 'inactive') {
+      return res.status(400).json({ error: 'Only a paused listing can be resumed.' });
+    }
+
+    if (listing.bookingPreferences?.autoPublish === true) {
+      listing.status = 'active';
+      listing.visibility = 'listed';
+      if (!listing.publishedAt) listing.publishedAt = new Date();
+    } else {
+      listing.status = 'pending_review';
+      listing.visibility = 'unlisted';
+    }
+    await listing.save();
     res.json(listing);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -91,7 +145,7 @@ router.get('/listings/:id', protect, requireHost, async (req, res) => {
 router.delete('/listings/:id', protect, requireHost, async (req, res) => {
   try {
     const listing = await Listing.findOneAndUpdate(
-      { _id: req.params.id, hostId: req.user._id },
+      { _id: req.params.id, hostId: req.user._id, ...notDeleted },
       { isDeleted: true, status: 'inactive', visibility: 'unlisted' },
       { new: true }
     );

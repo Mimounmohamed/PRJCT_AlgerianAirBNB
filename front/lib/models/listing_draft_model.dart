@@ -67,6 +67,9 @@ class ListingDraft {
   bool familyBookletRequired = false;
 
   // ── Booking Preferences ────────────────────────────────
+  /// Publishing: skip admin review and go live directly.
+  bool autoPublish = false;
+  /// Guest bookings: auto-confirmed without the host accepting them.
   bool instantBook = false;
   int advanceNoticeHours = 24;
   int minStayNights = 1;
@@ -233,6 +236,7 @@ class ListingDraft {
         'familyBookletRequired': familyBookletRequired,
       },
       'bookingPreferences': {
+        'autoPublish': autoPublish,
         'instantBook': instantBook,
         'advanceNoticeHours': advanceNoticeHours,
         'minStayNights': minStayNights,

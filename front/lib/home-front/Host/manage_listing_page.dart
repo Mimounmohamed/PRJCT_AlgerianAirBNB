@@ -123,10 +123,13 @@ class _ManageListingPageState extends State<ManageListingPage> {
         action: () => HostService.pauseListing(authToken: widget.authToken, listingId: widget.listingId),
       );
 
-  Future<void> _resumeListing() => _confirmAndRun(
+  Future<void> _resumeListing(bool autoPublish) => _confirmAndRun(
         title: 'Resume this listing?',
-        message: "It'll go back to being visible in search results.",
-        confirmLabel: 'Resume',
+        message: autoPublish
+            ? "Auto-publish is on, so it'll go straight back to being visible in search results."
+            : "It'll be sent to the AKRILI team for review, and goes back into search results once approved. "
+                'To skip the review, turn on Auto-publish in Listing settings → Booking preferences.',
+        confirmLabel: autoPublish ? 'Resume' : 'Send for review',
         confirmColor: _teal,
         action: () => HostService.resumeListing(authToken: widget.authToken, listingId: widget.listingId),
       );
@@ -538,7 +541,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
                                 Expanded(
                                   child: listing.status == 'inactive'
                                       ? ElevatedButton(
-                                          onPressed: _isBusy ? null : _resumeListing,
+                                          onPressed: _isBusy ? null : () => _resumeListing(listing.autoPublish),
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: _teal,
                                             elevation: 0,
@@ -551,7 +554,10 @@ class _ManageListingPageState extends State<ManageListingPage> {
                                           ),
                                         )
                                       : OutlinedButton(
-                                          onPressed: _isBusy ? null : _pauseListing,
+                                          // Only a live listing can be paused —
+                                          // pending/rejected ones aren't in search
+                                          // results yet (backend enforces this too).
+                                          onPressed: (_isBusy || listing.status != 'active') ? null : _pauseListing,
                                           style: OutlinedButton.styleFrom(
                                             side: const BorderSide(color: _border),
                                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
