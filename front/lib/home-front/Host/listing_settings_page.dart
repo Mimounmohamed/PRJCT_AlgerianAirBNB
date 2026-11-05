@@ -9,15 +9,14 @@ import 'house_rules_page.dart'; // adjust path to match your project structure
 /// quick action. Groups four real, backend-backed settings:
 /// bookingPreferences, houseRules, cancellationPolicy, and visibility.
 ///
-/// Booking preferences and House rules are each their own full page
-/// (pushed via Navigator) rather than bottom sheets, each with its own
-/// dedicated Save button that PUTs just that section. Cancellation
-/// policy and Visibility still open in a bottom sheet, and one
-/// page-level "Save Changes" button commits everything in a single PUT
-/// (including booking preferences / house rules again, using whatever
-/// values are currently in this page's state — so nothing is lost if
-/// the host only opens this page and taps Save Changes without visiting
-/// those two sub-pages).
+/// Booking preferences and House rules are each their own full page with
+/// their own Save (each PUTs just its section). Cancellation policy and
+/// Visibility open in a bottom sheet and are committed by this page's
+/// "Save Changes" button, which sends only those two fields and is
+/// disabled until one of them actually changed.
+///
+/// Pops with `true` whenever anything was saved — from this page or from
+/// either sub-page — so Manage Listing knows to reload.
 ///
 /// Deliberately does NOT include a "Deactivate Listing" control — pause
 /// / resume / delete already live on the Manage Listing page's Advanced
@@ -72,6 +71,19 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   late String _cancellationPolicy;
   late String _visibility;
 
+  // What's saved on the server — Save Changes is only enabled when the
+  // two fields this page owns differ from these.
+  late String _savedCancellationPolicy;
+  late String _savedVisibility;
+  // Listing status — visibility only applies to an 'active' listing.
+  String _status = 'active';
+  // True once a sub-page (booking preferences / house rules) saved.
+  bool _subPageSaved = false;
+
+  bool get _isLive => _status == 'active';
+  bool get _hasPageChanges =>
+      _cancellationPolicy != _savedCancellationPolicy || (_isLive && _visibility != _savedVisibility);
+
   String _title = '';
   String? _coverPhotoUrl;
   String _shortLocation = '';
@@ -110,6 +122,9 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
       _cancellationPolicy = listing.cancellationPolicy;
       _visibility = listing.visibility;
+      _savedCancellationPolicy = _cancellationPolicy;
+      _savedVisibility = _visibility;
+      _status = listing.status;
 
       _title = listing.title;
       _coverPhotoUrl = listing.coverPhotoUrl;
@@ -144,8 +159,10 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
     if (result != null && mounted) {
       setState(() {
+        _subPageSaved = true;
         _autoPublish = result.autoPublish;
         _instantBook = result.instantBook;
+        _advanceNoticeHours = result.advanceNoticeHours;
         _minStayNights = result.minStayNights;
         _maxStayNights = result.maxStayNights;
         _checkInTimeFrom = result.checkInTimeFrom;
@@ -180,9 +197,12 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
     if (result != null && mounted) {
       setState(() {
+        _subPageSaved = true;
         _petsAllowed = result.petsAllowed;
         _smokingAllowed = result.smokingAllowed;
         _eventsAllowed = result.eventsAllowed;
+        _adultOnly = result.adultOnly;
+        _familyBookletRequired = result.familyBookletRequired;
         _curfew = result.curfew;
         _curfewTime = result.curfewTime;
         _additionalRules = result.additionalRules;
@@ -190,45 +210,25 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
     }
   }
 
-  // ── Save (page-level — everything, including booking preferences and
-  // house rules again using current state, so nothing is lost if the
-  // host never opens those sub-pages) ────────────────────────
+  // ── Save (page-level — only the two fields this page itself edits;
+  // booking preferences and house rules are saved by their own pages) ──
 
   Future<void> _save() async {
+    if (!_hasPageChanges) return;
     setState(() => _isSaving = true);
     try {
       await HostService.updateListingDetails(
         authToken: widget.authToken,
         listingId: widget.listingId,
         updates: {
-          'bookingPreferences': {
-            'autoPublish': _autoPublish,
-            'instantBook': _instantBook,
-            'advanceNoticeHours': _advanceNoticeHours,
-            'minStayNights': _minStayNights,
-            'maxStayNights': _maxStayNights,
-            'checkInTimeFrom': _checkInTimeFrom,
-            'checkInTimeTo': _checkInTimeTo,
-            'checkOutTimeFrom': _checkOutTimeFrom,
-            'checkOutTimeTo': _checkOutTimeTo,
-            'checkOutTime': _checkOutTime,
-          },
-          'houseRules': {
-            'petsAllowed': _petsAllowed,
-            'smokingAllowed': _smokingAllowed,
-            'eventsAllowed': _eventsAllowed,
-            'adultOnly': _adultOnly,
-            'curfew': _curfew,
-            if (_curfewTime != null) 'curfewTime': _curfewTime,
-            if (_additionalRules != null) 'additionalRules': _additionalRules,
-            'familyBookletRequired': _familyBookletRequired,
-          },
           'cancellationPolicy': _cancellationPolicy,
-          'visibility': _visibility,
+          if (_isLive) 'visibility': _visibility,
         },
       );
 
       if (!mounted) return;
+      _savedCancellationPolicy = _cancellationPolicy;
+      _savedVisibility = _visibility;
       await _showSavedPopup();
       if (!mounted) return;
       Navigator.of(context).pop(true); // true = Manage Listing should refresh
@@ -386,8 +386,10 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
   Widget _visibilityCard({required String value, required String title, required String description, required IconData icon, required StateSetter sheetSetState}) {
     final selected = _visibility == value;
     return GestureDetector(
-      onTap: () => sheetSetState(() => setState(() => _visibility = value)),
-      child: Container(
+      onTap: _isLive ? () => sheetSetState(() => setState(() => _visibility = value)) : null,
+      child: Opacity(
+        opacity: _isLive ? 1 : 0.45,
+        child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
@@ -412,8 +414,24 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
             Icon(selected ? Icons.radio_button_checked : Icons.radio_button_off, color: selected ? _teal : _muted, size: 20),
           ],
         ),
+        ),
       ),
     );
+  }
+
+  String get _statusExplanation {
+    switch (_status) {
+      case 'pending_review':
+        return "Your listing is waiting for the AKRILI team's review, so it isn't in search results yet. "
+            'Visibility can be changed once it\'s approved and live.';
+      case 'inactive':
+        return "Your listing is paused, so it's hidden from search. Resume it from Manage Listing first — "
+            'visibility can be changed once it\'s live again.';
+      case 'rejected':
+        return "Your listing wasn't approved, so it can't appear in search. Visibility can be changed once it's live.";
+      default:
+        return "Your listing isn't live yet. Visibility can be changed once it is.";
+    }
   }
 
   void _openVisibilitySheet() {
@@ -423,22 +441,29 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Note: pausing a listing from Manage Listing also unlists it, and resuming lists it again — this setting is here for finer control alongside that.',
-              style: TextStyle(color: _muted, fontSize: 11, height: 1.3),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: _isLive ? _tealTint : _border, borderRadius: BorderRadius.circular(12)),
+              child: Text(
+                _isLive
+                    ? 'Your listing is live. Unlisting hides it from search without pausing it.'
+                    : _statusExplanation,
+                style: const TextStyle(color: _dark, fontSize: 12, height: 1.35),
+              ),
             ),
             const SizedBox(height: 12),
             _visibilityCard(
               value: 'listed',
               title: 'Listed',
-              description: 'Visible to guests in search results.',
+              description: 'Guests can find it in search results and book it.',
               icon: Icons.visibility_outlined,
               sheetSetState: sheetSetState,
             ),
             _visibilityCard(
               value: 'unlisted',
               title: 'Unlisted',
-              description: 'Hidden from search — only reachable via direct link.',
+              description: "Hidden from search results. Guests who already saved it, or have it in a conversation with you, can still open it.",
               icon: Icons.visibility_off_outlined,
               sheetSetState: sheetSetState,
             ),
@@ -483,6 +508,18 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Back (app bar or system) reports whether a sub-page saved, so
+    // Manage Listing reloads even if this page's own Save wasn't used.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) Navigator.of(context).pop(_subPageSaved);
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: _cream,
       appBar: PreferredSize(
@@ -586,7 +623,7 @@ class _ListingSettingsPageState extends State<ListingSettingsPage> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _isSaving ? null : _save,
+                    onPressed: (_isSaving || !_hasPageChanges) ? null : _save,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _teal,
                       disabledBackgroundColor: _teal.withValues(alpha: 0.4),

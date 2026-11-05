@@ -24,6 +24,8 @@ class HostListingDetailModel {
   final double? longitude;
 
   final double pricePerNight;
+  /// 'nightly' | 'monthly' — pricePerNight is the price per this unit.
+  final String rentalPeriod;
 
   // ── House rules ──────────────────────────────────────
   final bool petsAllowed;
@@ -81,6 +83,7 @@ class HostListingDetailModel {
     required this.latitude,
     required this.longitude,
     required this.pricePerNight,
+    this.rentalPeriod = 'nightly',
     required this.petsAllowed,
     required this.smokingAllowed,
     required this.eventsAllowed,
@@ -152,6 +155,7 @@ class HostListingDetailModel {
       latitude: coordsList != null && coordsList.length == 2 ? (coordsList[1] as num).toDouble() : null,
       longitude: coordsList != null && coordsList.length == 2 ? (coordsList[0] as num).toDouble() : null,
       pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
+      rentalPeriod: price['rentalPeriod'] as String? ?? 'nightly',
       petsAllowed: houseRules['petsAllowed'] as bool? ?? false,
       smokingAllowed: houseRules['smokingAllowed'] as bool? ?? false,
       eventsAllowed: houseRules['eventsAllowed'] as bool? ?? false,

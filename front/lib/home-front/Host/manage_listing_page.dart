@@ -460,15 +460,19 @@ class _ManageListingPageState extends State<ManageListingPage> {
                     _quickAction(
                       icon: Icons.calendar_today_outlined,
                       label: 'Manage calendar',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ManageCalendarPage(
-                            authToken: widget.authToken,
-                            listingId: widget.listingId,
-                            basePricePerNight: listing.pricePerNight,
+                      onTap: () async {
+                        final changed = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => ManageCalendarPage(
+                              authToken: widget.authToken,
+                              listingId: widget.listingId,
+                              basePricePerNight: listing.pricePerNight,
+                              rentalPeriod: listing.rentalPeriod,
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                        if (changed == true) setState(() { _load(); _didChange = true; });
+                      },
                     ),
                     _quickAction(
                       icon: Icons.rate_review_outlined,

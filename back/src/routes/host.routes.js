@@ -5,6 +5,8 @@ const User = require('../models/User');
 const Listing = require('../models/Listing');
 const Booking = require('../models/Booking');
 const { parseCloudinaryUrl, destroyImagesInBackground } = require('../config/cloudinary');
+const Availability = require('../models/Availability');
+const { ACTIVE_BOOKING_STATUSES, MS_PER_DAY, parseDay, dayKey, bookedNightsInRange } = require('../utils/bookingNights');
 
 // Every host-facing query excludes soft-deleted listings — "Delete" on the
 // Manage Listing page must make the listing disappear for the host too,
@@ -152,6 +154,88 @@ router.delete('/listings/:id', protect, requireHost, async (req, res) => {
     );
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
     res.json({ message: 'Listing deactivated.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/host/listings/:id/calendar?month=11&year=2026 — the Manage
+// Calendar view of one month. Merges the host's own Availability marks
+// (available/blocked/booked-offline + price overrides) with real guest
+// bookings: every night of a pending/confirmed booking comes back as
+// status 'booked' with its bookingId, so the app can show it and refuse
+// to edit it. Only days with something to say are returned; missing days
+// are plain 'available' at the base price.
+//
+// Response: [{ date: "2026-11-05", status, priceOverride, bookingId, bookingStatus }]
+router.get('/listings/:id/calendar', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id, ...notDeleted });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+
+    const month = parseInt(req.query.month, 10);
+    const year = parseInt(req.query.year, 10);
+    if (!(month >= 1 && month <= 12) || !(year >= 2000 && year <= 2100)) {
+      return res.status(400).json({ error: 'month (1-12) and year are required.' });
+    }
+
+    const rangeStart = new Date(Date.UTC(year, month - 1, 1));
+    const rangeEnd = new Date(Date.UTC(year, month, 1));
+
+    const [marks, bookedNights] = await Promise.all([
+      Availability.find({ listingId: listing._id, date: { $gte: rangeStart, $lt: rangeEnd } }),
+      bookedNightsInRange(listing._id, rangeStart, rangeEnd),
+    ]);
+
+    const days = new Map();
+    for (const mark of marks) {
+      days.set(dayKey(mark.date), {
+        date: dayKey(mark.date),
+        status: mark.status,
+        priceOverride: mark.priceOverride ?? null,
+        bookingId: null,
+        bookingStatus: null,
+      });
+    }
+    for (const [key, booking] of bookedNights) {
+      days.set(key, {
+        date: key,
+        status: 'booked',
+        priceOverride: days.get(key)?.priceOverride ?? null,
+        bookingId: booking._id,
+        bookingStatus: booking.status,
+      });
+    }
+
+    res.json([...days.values()].sort((a, b) => a.date.localeCompare(b.date)));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/host/listings/:id/bookings/on/:date — the guest booking that
+// occupies a given night ("2026-11-05"), for the Booking Details page
+// opened from Manage Calendar. 404 when no active booking covers it.
+router.get('/listings/:id/bookings/on/:date', protect, requireHost, async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, hostId: req.user._id, ...notDeleted });
+    if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
+
+    const day = parseDay(req.params.date);
+    if (!day) return res.status(400).json({ error: 'date must be "YYYY-MM-DD".' });
+
+    const bookedNights = await bookedNightsInRange(listing._id, day, new Date(day.getTime() + MS_PER_DAY));
+    const match = bookedNights.get(dayKey(day));
+    if (!match) return res.status(404).json({ error: 'No guest booking on this date.' });
+
+    const booking = await Booking.findOne({
+      _id: match._id,
+      hostId: req.user._id,
+      status: { $in: ACTIVE_BOOKING_STATUSES },
+    }).populate('guestId', 'fullName profilePhoto');
+    if (!booking) return res.status(404).json({ error: 'No guest booking on this date.' });
+
+    res.json(booking);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

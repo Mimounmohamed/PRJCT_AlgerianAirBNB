@@ -192,6 +192,12 @@ router.put('/:id', protect, requireHost, async (req, res) => {
     const oldPhotoUrls = listing.photos.map((p) => p.url);
 
     const { price, ...rest } = pickHostEditable(req.body);
+    // Visibility only means something for a live listing — a listing
+    // that's paused, pending review or rejected stays unlisted until it's
+    // active again (resume/admin approval set it then).
+    if (rest.visibility !== undefined && listing.status !== 'active') {
+      delete rest.visibility;
+    }
     listing.set(rest);
     if (price) {
       for (const [key, value] of Object.entries(price)) {

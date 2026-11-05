@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, requireHost } = require('../middleware/auth.middleware');
 const Availability = require('../models/Availability');
 const Listing = require('../models/Listing');
+const { MS_PER_DAY, parseDay, dayKey, bookedNightsInRange } = require('../utils/bookingNights');
 
 // GET /api/availability/:listingId — Get calendar for a listing
 router.get('/:listingId', async (req, res) => {
@@ -27,6 +28,19 @@ router.get('/:listingId', async (req, res) => {
 // only the listing's own host — requireHost alone only checks the
 // requester HAS a host account, not that they own THIS listing, so an
 // ownership check is added here explicitly).
+//
+// Body: { dates: ["2026-11-05", ...], status, priceOverride? }
+//   - status: 'available' | 'blocked' | 'booked' ('booked' = booked
+//     outside the app; real in-app bookings come from the Booking
+//     collection, see GET /api/host/listings/:id/calendar)
+//   - priceOverride: omitted → each day keeps its current override;
+//     a number → set it; null → clear it (day uses the base price)
+//
+// Dates taken by an active (pending/confirmed) guest booking are refused
+// with 409 — the host has to handle the booking itself, not paint over it.
+const HOST_CALENDAR_STATUSES = ['available', 'blocked', 'booked'];
+const MAX_DATES_PER_UPDATE = 366;
+
 router.put('/:listingId', protect, requireHost, async (req, res) => {
   try {
     const listing = await Listing.findOne({
@@ -36,19 +50,55 @@ router.put('/:listingId', protect, requireHost, async (req, res) => {
     });
     if (!listing) return res.status(404).json({ error: 'Listing not found or unauthorized.' });
 
-    const { dates, status, priceOverride } = req.body;
-    // dates: array of date strings ["2024-10-15", "2024-10-16", ...]
+    const { dates, status } = req.body || {};
 
-    const ops = dates.map((dateStr) => ({
+    if (!HOST_CALENDAR_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${HOST_CALENDAR_STATUSES.join(', ')}.` });
+    }
+    if (!Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ error: 'dates must be a non-empty array of "YYYY-MM-DD" strings.' });
+    }
+    if (dates.length > MAX_DATES_PER_UPDATE) {
+      return res.status(400).json({ error: `At most ${MAX_DATES_PER_UPDATE} dates per update.` });
+    }
+
+    const days = [...new Set(dates)].map(parseDay);
+    if (days.some((d) => d === null)) {
+      return res.status(400).json({ error: 'Every date must be a valid "YYYY-MM-DD" string.' });
+    }
+
+    const hasPriceOverride = Object.prototype.hasOwnProperty.call(req.body, 'priceOverride');
+    const { priceOverride } = req.body;
+    if (hasPriceOverride && priceOverride !== null && !(typeof priceOverride === 'number' && priceOverride > 0)) {
+      return res.status(400).json({ error: 'priceOverride must be a positive number, or null to clear it.' });
+    }
+
+    // Refuse any date an active guest booking already occupies.
+    const times = days.map((d) => d.getTime());
+    const rangeStart = new Date(Math.min(...times));
+    const rangeEnd = new Date(Math.max(...times) + MS_PER_DAY);
+    const bookedNights = await bookedNightsInRange(listing._id, rangeStart, rangeEnd);
+    const conflicts = days.map(dayKey).filter((key) => bookedNights.has(key));
+    if (conflicts.length > 0) {
+      return res.status(409).json({
+        error: `${conflicts.length === 1 ? 'This date has' : 'These dates have'} a guest booking and can't be changed here: ${conflicts.join(', ')}.`,
+        conflicts,
+      });
+    }
+
+    const update = { status };
+    if (hasPriceOverride) update.priceOverride = priceOverride;
+
+    const ops = days.map((date) => ({
       updateOne: {
-        filter: { listingId: req.params.listingId, date: new Date(dateStr) },
-        update: { status, priceOverride: priceOverride || null },
+        filter: { listingId: listing._id, date },
+        update: { $set: update },
         upsert: true,
       },
     }));
 
     await Availability.bulkWrite(ops);
-    res.json({ message: `Updated ${dates.length} dates.` });
+    res.json({ message: `Updated ${days.length} dates.` });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

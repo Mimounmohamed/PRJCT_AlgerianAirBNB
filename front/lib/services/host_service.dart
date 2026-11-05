@@ -112,6 +112,24 @@ class HostService {
     }
   }
 
+  /// GET /api/host/listings/:id/bookings/on/:date — the guest booking that
+  /// occupies a given night, with the guest populated. Returns the raw
+  /// booking JSON; null when no active booking covers that date.
+  static Future<Map<String, dynamic>?> fetchBookingOnDate({
+    required String authToken,
+    required String listingId,
+    required String date, // "YYYY-MM-DD"
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId/bookings/on/$date');
+    final response = await http.get(uri, headers: {'Authorization': 'Bearer $authToken'});
+
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception(_errorFrom(response, 'Failed to load this booking'));
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   /// POST /api/host/media/discard — photos uploaded in Edit Listing that
   /// never got saved (host left without saving, or removed them before
   /// saving). The backend deletes them from Cloudinary if they're recent

@@ -8,6 +8,7 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 class BookingPreferencesResult {
   final bool autoPublish;
   final bool instantBook;
+  final int advanceNoticeHours;
   final int minStayNights;
   final int maxStayNights;
   final String checkInTimeFrom;
@@ -19,6 +20,7 @@ class BookingPreferencesResult {
   const BookingPreferencesResult({
     required this.autoPublish,
     required this.instantBook,
+    required this.advanceNoticeHours,
     required this.minStayNights,
     required this.maxStayNights,
     required this.checkInTimeFrom,
@@ -31,10 +33,11 @@ class BookingPreferencesResult {
 
 /// "Booking preferences" — its own full page (pushed from Listing
 /// Settings), not a bottom sheet. Edits autoPublish (skip admin review),
-/// instantBook (auto-confirm guest bookings), minStayNights,
-/// maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To. advanceNoticeHours
-/// is no longer editable here but is still sent back unchanged on save
-/// so the field isn't wiped by the backend's shallow-merge PUT.
+/// instantBook (auto-confirm guest bookings), advanceNoticeHours,
+/// minStayNights, maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To.
+/// (checkOutTime is the legacy single check-out field — kept equal to
+/// checkOutTimeFrom, same as the Create Listing wizard and the guest-side
+/// listing page read it.)
 class BookingPreferencesPage extends StatefulWidget {
   final String authToken;
   final String listingId;
@@ -79,7 +82,17 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
 
   late bool _autoPublish;
   late bool _instantBook;
+  late int _advanceNoticeHours;
   late int _minStayNights;
+
+  /// Advance-notice choices offered to the host (hours → label).
+  static const Map<int, String> _advanceNoticeOptions = {
+    0: 'Same day',
+    24: '1 day',
+    48: '2 days',
+    72: '3 days',
+    168: '7 days',
+  };
   late int _maxStayNights;
   late String _checkInTimeFrom;
   late String _checkInTimeTo;
@@ -92,6 +105,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
     super.initState();
     _autoPublish = widget.autoPublish;
     _instantBook = widget.instantBook;
+    _advanceNoticeHours = widget.advanceNoticeHours;
     _minStayNights = widget.minStayNights;
     _maxStayNights = widget.maxStayNights;
     _checkInTimeFrom = widget.checkInTimeFrom;
@@ -121,7 +135,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
           'bookingPreferences': {
             'autoPublish': _autoPublish,
             'instantBook': _instantBook,
-            'advanceNoticeHours': widget.advanceNoticeHours,
+            'advanceNoticeHours': _advanceNoticeHours,
             'minStayNights': _minStayNights,
             'maxStayNights': _maxStayNights,
             'checkInTimeFrom': _checkInTimeFrom,
@@ -139,6 +153,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
         BookingPreferencesResult(
           autoPublish: _autoPublish,
           instantBook: _instantBook,
+          advanceNoticeHours: _advanceNoticeHours,
           minStayNights: _minStayNights,
           maxStayNights: _maxStayNights,
           checkInTimeFrom: _checkInTimeFrom,
@@ -342,6 +357,37 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Advance notice
+                  const Text('ADVANCE NOTICE', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'How long before check-in guests have to book.',
+                    style: TextStyle(color: _muted, fontSize: 12, height: 1.35),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Keep a non-standard stored value visible as its own chip.
+                      for (final hours in {..._advanceNoticeOptions.keys, _advanceNoticeHours}.toList()..sort())
+                        ChoiceChip(
+                          label: Text(_advanceNoticeOptions[hours] ?? '$hours hours'),
+                          selected: _advanceNoticeHours == hours,
+                          onSelected: (_) => setState(() => _advanceNoticeHours = hours),
+                          selectedColor: _tealTint,
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: _advanceNoticeHours == hours ? _teal : _border),
+                          labelStyle: TextStyle(
+                            color: _advanceNoticeHours == hours ? _teal : _dark,
+                            fontWeight: _advanceNoticeHours == hours ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          showCheckmark: false,
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 
