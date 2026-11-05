@@ -433,6 +433,8 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                     MaterialPageRoute(
                       builder: (_) => BookingPage(
                         listingId: listing.id,
+                        hostId: listing.hostId,
+                        hostName: listing.hostName,
                         title: listing.title,
                         coverPhotoUrl: listing.photoUrls.isNotEmpty ? listing.photoUrls.first : null,
                         locationLabel: listing.neighborhood != null && listing.neighborhood!.isNotEmpty

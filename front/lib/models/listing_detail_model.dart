@@ -112,7 +112,11 @@ class ListingDetailModel {
 
     // hostId is populated by the backend with a subset of User fields
     // (see listing.routes.js: .populate('hostId', 'fullName profilePhoto isSuperhost hostSince createdAt phone'))
-    final host = json['hostId'] as Map<String, dynamic>? ?? {};
+    final hostRaw = json['hostId'];
+    final Map<String, dynamic> host = hostRaw is Map<String, dynamic>
+        ? hostRaw
+        : (hostRaw is Map ? Map<String, dynamic>.from(hostRaw) : {});
+    final hostIdString = host['_id']?.toString() ?? (hostRaw is String ? hostRaw : '');
 
     return ListingDetailModel(
       id: json['_id'] as String? ?? '',
@@ -143,7 +147,7 @@ class ListingDetailModel {
           .toList(),
       ratingOverall: (rating['overall'] as num?)?.toDouble() ?? 0,
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
-      hostId: host['_id'] as String? ?? '',
+      hostId: hostIdString,
       hostName: host['fullName'] as String? ?? 'Host',
       hostProfilePhotoUrl: host['profilePhoto'] as String?,
       hostIsSuperhost: host['isSuperhost'] as bool? ?? false,
