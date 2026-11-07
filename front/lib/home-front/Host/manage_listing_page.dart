@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/host_service.dart'; // adjust path to match your project structure
 import '../../models/host_listing_detail_model.dart';
+import '../../services/user_session.dart';
 import '../explore_page/listing_detail_page.dart'; // adjust path if you placed this elsewhere
 import '../explore_page/reviews_page.dart'; // adjust path if you placed this elsewhere
 import 'edit_listing_details_page.dart';
@@ -347,6 +348,10 @@ class _ManageListingPageState extends State<ManageListingPage> {
                           ? () => Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => ReviewsPage(
+                                    listingId: listing.id,
+                                    hostId: listing.hostId.isNotEmpty
+                                        ? listing.hostId
+                                        : (UserSession.instance.currentUser?.id ?? ''),
                                     listingTitle: listing.title,
                                     ratingOverall: listing.ratingOverall,
                                     reviewCount: listing.reviewCount,
@@ -473,7 +478,11 @@ class _ManageListingPageState extends State<ManageListingPage> {
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => ReviewsPage(
-                            listingTitle: listing.title,
+                                    listingId: listing.id,
+                                    hostId: listing.hostId.isNotEmpty
+                                        ? listing.hostId
+                                        : (UserSession.instance.currentUser?.id ?? ''),
+                                    listingTitle: listing.title,
                             ratingOverall: listing.ratingOverall,
                             reviewCount: listing.reviewCount,
                           ),

@@ -1,12 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
+import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
-import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
-import '../../../services/auth_service.dart'; // adjust path — exposes AuthService.uploadToCloudinary()
-import '../../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
-import '../../../services/user_session.dart'; // adjust path to match your project structure — exposes UserSession.instance.token
+import '../../models/listing_draft_model.dart'; // adjust path to match your project structure
+import '../../services/auth_service.dart'; // adjust path — exposes AuthService.uploadToCloudinary()
+import '../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
+import '../../services/user_session.dart'; // adjust path to match your project structure — exposes UserSession.instance.token
 import 'create_listing_confirmation_page.dart'; // adjust path if you placed this elsewhere
 
 /// Final step of the Create Listing wizard — Review & Submit. Pulls

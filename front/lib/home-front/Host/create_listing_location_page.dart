@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
+import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
-import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
-import '../../../data/algeria_location_data.dart'; // adjust path to match your project structure
+import '../../models/listing_draft_model.dart'; // adjust path to match your project structure
+import '../../data/algeria_location_data.dart'; // adjust path to match your project structure
 import '../widgets/app_search_sheet_picker.dart'; // adjust path if you placed this elsewhere
 import 'create_listing_amenities_page.dart'; // adjust path if you placed this elsewhere
 
