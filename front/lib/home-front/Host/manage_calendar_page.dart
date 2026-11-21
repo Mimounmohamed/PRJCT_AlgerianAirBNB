@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/availability_service.dart'; // adjust path to match your project structure
 import '../../models/availability_day_model.dart';
-import 'booking_details_page.dart'; // adjust path if you placed this elsewhere
+import '../../bookings/booking_details_page.dart';
 
 /// "Manage Calendar" — shown from the Manage Listing page's "Manage
 /// calendar" quick action. The host browses month by month, selects dates
@@ -181,16 +181,19 @@ class _ManageCalendarPageState extends State<ManageCalendarPage> {
         _anchor = null;
       });
 
-  void _openBookingDetails(DateTime day) {
-    Navigator.of(context).push(
+  /// Opens the guest booking covering this night (with Accept / Decline /
+  /// Cancel). If it was changed there, the calendar reloads — a declined
+  /// or cancelled booking frees its nights.
+  Future<void> _openBookingDetails(DateTime day) async {
+    final changed = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => BookingDetailsPage(
-          authToken: widget.authToken,
-          listingId: widget.listingId,
-          date: day,
-        ),
+        builder: (_) => BookingDetailsPage.onDate(listingId: widget.listingId, date: day),
       ),
     );
+    if (changed == true && mounted) {
+      _didChange = true;
+      _loadMonth();
+    }
   }
 
   String _shortDate(DateTime d) {

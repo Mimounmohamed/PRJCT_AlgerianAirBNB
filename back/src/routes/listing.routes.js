@@ -5,6 +5,8 @@ const Listing = require('../models/Listing');
 const ListingView = require('../models/ListingView');
 const { destroyImagesInBackground } = require('../config/cloudinary');
 const { MAX_SNOOZE_DAYS, listedFilter } = require('../utils/snooze');
+const Availability = require('../models/Availability');
+const { parseDay, dayKey, bookedNightsInRange } = require('../utils/bookingNights');
 
 // GET /api/listings — Browse all active listings (public)
 router.get('/', async (req, res) => {
@@ -54,6 +56,53 @@ router.get('/', async (req, res) => {
     const total = await Listing.countDocuments(filter);
 
     res.json({ listings, total, page: parseInt(page), pages: Math.ceil(total / limit) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/listings/:id/availability?from=YYYY-MM-DD&months=12 — the
+// guest-facing calendar for the Booking page. Public. For every night in
+// the range that is NOT bookable (blocked by the host, booked offline, or
+// taken by another guest's pending/confirmed booking) it returns
+// available:false — without saying why, so other guests' bookings stay
+// private — plus each night's custom price where the host set one.
+//
+// Response: { basePrice, currency, rentalPeriod, days: [{ date, available, price }] }
+// Nights not listed are available at basePrice.
+router.get('/:id/availability', async (req, res) => {
+  try {
+    const listing = await Listing.findOne({ _id: req.params.id, isDeleted: { $ne: true } })
+      .select('price status');
+    if (!listing) return res.status(404).json({ error: 'Listing not found.' });
+
+    const from = parseDay(req.query.from) || new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
+    const months = Math.min(Math.max(parseInt(req.query.months, 10) || 12, 1), 13);
+    const to = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth() + months, from.getUTCDate()));
+
+    const [marks, bookedNights] = await Promise.all([
+      Availability.find({ listingId: listing._id, date: { $gte: from, $lt: to } }),
+      bookedNightsInRange(listing._id, from, to),
+    ]);
+
+    const days = new Map();
+    for (const mark of marks) {
+      days.set(dayKey(mark.date), {
+        date: dayKey(mark.date),
+        available: mark.status === 'available',
+        price: mark.priceOverride ?? null,
+      });
+    }
+    for (const key of bookedNights.keys()) {
+      days.set(key, { date: key, available: false, price: days.get(key)?.price ?? null });
+    }
+
+    res.json({
+      basePrice: listing.price?.perNight || 0,
+      currency: listing.price?.currency || 'DZD',
+      rentalPeriod: listing.price?.rentalPeriod || 'nightly',
+      days: [...days.values()].sort((a, b) => a.date.localeCompare(b.date)),
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

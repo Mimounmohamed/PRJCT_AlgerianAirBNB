@@ -29,12 +29,13 @@ function startOfUtcDay(date) {
 // this listing that falls in [rangeStart, rangeEnd). A booking from the
 // 3rd to the 6th occupies the nights of the 3rd, 4th and 5th — the
 // check-out day stays free for the next guest.
-async function bookedNightsInRange(listingId, rangeStart, rangeEnd) {
+async function bookedNightsInRange(listingId, rangeStart, rangeEnd, { excludeBookingId } = {}) {
   const bookings = await Booking.find({
     listingId,
     status: { $in: ACTIVE_BOOKING_STATUSES },
     checkIn: { $lt: rangeEnd },
     checkOut: { $gt: rangeStart },
+    ...(excludeBookingId && { _id: { $ne: excludeBookingId } }),
   }).select('_id status checkIn checkOut');
 
   const nights = new Map();

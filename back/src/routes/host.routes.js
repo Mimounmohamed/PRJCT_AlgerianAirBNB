@@ -43,11 +43,27 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
       ? listings.reduce((sum, l) => sum + (l.rating.overall || 0), 0) / listings.length
       : 0;
 
-    const recentBookings = await Booking.find({ hostId: req.user._id })
-      .populate('guestId', 'fullName profilePhoto')
-      .populate('listingId', 'title')
-      .sort({ createdAt: -1 })
-      .limit(5);
+    // Booking sections for the dashboard home: requests waiting for an
+    // answer, the next confirmed stays, and recent history.
+    const bookingQuery = (filter, sort, limit) =>
+      Booking.find({ hostId: req.user._id, ...filter })
+        .populate('guestId', 'fullName profilePhoto')
+        .populate('listingId', 'title photos coverPhotoIndex')
+        .sort(sort)
+        .limit(limit);
+
+    const now = new Date();
+    const [pendingCount, requests, upcoming, history, recentBookings] = await Promise.all([
+      Booking.countDocuments({ hostId: req.user._id, status: 'pending', expiresAt: { $gt: now } }),
+      bookingQuery({ status: 'pending', expiresAt: { $gt: now } }, { expiresAt: 1 }, 3),
+      bookingQuery({ status: 'confirmed', checkOut: { $gte: now } }, { checkIn: 1 }, 3),
+      bookingQuery(
+        { status: { $in: ['completed', 'cancelled_by_guest', 'cancelled_by_host', 'rejected', 'expired'] } },
+        { updatedAt: -1 },
+        5
+      ),
+      bookingQuery({}, { createdAt: -1 }, 5),
+    ]);
 
     res.json({
       totalListings: listings.length,
@@ -57,6 +73,7 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
       totalViews,
       avgRating: parseFloat(avgRating.toFixed(2)),
       recentBookings,
+      bookings: { pendingCount, requests, upcoming, history },
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

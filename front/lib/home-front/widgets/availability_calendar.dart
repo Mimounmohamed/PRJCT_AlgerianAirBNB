@@ -14,10 +14,10 @@ class DayAvailability {
 /// not selectable. Selecting a range calls [onRangeSelected] with the
 /// chosen (start, end) dates so the parent can compute nights/price.
 ///
-/// TODO: [availabilityForMonth] is currently fake/generated data (see
-/// _generateFakeMonth in booking_page.dart) standing in until the real
-/// GET /api/availability/:listingId?month=... contract is confirmed —
-/// swap the data source, not this widget's selection logic.
+/// A range can't contain a taken night; its check-out day may itself be
+/// taken (another guest checking in), since it isn't a night of the stay.
+/// [availabilityForMonth] is fed from GET /api/listings/:id/availability
+/// by the Booking page.
 class AvailabilityCalendar extends StatefulWidget {
   final Map<DateTime, DayAvailability> Function(DateTime month) availabilityForMonth;
   final DateTime initialMonth;
@@ -62,9 +62,29 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
     return day.isBefore(today);
   }
 
+  DayStatus _statusOf(DateTime day) {
+    final month = widget.availabilityForMonth(DateTime(day.year, day.month));
+    return month[_dateOnly(day)]?.status ?? DayStatus.available;
+  }
+
+  /// True if every NIGHT from [start] up to (not including) [end] is free.
+  bool _nightsFree(DateTime start, DateTime end) {
+    for (var d = start; d.isBefore(end); d = DateTime(d.year, d.month, d.day + 1)) {
+      if (_statusOf(d) != DayStatus.available) return false;
+    }
+    return true;
+  }
+
+  /// A day can be tapped as check-out even when it's unavailable itself
+  /// (someone else checks in that day) — the check-out day isn't a night
+  /// of this stay. Only the nights before it must be free.
+  bool _canBeCheckOut(DateTime day) =>
+      _rangeStart != null && _rangeEnd == null && day.isAfter(_rangeStart!) && _nightsFree(_rangeStart!, day);
+
   void _onDayTap(DateTime day, DayAvailability availability) {
-    if (availability.status != DayStatus.available) return;
     if (_isBeforeToday(day)) return;
+    final isAvailable = availability.status == DayStatus.available;
+    if (!isAvailable && !_canBeCheckOut(day)) return;
 
     setState(() {
       if (_rangeStart == null || (_rangeStart != null && _rangeEnd != null)) {
@@ -76,8 +96,12 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
       } else if (day.isAtSameMomentAs(_rangeStart!)) {
         _rangeStart = null;
         _rangeEnd = null;
-      } else {
+      } else if (_nightsFree(_rangeStart!, day)) {
         _rangeEnd = day;
+      } else {
+        // A taken night sits between the two taps — start over from here.
+        _rangeStart = isAvailable ? day : null;
+        _rangeEnd = null;
       }
     });
 
@@ -200,7 +224,7 @@ class _AvailabilityCalendarState extends State<AvailabilityCalendar> {
             final isEdge = _isRangeEdge(day);
             final inRange = _isInRange(day);
 
-            final isSelectable = dayAvailability.status == DayStatus.available && !isPast;
+            final isSelectable = !isPast && (dayAvailability.status == DayStatus.available || _canBeCheckOut(day));
 
             Color bg = Colors.transparent;
             if (dayAvailability.status == DayStatus.booked) bg = _bookedBg;

@@ -13,6 +13,7 @@ import 'Settings.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
+import '../bookings/bookings_list_page.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({
@@ -382,6 +383,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  const _SectionLabel('Travel'),
+                  _SectionCard(
+                    tiles: [
+                      _SettingsTile(
+                        icon: Icons.luggage_outlined,
+                        label: 'My trips',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const BookingsListPage.trips()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   const _SectionLabel('Account Settings'),
                   _SectionCard(
                     tiles: [

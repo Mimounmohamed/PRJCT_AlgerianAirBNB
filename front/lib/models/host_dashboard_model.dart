@@ -1,3 +1,5 @@
+import 'booking_model.dart';
+
 /// Parses GET /api/host/dashboard.
 class HostDashboardModel {
   final int totalListings;
@@ -7,6 +9,12 @@ class HostDashboardModel {
   final int totalViews;
   final double avgRating;
 
+  // Booking sections on the dashboard home.
+  final int pendingRequestCount;
+  final List<BookingModel> requests; // pending, soonest-expiring first (max 3)
+  final List<BookingModel> upcoming; // next confirmed stays (max 3)
+  final List<BookingModel> history; // latest completed / cancelled / declined / expired (max 5)
+
   HostDashboardModel({
     required this.totalListings,
     required this.activeListings,
@@ -14,9 +22,19 @@ class HostDashboardModel {
     required this.totalBookings,
     required this.totalViews,
     required this.avgRating,
+    this.pendingRequestCount = 0,
+    this.requests = const [],
+    this.upcoming = const [],
+    this.history = const [],
   });
 
   factory HostDashboardModel.fromJson(Map<String, dynamic> json) {
+    final bookings = json['bookings'] is Map ? Map<String, dynamic>.from(json['bookings'] as Map) : <String, dynamic>{};
+    // These come straight from the host's dashboard, so the viewer is the host.
+    List<BookingModel> parse(String key) => (bookings[key] as List<dynamic>? ?? [])
+        .map((b) => BookingModel.fromJson({...Map<String, dynamic>.from(b as Map), 'viewerRole': 'host'}))
+        .toList();
+
     return HostDashboardModel(
       totalListings: (json['totalListings'] as num?)?.toInt() ?? 0,
       activeListings: (json['activeListings'] as num?)?.toInt() ?? 0,
@@ -24,6 +42,10 @@ class HostDashboardModel {
       totalBookings: (json['totalBookings'] as num?)?.toInt() ?? 0,
       totalViews: (json['totalViews'] as num?)?.toInt() ?? 0,
       avgRating: (json['avgRating'] as num?)?.toDouble() ?? 0,
+      pendingRequestCount: (bookings['pendingCount'] as num?)?.toInt() ?? 0,
+      requests: parse('requests'),
+      upcoming: parse('upcoming'),
+      history: parse('history'),
     );
   }
 
