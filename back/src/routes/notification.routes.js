@@ -23,7 +23,11 @@ router.get('/', protect, async (req, res) => {
 // PUT /api/notifications/:id/read — Mark as read
 router.put('/:id/read', protect, async (req, res) => {
   try {
-    await Notification.findByIdAndUpdate(req.params.id, { read: true, readAt: new Date() });
+    // Only the owner can mark their own notification.
+    await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user._id },
+      { read: true, readAt: new Date() }
+    );
     res.json({ message: 'Marked as read.' });
   } catch (err) {
     res.status(500).json({ error: err.message });

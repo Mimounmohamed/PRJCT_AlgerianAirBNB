@@ -1,21 +1,27 @@
 import 'package:flutter/material.dart';
 import '../widgets/availability_calendar.dart';
-import '../../services/user_session.dart';
+import '../../services/booking_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/user_session.dart';
+import '../../bookings/booking_result_page.dart';
+import '../../bookings/booking_ui.dart';
 import '../../chat/conversation.dart';
 
 /// Booking Overview page — shown after tapping "Book now" on Listing Detail.
 ///
-/// Date selection and price calculation are fully real/working:
-/// nights, subtotal, service fee, and tourist tax are all computed live
-/// from the selected calendar range and the fee percentages passed in
-/// from ListingDetailModel (price.serviceFeePercent / price.touristTaxPercent).
-///
-/// TODO: [_generateFakeMonth] stands in for real availability data until
-/// the GET /api/availability/:listingId?month=... contract is confirmed —
-/// only the DATA SOURCE needs swapping, not the selection/price logic.
-/// TODO: the "Text" button isn't wired to anything yet — pending the
-/// messaging system.
+/// - The calendar shows REAL availability (GET /api/listings/:id/availability):
+///   nights blocked by the host or taken by other guests can't be picked,
+///   and each day shows its real price (custom calendar prices included).
+/// - Every time dates or guests change, the server quotes the stay
+///   (POST /api/bookings/quote): it checks min/max stay, advance notice,
+///   guest count and the calendar, and computes the authoritative price
+///   (custom prices, weekly/monthly discount, fee, tax). Problems are shown
+///   inline ("Minimum stay is 2 nights.").
+/// - The main button creates the booking (POST /api/bookings):
+///   "Book now" when the listing has Instant Book (confirmed right away),
+///   "Request to book" otherwise (the host has 24h to answer).
+/// - "Text" opens a chat with the host; the phone icon still shows the
+///   host's number for guests who prefer calling.
 class BookingPage extends StatefulWidget {
   final String listingId;
   final String hostId;
@@ -37,6 +43,8 @@ class BookingPage extends StatefulWidget {
   final String checkOutTimeFrom;
   final String checkOutTimeTo;
   final String checkOutTime;
+  final bool instantBook;
+  final int advanceNoticeHours;
 
   const BookingPage({
     super.key,
@@ -60,6 +68,8 @@ class BookingPage extends StatefulWidget {
     this.checkOutTimeFrom = '11:00',
     this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
+    this.instantBook = false,
+    this.advanceNoticeHours = 24,
   });
 
   @override
@@ -163,19 +173,166 @@ class _BookingPageState extends State<BookingPage> {
 
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
-  int _guests = 2;
+  late int _guests = widget.maxGuests >= 2 ? 2 : 1;
 
   static const Color _teal = Color(0xFF006972);
 
-  int get _nights {
-    if (_rangeStart == null || _rangeEnd == null) return 0;
-    return _rangeEnd!.difference(_rangeStart!).inDays;
+  // Real calendar (12 months loaded up front).
+  GuestAvailability? _availability;
+  bool _loadingAvailability = true;
+
+  // Server quote for the current dates + guests.
+  StayQuote? _quote;
+  String? _quoteError;
+  bool _quoting = false;
+  int _quoteRequest = 0;
+
+  bool _booking = false;
+  bool _openingChat = false;
+
+  String? get _token => UserSession.instance.token;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvailability();
   }
 
-  double get _subtotal => _nights * widget.pricePerNight;
-  double get _serviceFee => _subtotal * widget.serviceFeePercent / 100;
-  double get _touristTax => _subtotal * widget.touristTaxPercent / 100;
-  double get _total => _subtotal + _serviceFee + _touristTax;
+  Future<void> _loadAvailability() async {
+    try {
+      final availability = await BookingService.fetchGuestAvailability(listingId: widget.listingId, from: DateTime.now());
+      if (!mounted) return;
+      setState(() {
+        _availability = availability;
+        _loadingAvailability = false;
+      });
+    } catch (_) {
+      // Calendar falls back to "everything available"; the server quote
+      // still refuses taken dates.
+      if (mounted) setState(() => _loadingAvailability = false);
+    }
+  }
+
+  int get _nights {
+    if (_rangeStart == null || _rangeEnd == null) return 0;
+    return DateTime.utc(_rangeEnd!.year, _rangeEnd!.month, _rangeEnd!.day)
+        .difference(DateTime.utc(_rangeStart!.year, _rangeStart!.month, _rangeStart!.day))
+        .inDays;
+  }
+
+  // Local estimate, shown only until the server quote arrives.
+  double get _subtotal => _quote?.subtotal ?? _nights * widget.pricePerNight;
+  double get _serviceFee => _quote?.serviceFee ?? _subtotal * widget.serviceFeePercent / 100;
+  double get _touristTax => _quote?.touristTax ?? _subtotal * widget.touristTaxPercent / 100;
+  double get _total => _quote?.total ?? _subtotal + _serviceFee + _touristTax;
+
+  bool get _canBook => _nights > 0 && _quote != null && _quoteError == null && !_quoting && !_booking;
+
+  /// Asks the server to check and price the current dates + guests.
+  Future<void> _requote() async {
+    final token = _token;
+    if (_rangeStart == null || _rangeEnd == null) {
+      setState(() {
+        _quote = null;
+        _quoteError = null;
+      });
+      return;
+    }
+    if (token == null) {
+      setState(() => _quoteError = 'Please log in to book.');
+      return;
+    }
+    final request = ++_quoteRequest;
+    setState(() {
+      _quoting = true;
+      _quoteError = null;
+    });
+    try {
+      final quote = await BookingService.quote(
+        token: token,
+        listingId: widget.listingId,
+        checkIn: _rangeStart!,
+        checkOut: _rangeEnd!,
+        guests: _guests,
+      );
+      if (!mounted || request != _quoteRequest) return;
+      setState(() {
+        _quote = quote;
+        _quoting = false;
+      });
+    } catch (e) {
+      if (!mounted || request != _quoteRequest) return;
+      setState(() {
+        _quote = null;
+        _quoteError = '$e';
+        _quoting = false;
+      });
+    }
+  }
+
+  Future<void> _book() async {
+    final token = _token;
+    if (token == null || !_canBook) return;
+    setState(() => _booking = true);
+    try {
+      final booking = await BookingService.create(
+        token: token,
+        listingId: widget.listingId,
+        checkIn: _rangeStart!,
+        checkOut: _rangeEnd!,
+        guests: _guests,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => BookingResultPage(booking: booking)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _booking = false;
+        _quoteError = '$e';
+        _quote = null;
+      });
+      // Dates may have just been taken — refresh the calendar.
+      _loadAvailability();
+    }
+  }
+
+  Future<void> _messageHost() async {
+    final token = _token;
+    final myId = UserSession.instance.currentUser?.id ?? '';
+    if (token == null || widget.hostId.isEmpty || widget.hostId == myId) return;
+    setState(() => _openingChat = true);
+    try {
+      final result = await AuthService.startConversation(
+        token: token,
+        recipientId: widget.hostId,
+        listingId: widget.listingId,
+        content: _rangeStart != null && _rangeEnd != null
+            ? 'Hi, I\'m interested in "${widget.title}" for ${BookingUi.range(_rangeStart!, _rangeEnd!)}.'
+            : 'Hi, I\'m interested in your listing "${widget.title}".',
+      );
+      final conv = result['conversation'] as Map<String, dynamic>? ?? result;
+      final conversationId = (conv['_id'] ?? conv['id'] ?? '').toString();
+      if (!mounted || conversationId.isEmpty) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            otherUserName: widget.hostName,
+            otherUserInitials: BookingUi.initials(widget.hostName),
+            listingName: widget.title,
+            listingLocation: widget.locationLabel,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open chat: $e')));
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
+  }
 
   String? get _hostPhoneFormatted {
     if (widget.hostPhoneNumber == null || widget.hostPhoneNumber!.isEmpty) return null;
@@ -208,33 +365,51 @@ class _BookingPageState extends State<BookingPage> {
     return '${_formatDate(_rangeStart!)} – ${_formatDate(_rangeEnd!)}';
   }
 
-  /// FAKE availability generator — replicates the demo pattern (a couple of
-  /// booked days, a couple of blocked days, weekend vs weekday pricing) so
-  /// the calendar is fully interactive today. Replace with a real fetch
-  /// from GET /api/availability/:listingId?month=... once that contract
-  /// is confirmed.
-  Map<DateTime, DayAvailability> _generateFakeMonth(DateTime month) {
+  /// Real availability for one month, from the data loaded in initState.
+  /// Unavailable nights show as "Booked" without saying whether the host
+  /// blocked them or another guest booked them.
+  Map<DateTime, DayAvailability> _monthAvailability(DateTime month) {
+    final availability = _availability;
+    final base = availability?.basePrice ?? widget.pricePerNight;
+    final earliest = _earliestCheckIn;
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final result = <DateTime, DayAvailability>{};
-
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(month.year, month.month, day);
-      final weekday = date.weekday; // Mon=1 ... Sun=7
-
-      DayStatus status = DayStatus.available;
-      if (day == 4 || day == 5) status = DayStatus.booked;
-      if (day == 15 || day == 16) status = DayStatus.blocked;
-
-      // Fri(5), Sat(6), Sun(7) priced higher — matches the reference design.
-      final isWeekend = weekday == DateTime.friday ||
-          weekday == DateTime.saturday ||
-          weekday == DateTime.sunday;
-      final price = isWeekend ? widget.pricePerNight * 1.1 : widget.pricePerNight;
-
-      result[date] = DayAvailability(status: status, price: price);
+      final unavailable = availability?.unavailable.contains(date) ?? false;
+      // Too soon for the host's advance notice → can't be a check-in day.
+      final tooSoon = date.isBefore(earliest);
+      result[date] = DayAvailability(
+        status: unavailable ? DayStatus.booked : (tooSoon ? DayStatus.blocked : DayStatus.available),
+        price: availability?.prices[date] ?? base,
+      );
     }
-
     return result;
+  }
+
+  /// First day a guest may check in, given the host's advance notice and
+  /// check-in time — the same rule the server applies (times are Algerian
+  /// local time, UTC+1). Days before it are greyed out in the calendar.
+  DateTime get _earliestCheckIn {
+    final nowUtc = DateTime.now().toUtc();
+    final parts = widget.checkInTimeFrom.split(':');
+    final hour = int.tryParse(parts.first) ?? 14;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    final algeriaNow = nowUtc.add(const Duration(hours: 1));
+    var day = DateTime.utc(algeriaNow.year, algeriaNow.month, algeriaNow.day);
+    for (var i = 0; i < 400; i++) {
+      final checkInMomentUtc = DateTime.utc(day.year, day.month, day.day, hour, minute).subtract(const Duration(hours: 1));
+      if (!nowUtc.add(Duration(hours: widget.advanceNoticeHours)).isAfter(checkInMomentUtc)) break;
+      day = day.add(const Duration(days: 1));
+    }
+    return DateTime(day.year, day.month, day.day);
+  }
+
+  String get _noticeLabel {
+    final h = widget.advanceNoticeHours;
+    if (h <= 0) return 'same-day';
+    if (h % 24 == 0) return '${h ~/ 24} day${h == 24 ? '' : 's'}';
+    return '$h hours';
   }
 
   void _openCalendarSheet() {
@@ -281,19 +456,34 @@ class _BookingPageState extends State<BookingPage> {
                         const SizedBox(width: 48), // balances the close button
                       ],
                     ),
+                    if (widget.advanceNoticeHours > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          'This host needs $_noticeLabel notice — earliest check-in is ${BookingUi.longDate(_earliestCheckIn)}.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 12, height: 1.35),
+                        ),
+                      ),
                     const SizedBox(height: 8),
-                    AvailabilityCalendar(
-                      initialMonth: tempStart ?? DateTime.now(),
-                      initialStart: tempStart,
-                      initialEnd: tempEnd,
-                      availabilityForMonth: _generateFakeMonth,
-                      onRangeSelected: (start, end) {
-                        setSheetState(() {
-                          tempStart = start;
-                          tempEnd = end;
-                        });
-                      },
-                    ),
+                    if (_loadingAvailability)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 60),
+                        child: CircularProgressIndicator(color: _teal),
+                      )
+                    else
+                      AvailabilityCalendar(
+                        initialMonth: tempStart ?? DateTime.now(),
+                        initialStart: tempStart,
+                        initialEnd: tempEnd,
+                        availabilityForMonth: _monthAvailability,
+                        onRangeSelected: (start, end) {
+                          setSheetState(() {
+                            tempStart = start;
+                            tempEnd = end;
+                          });
+                        },
+                      ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
@@ -304,6 +494,7 @@ class _BookingPageState extends State<BookingPage> {
                             _rangeEnd = tempEnd;
                           });
                           Navigator.of(context).pop();
+                          _requote();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _teal,
@@ -359,6 +550,7 @@ class _BookingPageState extends State<BookingPage> {
                   onPressed: () {
                     setState(() => _guests = tempGuests);
                     Navigator.of(context).pop();
+                    _requote();
                   },
                   child: const Text('Done', style: TextStyle(color: _teal)),
                 ),
@@ -392,7 +584,7 @@ class _BookingPageState extends State<BookingPage> {
             children: [
               if (_hostPhoneFormatted != null) ...[
                 const Text(
-                  'Call to confirm your stay',
+                  'Questions before you book? Call the host',
                   style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 13),
                 ),
                 const SizedBox(height: 8),
@@ -598,33 +790,67 @@ class _BookingPageState extends State<BookingPage> {
             style: TextStyle(color: Color(0xFF2A1B12), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'HenkenGrotesk'),
           ),
           const SizedBox(height: 8),
-          _priceRow(
-            '${widget.pricePerNight.round()} DZD x $_nights night${_nights == 1 ? '' : 's'}',
-            _formatMoney(_subtotal),
-          ),
-          _priceRow('Service fee', _formatMoney(_serviceFee)),
-          _priceRow('Tourist tax', _formatMoney(_touristTax)),
-          const Divider(height: 24, color: Color(0xFFE7DCCB)),
-          _priceRow('Total (${widget.currency})', _formatMoney(_total), isTotal: true),
+          if (_nights == 0)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 6),
+              child: Text('Pick your dates to see the price.', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 14)),
+            )
+          else ...[
+            _priceRow(
+              '${(_quote?.nightlyRate ?? widget.pricePerNight).round()} DZD x $_nights night${_nights == 1 ? '' : 's'}',
+              _formatMoney(_subtotal + (_quote?.discount ?? 0)),
+            ),
+            if ((_quote?.discount ?? 0) > 0) _priceRow('Long-stay discount', '− ${_formatMoney(_quote!.discount)}'),
+            _priceRow('Service fee', _formatMoney(_serviceFee)),
+            _priceRow('Tourist tax', _formatMoney(_touristTax)),
+            const Divider(height: 24, color: Color(0xFFE7DCCB)),
+            _priceRow('Total (${widget.currency})', _formatMoney(_total), isTotal: true),
+          ],
+          if (_quoting)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: _teal)),
+                  SizedBox(width: 8),
+                  Text('Checking availability…', style: TextStyle(color: Color(0xFF8A7B6E), fontSize: 12)),
+                ],
+              ),
+            ),
+          if (_quoteError != null)
+            Container(
+              margin: const EdgeInsets.only(top: 10),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(color: const Color(0xFFB3261E).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(12)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.error_outline, size: 18, color: Color(0xFFB3261E)),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(_quoteError!, style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 13, height: 1.35))),
+                ],
+              ),
+            ),
           const SizedBox(height: 20),
 
-          // ── Cancellation info banner ─────────────────────────────────
-          // TODO: compute a real cutoff date from the listing's cancellationPolicy.
+          // ── Cancellation info banner (real deadline from the quote) ───
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: const Color(0xFFDCEEF0),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, size: 18, color: _teal),
-                SizedBox(width: 10),
+                const Icon(Icons.info_outline, size: 18, color: _teal),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Free cancellation before check-in. After that, cancellation policy applies.',
-                    style: TextStyle(color: Color(0xFF2A1B12), fontSize: 14, height: 1.4),
+                    _quote?.freeCancellationUntil != null
+                        ? 'Free cancellation until ${BookingUi.dateTime(_quote!.freeCancellationUntil!)} (${_quote!.cancellationPolicy} policy). After that, no refund.'
+                        : 'Free cancellation depends on the host\'s policy — pick your dates to see the exact deadline.',
+                    style: const TextStyle(color: Color(0xFF2A1B12), fontSize: 14, height: 1.4),
                   ),
                 ),
               ],
@@ -632,28 +858,46 @@ class _BookingPageState extends State<BookingPage> {
           ),
           const SizedBox(height: 28),
 
+          // ── Main action: Book now / Request to book ──────────────────
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _canBook ? _book : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _teal,
+                disabledBackgroundColor: _teal.withValues(alpha: 0.4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: _booking
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(widget.instantBook ? Icons.flash_on : Icons.send_rounded, color: Colors.white, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          widget.instantBook ? 'Book now' : 'Request to book',
+                          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.instantBook
+                ? 'Instant Book — your stay is confirmed right away.'
+                : '${widget.hostName.split(' ').first} has 24 hours to accept. Nothing is charged until then.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 12),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Secondary: message / call the host ───────────────────────
           Row(
             children: [
-              // Small secondary "Text" button — static for now, wired once
-              // the messaging system exists.
               Expanded(
-                flex: 6,
-                child: ElevatedButton.icon(
-                  onPressed: _nights > 0 ? _showCallDialog : null,
-                  icon: const Icon(Icons.call, color: Colors.white, size: 26),
-                  label: const Text('Call', style: TextStyle(color: Colors.white,fontSize: 16, fontWeight: FontWeight.w700)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _teal,
-                    disabledBackgroundColor: _teal.withValues(alpha: 0.4),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ),
-              
-              const SizedBox(width: 12),
-             Expanded(
-                flex: 2,
                 child: OutlinedButton.icon(
                   onPressed: _openingChat ? null : _openChat,
                   icon: _openingChat
@@ -670,7 +914,20 @@ class _BookingPageState extends State<BookingPage> {
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: _teal),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _showCallDialog,
+                  icon: const Icon(Icons.call, size: 20, color: _teal),
+                  label: const Text('Call', style: TextStyle(color: _teal, fontSize: 15, fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: _teal),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
                   ),
                 ),
               ),

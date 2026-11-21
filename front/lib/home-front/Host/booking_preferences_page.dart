@@ -6,7 +6,9 @@ import '../../services/host_service.dart'; // adjust path to match your project 
 /// so it can keep its own in-memory copy of these fields in sync without
 /// re-fetching the whole listing.
 class BookingPreferencesResult {
+  final bool autoPublish;
   final bool instantBook;
+  final int advanceNoticeHours;
   final int minStayNights;
   final int maxStayNights;
   final String checkInTimeFrom;
@@ -16,7 +18,9 @@ class BookingPreferencesResult {
   final String checkOutTime;
 
   const BookingPreferencesResult({
+    required this.autoPublish,
     required this.instantBook,
+    required this.advanceNoticeHours,
     required this.minStayNights,
     required this.maxStayNights,
     required this.checkInTimeFrom,
@@ -28,13 +32,16 @@ class BookingPreferencesResult {
 }
 
 /// "Booking preferences" — its own full page (pushed from Listing
-/// Settings), not a bottom sheet. Edits instantBook, minStayNights,
-/// maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To. advanceNoticeHours
-/// is no longer editable here but is still sent back unchanged on save
-/// so the field isn't wiped by the backend's shallow-merge PUT.
+/// Settings), not a bottom sheet. Edits autoPublish (skip admin review),
+/// instantBook (auto-confirm guest bookings), advanceNoticeHours,
+/// minStayNights, maxStayNights, checkInTimeFrom/To, checkOutTimeFrom/To.
+/// (checkOutTime is the legacy single check-out field — kept equal to
+/// checkOutTimeFrom, same as the Create Listing wizard and the guest-side
+/// listing page read it.)
 class BookingPreferencesPage extends StatefulWidget {
   final String authToken;
   final String listingId;
+  final bool autoPublish;
   final bool instantBook;
   final int advanceNoticeHours;
   final int minStayNights;
@@ -49,6 +56,7 @@ class BookingPreferencesPage extends StatefulWidget {
     super.key,
     required this.authToken,
     required this.listingId,
+    required this.autoPublish,
     required this.instantBook,
     required this.advanceNoticeHours,
     required this.minStayNights,
@@ -72,8 +80,19 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
   static const Color _muted = Color(0xFF4F4540);
   static const Color _border = Color(0xFFE7DCCB);
 
+  late bool _autoPublish;
   late bool _instantBook;
+  late int _advanceNoticeHours;
   late int _minStayNights;
+
+  /// Advance-notice choices offered to the host (hours → label).
+  static const Map<int, String> _advanceNoticeOptions = {
+    0: 'Same day',
+    24: '1 day',
+    48: '2 days',
+    72: '3 days',
+    168: '7 days',
+  };
   late int _maxStayNights;
   late String _checkInTimeFrom;
   late String _checkInTimeTo;
@@ -84,7 +103,9 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
   @override
   void initState() {
     super.initState();
+    _autoPublish = widget.autoPublish;
     _instantBook = widget.instantBook;
+    _advanceNoticeHours = widget.advanceNoticeHours;
     _minStayNights = widget.minStayNights;
     _maxStayNights = widget.maxStayNights;
     _checkInTimeFrom = widget.checkInTimeFrom;
@@ -112,8 +133,9 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
         listingId: widget.listingId,
         updates: {
           'bookingPreferences': {
+            'autoPublish': _autoPublish,
             'instantBook': _instantBook,
-            'advanceNoticeHours': widget.advanceNoticeHours,
+            'advanceNoticeHours': _advanceNoticeHours,
             'minStayNights': _minStayNights,
             'maxStayNights': _maxStayNights,
             'checkInTimeFrom': _checkInTimeFrom,
@@ -129,7 +151,9 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
       if (!mounted) return;
       Navigator.of(context).pop(
         BookingPreferencesResult(
+          autoPublish: _autoPublish,
           instantBook: _instantBook,
+          advanceNoticeHours: _advanceNoticeHours,
           minStayNights: _minStayNights,
           maxStayNights: _maxStayNights,
           checkInTimeFrom: _checkInTimeFrom,
@@ -266,7 +290,42 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Instant Book
+                  // Auto-publish (skip admin review)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Auto-publish', style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700)),
+                              const SizedBox(height: 4),
+                              Text(
+                                _autoPublish
+                                    ? 'Your listing goes live directly, without waiting for the AKRILI team to review it — including when you resume it after a pause.'
+                                    : 'The AKRILI team reviews your listing before it goes live — including when you resume it after a pause.',
+                                style: const TextStyle(color: _muted, fontSize: 12, height: 1.35),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Switch(
+                          value: _autoPublish,
+                          onChanged: (v) => setState(() => _autoPublish = v),
+                          activeColor: Colors.white,
+                          activeTrackColor: _teal,
+                          inactiveTrackColor: _border,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Instant Book (guest bookings auto-confirmed)
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: _border)),
@@ -285,11 +344,6 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
                                     : 'Guests must send a request before booking your place.',
                                 style: const TextStyle(color: _muted, fontSize: 12, height: 1.35),
                               ),
-                              const SizedBox(height: 6),
-                              const Text(
-                                'Any change you make here needs admin approval before it goes live — once approved, your listing keeps its Verified badge.',
-                                style: TextStyle(color: _teal, fontSize: 11, height: 1.3, fontWeight: FontWeight.w600),
-                              ),
                             ],
                           ),
                         ),
@@ -303,6 +357,37 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Advance notice
+                  const Text('ADVANCE NOTICE', style: TextStyle(color: _teal, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 0.4)),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'How long before check-in guests have to book.',
+                    style: TextStyle(color: _muted, fontSize: 12, height: 1.35),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      // Keep a non-standard stored value visible as its own chip.
+                      for (final hours in {..._advanceNoticeOptions.keys, _advanceNoticeHours}.toList()..sort())
+                        ChoiceChip(
+                          label: Text(_advanceNoticeOptions[hours] ?? '$hours hours'),
+                          selected: _advanceNoticeHours == hours,
+                          onSelected: (_) => setState(() => _advanceNoticeHours = hours),
+                          selectedColor: _tealTint,
+                          backgroundColor: Colors.white,
+                          side: BorderSide(color: _advanceNoticeHours == hours ? _teal : _border),
+                          labelStyle: TextStyle(
+                            color: _advanceNoticeHours == hours ? _teal : _dark,
+                            fontWeight: _advanceNoticeHours == hours ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          showCheckmark: false,
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 16),
 

@@ -99,6 +99,13 @@ const listingSchema = new mongoose.Schema(
 
     // ── Booking Preferences ────────────────────────────────
     bookingPreferences: {
+      // Publishing: when true, the listing skips admin review and goes
+      // live directly — on creation and whenever it's resumed after a
+      // pause. When false, both go to 'pending_review' for an admin.
+      autoPublish:        { type: Boolean, default: false },
+      // Guest bookings: when true, a guest's booking request is confirmed
+      // automatically (see booking.routes.js) instead of waiting for the
+      // host to accept it. Unrelated to admin review.
       instantBook:        { type: Boolean, default: false },
       advanceNoticeHours: { type: Number, default: 24 },
       minStayNights:      { type: Number, default: 1 },
@@ -118,11 +125,17 @@ const listingSchema = new mongoose.Schema(
     checkInInstructions: { type: String },
 
     // ── Status & Visibility ────────────────────────────────
+    // 'listed'   — in search results
+    // 'unlisted' — hidden from search; still opens by id (saved lists,
+    //              conversations, links) and existing bookings stand
+    // 'snoozed'  — hidden like unlisted until snoozedUntil, then it goes
+    //              back to 'listed' on its own (see utils/snooze.js)
     visibility: {
       type:    String,
-      enum:    ['listed', 'unlisted'],
+      enum:    ['listed', 'unlisted', 'snoozed'],
       default: 'unlisted',
     },
+    snoozedUntil: { type: Date, default: null }, // only set while visibility === 'snoozed'
     status: {
       type:    String,
       enum:    ['draft', 'pending_review', 'active', 'inactive', 'rejected'],

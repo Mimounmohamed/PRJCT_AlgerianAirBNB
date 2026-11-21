@@ -75,49 +75,91 @@ class HostService {
     return HostListingDetailModel.fromJson(body);
   }
 
-  /// PUT /api/listings/:id — "Pause Listing" on the Manage Listing page.
-  /// Reversible: sets status back to 'inactive'/'unlisted' rather than
-  /// deleting anything. Uses the general (non-host-prefixed) listings
-  /// route since that's where update already lives.
+  /// POST /api/host/listings/:id/pause — "Pause Listing" on the Manage
+  /// Listing page. Reversible (status → 'inactive', unlisted). The backend
+  /// only allows this on an active listing.
   static Future<void> pauseListing({
     required String authToken,
     required String listingId,
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
-    final response = await http.put(
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId/pause');
+    final response = await http.post(
       uri,
-      headers: {
-        'Authorization': 'Bearer $authToken',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'status': 'inactive', 'visibility': 'unlisted'}),
+      headers: {'Authorization': 'Bearer $authToken'},
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to pause listing (${response.statusCode}).');
+      throw Exception(_errorFrom(response, 'Failed to pause listing'));
     }
   }
 
-  /// PUT /api/listings/:id — "Resume Listing" on the Manage Listing page,
-  /// shown once a listing is paused. Reverses pauseListing above — sets
-  /// status back to 'active'/'listed'.
+  /// POST /api/host/listings/:id/resume — "Resume Listing" on the Manage
+  /// Listing page, shown once a listing is paused. The backend decides the
+  /// new status: 'active' straight away if the listing has autoPublish on,
+  /// otherwise 'pending_review' (an admin has to approve it again).
   static Future<void> resumeListing({
     required String authToken,
     required String listingId,
   }) async {
-    final uri = Uri.parse('${ApiConfig.baseUrl}/listings/$listingId');
-    final response = await http.put(
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId/resume');
+    final response = await http.post(
       uri,
-      headers: {
-        'Authorization': 'Bearer $authToken',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({'status': 'active', 'visibility': 'listed'}),
+      headers: {'Authorization': 'Bearer $authToken'},
     );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to resume listing (${response.statusCode}).');
+      throw Exception(_errorFrom(response, 'Failed to resume listing'));
     }
+  }
+
+  /// GET /api/host/listings/:id/bookings/on/:date — the guest booking that
+  /// occupies a given night, with the guest populated. Returns the raw
+  /// booking JSON; null when no active booking covers that date.
+  static Future<Map<String, dynamic>?> fetchBookingOnDate({
+    required String authToken,
+    required String listingId,
+    required String date, // "YYYY-MM-DD"
+  }) async {
+    final uri = Uri.parse('${ApiConfig.baseUrl}/host/listings/$listingId/bookings/on/$date');
+    final response = await http.get(uri, headers: {'Authorization': 'Bearer $authToken'});
+
+    if (response.statusCode == 404) return null;
+    if (response.statusCode != 200) {
+      throw Exception(_errorFrom(response, 'Failed to load this booking'));
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
+  /// POST /api/host/media/discard — photos uploaded in Edit Listing that
+  /// never got saved (host left without saving, or removed them before
+  /// saving). The backend deletes them from Cloudinary if they're recent
+  /// and unused. Best effort: never throws.
+  static Future<void> discardUploadedPhotos({
+    required String authToken,
+    required List<String> urls,
+  }) async {
+    if (urls.isEmpty) return;
+    try {
+      await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/host/media/discard'),
+        headers: {
+          'Authorization': 'Bearer $authToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'urls': urls}),
+      );
+    } catch (_) {
+      // Leaving an orphan image behind isn't worth bothering the host about.
+    }
+  }
+
+  /// Uses the backend's `{error: "..."}` message when there is one.
+  static String _errorFrom(http.Response response, String fallback) {
+    try {
+      final body = jsonDecode(response.body);
+      if (body is Map && body['error'] != null) return body['error'].toString();
+    } catch (_) {}
+    return '$fallback (${response.statusCode}).';
   }
 
   /// DELETE /api/host/listings/:id — "Delete" on the Manage Listing

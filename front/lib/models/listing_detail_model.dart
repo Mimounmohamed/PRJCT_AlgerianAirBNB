@@ -53,6 +53,8 @@ class ListingDetailModel {
   final String checkOutTime;
   final bool instantBook;
   final int minStayNights;
+  /// How long before check-in a guest must book (0 = same day).
+  final int advanceNoticeHours;
   final int maxStayNights;
 
   ListingDetailModel({
@@ -94,6 +96,7 @@ class ListingDetailModel {
     this.checkOutTime = '11:00',
     this.instantBook = false,
     this.minStayNights = 1,
+    this.advanceNoticeHours = 24,
     this.maxStayNights = 365,
   });
 
@@ -162,6 +165,7 @@ class ListingDetailModel {
       checkOutTime: bookingPreferences['checkOutTime'] as String? ?? (bookingPreferences['checkOutTimeFrom'] as String? ?? '11:00'),
       instantBook: bookingPreferences['instantBook'] as bool? ?? false,
       minStayNights: (bookingPreferences['minStayNights'] as num?)?.toInt() ?? 1,
+      advanceNoticeHours: (bookingPreferences['advanceNoticeHours'] as num?)?.toInt() ?? 24,
       maxStayNights: (bookingPreferences['maxStayNights'] as num?)?.toInt() ?? 365,
     );
   }

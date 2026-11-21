@@ -7,6 +7,10 @@ import 'all_listings_page.dart'; // adjust path if you placed this elsewhere
 import '../widgets/host_listing_row.dart';
 import 'create_listing_intro_page.dart'; // adjust path if you placed this elsewhere
 import 'manage_listing_page.dart'; // adjust path if you placed this elsewhere
+import '../../models/booking_model.dart';
+import '../../bookings/booking_ui.dart';
+import '../../bookings/booking_details_page.dart';
+import '../../bookings/bookings_list_page.dart';
 
 /// Real Host dashboard — shown once the user is confirmed to be a host.
 /// Fetches GET /api/host/dashboard (stats) and GET /api/host/listings
@@ -97,6 +101,101 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
     _fetchAll();
   }
 
+  Future<void> _openBooking(BookingModel booking) async {
+    final changed = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => BookingDetailsPage(bookingId: booking.id)),
+    );
+    if (changed == true) _fetchAll();
+  }
+
+  Future<void> _openReservations({int tab = 0}) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => BookingsListPage.reservations(initialTab: tab)),
+    );
+    _fetchAll(); // stats and sections may have changed
+  }
+
+  Widget _sectionHeader(String title, {int? count, String? action, VoidCallback? onAction}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Text(title, style: const TextStyle(color: _dark, fontSize: 20, fontFamily: 'CormorantGaramond', fontWeight: FontWeight.w600)),
+          if (count != null && count > 0) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(color: BookingUi.gold, borderRadius: BorderRadius.circular(12)),
+              child: Text('$count', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800)),
+            ),
+          ],
+          const Spacer(),
+          if (action != null)
+            TextButton(
+              onPressed: onAction,
+              child: Text(action, style: const TextStyle(color: _teal, fontWeight: FontWeight.w600)),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _emptyNote(String text) => Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 10),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+        child: Text(text, style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 13)),
+      );
+
+  /// Booking requests · Upcoming stays · History — the host's booking home.
+  List<Widget> _bookingSections(HostDashboardModel dashboard) {
+    return [
+      // Requests waiting for an answer
+      _sectionHeader(
+        'Booking requests',
+        count: dashboard.pendingRequestCount,
+        action: dashboard.pendingRequestCount > dashboard.requests.length ? 'See all' : null,
+        onAction: () => _openReservations(tab: 0),
+      ),
+      if (dashboard.requests.isEmpty)
+        _emptyNote('No requests waiting. When a guest asks to book, you\'ll accept or decline it here.')
+      else
+        ...dashboard.requests.map((b) => BookingCard(booking: b, onTap: () => _openBooking(b))),
+      const SizedBox(height: 14),
+
+      // Next confirmed stays
+      _sectionHeader('Upcoming stays', action: 'See all', onAction: () => _openReservations(tab: 1)),
+      if (dashboard.upcoming.isEmpty)
+        _emptyNote('No upcoming stays yet.')
+      else
+        ...dashboard.upcoming.map((b) => BookingCard(booking: b, onTap: () => _openBooking(b))),
+      const SizedBox(height: 14),
+
+      // Recent history
+      _sectionHeader('Booking history', action: 'See all', onAction: () => _openReservations(tab: 2)),
+      if (dashboard.history.isEmpty)
+        _emptyNote('Completed and cancelled bookings will appear here.')
+      else
+        ...dashboard.history.map((b) => BookingCard(booking: b, onTap: () => _openBooking(b))),
+      const SizedBox(height: 8),
+      Align(
+        alignment: Alignment.center,
+        child: OutlinedButton.icon(
+          onPressed: () => _openReservations(),
+          icon: const Icon(Icons.event_note_outlined, size: 18, color: _teal),
+          label: const Text('All reservations', style: TextStyle(color: _teal, fontWeight: FontWeight.w700)),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: _teal),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          ),
+        ),
+      ),
+      const SizedBox(height: 24),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -143,14 +242,14 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
               const SizedBox(height: 20),
 
               HostStatsGrid(
-                formattedEarnings: dashboard.formattedEarnings,
+                formattedEarnings: dashboard.formattedProjectedEarnings,
                 activeListings: dashboard.activeListings,
                 avgRating: dashboard.avgRating,
                 formattedViews: dashboard.formattedViews,
               ),
               const SizedBox(height: 20),
 
-              // ── Get verified banner ───────────────────────────────────────
+              // ── Get verified banner (right under the stats) ───────────────
               // TODO: wire to a real verification submission flow
               // (POST /api/host/verify needs documentType + documentImageUrl,
               // meaning a document picker + upload UI that doesn't exist yet).
@@ -191,6 +290,9 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // ── Booking requests · Upcoming stays · History ───────────────
+              ..._bookingSections(dashboard),
 
               // ── Your listings ──────────────────────────────────────────────
               Row(

@@ -105,6 +105,8 @@ mongoose
   .connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB Atlas');
+    require('./utils/snooze').startSnoozeSweeper(); // snoozed listings come back to search on their end date
+    require('./utils/bookingService').startBookingSweeper(); // expire unanswered requests, complete finished stays
     server.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
