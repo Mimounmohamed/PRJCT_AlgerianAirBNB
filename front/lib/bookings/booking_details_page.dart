@@ -5,6 +5,7 @@ import '../services/booking_service.dart';
 import '../services/host_service.dart';
 import '../services/user_session.dart';
 import 'booking_ui.dart';
+import '../home-front/widgets/add_review_sheet.dart';
 
 /// One booking, for its guest or its host (the server says which via
 /// viewerRole, and the actions follow):
@@ -194,6 +195,22 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
         b.isPending ? 'Request withdrawn.' : 'Booking cancelled.');
   }
 
+  Future<void> _leaveReview(BookingModel b) async {
+    final review = await AddReviewSheet.show(
+      context,
+      listingId: b.listingId,
+      hostId: b.hostId,
+      listingTitle: b.listingTitle,
+      bookingId: b.id,
+    );
+    if (review == null || !mounted) return;
+    _changed = true;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Thank you! Your review has been published.')),
+    );
+    _reload(); // the booking now has its review — the button goes away
+  }
+
   // ── UI pieces ──────────────────────────────────────────
 
   Widget _card({required Widget child}) => Container(
@@ -270,7 +287,13 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
       banners.add(_banner(Icons.schedule, 'This request expired because the host didn\'t answer within 24 hours.', BookingUi.muted));
     }
     if (b.status == 'completed' && !b.isHostView) {
-      banners.add(_banner(Icons.rate_review_outlined, 'Your stay is complete. Thanks for staying with AKRILI!', BookingUi.teal));
+      banners.add(_banner(
+        Icons.rate_review_outlined,
+        b.canReview
+            ? 'Your stay is complete. Thanks for staying with AKRILI! Tell future guests how it went.'
+            : 'Your stay is complete and reviewed. Thanks for staying with AKRILI!',
+        BookingUi.teal,
+      ));
     }
     return banners;
   }
@@ -404,7 +427,21 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
         ),
 
         // Actions
-        if (b.canHostRespond)
+        if (b.canReview)
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _leaveReview(b),
+              icon: const Icon(Icons.rate_review_outlined, color: Colors.white, size: 20),
+              label: const Text('Leave a review', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: BookingUi.teal,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: const EdgeInsets.symmetric(vertical: 15),
+              ),
+            ),
+          )
+        else if (b.canHostRespond)
           Row(
             children: [
               Expanded(

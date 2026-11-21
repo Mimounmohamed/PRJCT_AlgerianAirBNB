@@ -28,6 +28,8 @@ class BookingModel {
   final String declineReason;
   final String cancellationReason;
   final double? refundAmount;
+  /// Set once the guest reviewed this stay.
+  final String? guestReviewId;
 
   // Listing
   final String listingId;
@@ -76,6 +78,7 @@ class BookingModel {
     required this.declineReason,
     required this.cancellationReason,
     required this.refundAmount,
+    this.guestReviewId,
     required this.listingId,
     required this.listingTitle,
     required this.listingPhotoUrl,
@@ -146,6 +149,7 @@ class BookingModel {
       declineReason: json['declineReason'] as String? ?? '',
       cancellationReason: json['cancellationReason'] as String? ?? '',
       refundAmount: (json['refundAmount'] as num?)?.toDouble(),
+      guestReviewId: json['guestReviewId']?.toString(),
       listingId: listing['_id']?.toString() ?? json['listingId']?.toString() ?? '',
       listingTitle: listing['title'] as String? ?? 'Listing',
       listingPhotoUrl: photo,
@@ -184,6 +188,9 @@ class BookingModel {
     final today = DateTime(now.year, now.month, now.day);
     return isConfirmed && !today.isBefore(checkIn) && today.isBefore(checkOut);
   }
+
+  /// Guest's completed stay that hasn't been reviewed yet.
+  bool get canReview => !isHostView && status == 'completed' && (guestReviewId == null || guestReviewId!.isEmpty);
 
   bool get canHostRespond => isHostView && isPending && (expiresAt == null || expiresAt!.isAfter(DateTime.now()));
   bool get canCancel => (isPending && !isHostView || isConfirmed) && !hasStarted;

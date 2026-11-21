@@ -3,16 +3,23 @@ import '../../services/user_session.dart';
 import '../../services/review_service.dart';
 import '../../models/review_model.dart';
 
+/// "Write a review" sheet. A review always belongs to one completed stay
+/// (booking): pass [bookingId] when you already know it (e.g. from My
+/// trips); otherwise [show] asks the server for the user's completed,
+/// not-yet-reviewed stay at this listing, and explains instead of opening
+/// the sheet when there is none ("Only guests who stayed here…").
 class AddReviewSheet extends StatefulWidget {
   final String listingId;
   final String hostId;
   final String listingTitle;
+  final String bookingId;
 
   const AddReviewSheet({
     super.key,
     required this.listingId,
     required this.hostId,
     required this.listingTitle,
+    required this.bookingId,
   });
 
   static Future<ReviewModel?> show(
@@ -20,7 +27,32 @@ class AddReviewSheet extends StatefulWidget {
     required String listingId,
     required String hostId,
     required String listingTitle,
-  }) {
+    String? bookingId,
+  }) async {
+    var stayId = bookingId;
+    if (stayId == null) {
+      final token = UserSession.instance.token;
+      if (token == null || token.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please log in to write a review.'), behavior: SnackBarBehavior.floating),
+        );
+        return null;
+      }
+      final eligibility = await ReviewService.checkEligibility(token: token, listingId: listingId);
+      if (!context.mounted) return null;
+      if (!eligibility.canReview) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(eligibility.reason.isNotEmpty ? eligibility.reason : 'Only guests who stayed here can write a review.'),
+            backgroundColor: const Color(0xFF2A1B12),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return null;
+      }
+      stayId = eligibility.bookingId!;
+    }
+
     return showModalBottomSheet<ReviewModel>(
       context: context,
       isScrollControlled: true,
@@ -29,6 +61,7 @@ class AddReviewSheet extends StatefulWidget {
         listingId: listingId,
         hostId: hostId,
         listingTitle: listingTitle,
+        bookingId: stayId!,
       ),
     );
   }
@@ -117,8 +150,7 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
     try {
       final review = await ReviewService.submitReview(
         token: token,
-        listingId: widget.listingId,
-        hostId: widget.hostId,
+        bookingId: widget.bookingId,
         rating: _overallRating.toDouble(),
         comment: comment,
         categoryRatings: {
@@ -136,7 +168,7 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Failed to submit review: $e'),
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),

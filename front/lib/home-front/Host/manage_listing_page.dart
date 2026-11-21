@@ -14,11 +14,9 @@ import 'listing_settings_page.dart'; // adjust path to match your project struct
 /// performance data pulled straight from the listing document, quick
 /// actions, and pause/delete controls.
 ///
-/// NOTE: the "98% recommended" figure next to the rating is a STATIC
-/// placeholder — no guest-recommendation-percentage tracking exists in
-/// the schema yet. Replace with a real field once that's built
-/// server-side; until then this is intentionally fake and should not be
-/// trusted as real data (see the inline comment where it's rendered).
+/// (The old static "98% recommended" figure was removed — no
+/// recommendation tracking exists yet. Add a real field server-side
+/// before showing a percentage there again.)
 class ManageListingPage extends StatefulWidget {
   final String authToken;
   final String listingId;
@@ -399,11 +397,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
                                             style: TextStyle(color: _dark, fontSize: 15, fontWeight: FontWeight.w700),
                                           ),
                                         Text(
-                                          '${listing.reviewCount} reviews'
-                                          // STATIC PLACEHOLDER — not a real
-                                          // tracked stat, see class doc
-                                          // comment above.
-                                          ' · 98% recommended',
+                                          '${listing.reviewCount} review${listing.reviewCount == 1 ? '' : 's'}',
                                           style: const TextStyle(color: _muted, fontSize: 12),
                                         ),
                                       ],
