@@ -188,7 +188,6 @@ class _BookingPageState extends State<BookingPage> {
   int _quoteRequest = 0;
 
   bool _booking = false;
-  bool _openingChat = false;
 
   String? get _token => UserSession.instance.token;
 
@@ -295,42 +294,6 @@ class _BookingPageState extends State<BookingPage> {
       });
       // Dates may have just been taken — refresh the calendar.
       _loadAvailability();
-    }
-  }
-
-  Future<void> _messageHost() async {
-    final token = _token;
-    final myId = UserSession.instance.currentUser?.id ?? '';
-    if (token == null || widget.hostId.isEmpty || widget.hostId == myId) return;
-    setState(() => _openingChat = true);
-    try {
-      final result = await AuthService.startConversation(
-        token: token,
-        recipientId: widget.hostId,
-        listingId: widget.listingId,
-        content: _rangeStart != null && _rangeEnd != null
-            ? 'Hi, I\'m interested in "${widget.title}" for ${BookingUi.range(_rangeStart!, _rangeEnd!)}.'
-            : 'Hi, I\'m interested in your listing "${widget.title}".',
-      );
-      final conv = result['conversation'] as Map<String, dynamic>? ?? result;
-      final conversationId = (conv['_id'] ?? conv['id'] ?? '').toString();
-      if (!mounted || conversationId.isEmpty) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(
-            conversationId: conversationId,
-            otherUserName: widget.hostName,
-            otherUserInitials: BookingUi.initials(widget.hostName),
-            listingName: widget.title,
-            listingLocation: widget.locationLabel,
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open chat: $e')));
-    } finally {
-      if (mounted) setState(() => _openingChat = false);
     }
   }
 
