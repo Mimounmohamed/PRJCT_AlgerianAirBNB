@@ -14,6 +14,7 @@ import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../bookings/bookings_list_page.dart';
+import '../services/push_notification_service.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({
@@ -200,9 +201,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.of(dialogContext).pop();
+                    // Stop this user's pushes reaching this phone before the
+                    // session (and its auth token) is cleared.
+                    await PushNotificationService.instance.unregisterCurrentUser();
                     UserSession.instance.clear();
+                    if (!context.mounted) return;
                     if (widget.onLogout != null) {
                       widget.onLogout!();
                     } else {

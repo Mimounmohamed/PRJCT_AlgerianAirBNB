@@ -15,6 +15,10 @@ void main() async {
   // Set up the local notification channel (Android) before runApp
   await initLocalNotifications();
 
+  // Push tokens: starts once and follows the login session from here on,
+  // so whichever account logs in (any login method) gets this phone's pushes.
+  PushNotificationService.instance.initialize();
+
   runApp(const MyApp());
 }
 

@@ -67,12 +67,28 @@ router.delete('/me/permanent', protect, async (req, res) => {
   }
 });
 
-// PUT /api/users/fcm-token
+// PUT /api/users/fcm-token — this device now belongs to the logged-in user.
+// A device token can only belong to ONE account: when two accounts are used
+// on the same phone, the previous account must stop receiving this phone's
+// pushes — otherwise a guest's "Booking confirmed" shows up while the host
+// is logged in.
 router.put('/fcm-token', protect, async (req, res) => {
   try {
     const { fcmToken } = req.body;
     if (!fcmToken) return res.status(400).json({ error: 'fcmToken is required' });
+    await User.updateMany({ fcmToken, _id: { $ne: req.user._id } }, { $set: { fcmToken: null } });
     await User.findByIdAndUpdate(req.user._id, { fcmToken });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/users/fcm-token — on logout: stop sending this user's pushes
+// to this device.
+router.delete('/fcm-token', protect, async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user._id, { fcmToken: null });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
