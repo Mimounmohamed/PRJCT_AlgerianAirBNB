@@ -13,6 +13,8 @@ import 'Settings.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
+import '../bookings/bookings_list_page.dart';
+import '../services/push_notification_service.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({
@@ -199,9 +201,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     Navigator.of(dialogContext).pop();
+                    // Stop this user's pushes reaching this phone before the
+                    // session (and its auth token) is cleared.
+                    await PushNotificationService.instance.unregisterCurrentUser();
                     UserSession.instance.clear();
+                    if (!context.mounted) return;
                     if (widget.onLogout != null) {
                       widget.onLogout!();
                     } else {
@@ -382,6 +388,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
                   ),
                   const SizedBox(height: 28),
+                  const _SectionLabel('Travel'),
+                  _SectionCard(
+                    tiles: [
+                      _SettingsTile(
+                        icon: Icons.luggage_outlined,
+                        label: 'My trips',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const BookingsListPage.trips()),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   const _SectionLabel('Account Settings'),
                   _SectionCard(
                     tiles: [

@@ -9,6 +9,8 @@ class HouseRulesResult {
   final bool petsAllowed;
   final bool smokingAllowed;
   final bool eventsAllowed;
+  final bool adultOnly;
+  final bool familyBookletRequired;
   final bool curfew;
   final String? curfewTime;
   final String? additionalRules;
@@ -17,6 +19,8 @@ class HouseRulesResult {
     required this.petsAllowed,
     required this.smokingAllowed,
     required this.eventsAllowed,
+    required this.adultOnly,
+    required this.familyBookletRequired,
     required this.curfew,
     required this.curfewTime,
     required this.additionalRules,
@@ -25,12 +29,8 @@ class HouseRulesResult {
 
 /// "House rules" — its own full page (pushed from Listing Settings),
 /// not a bottom sheet. Edits petsAllowed, smokingAllowed, eventsAllowed,
-/// curfew/curfewTime, and additionalRules.
-///
-/// adultOnly and familyBookletRequired have no UI control on this page
-/// (per the current design) but are still accepted and sent back on
-/// save unchanged, so the backend's shallow-merge PUT on houseRules
-/// doesn't silently wipe them.
+/// adultOnly, familyBookletRequired, curfew/curfewTime, and
+/// additionalRules. curfewTime is only saved while quiet hours are on.
 class HouseRulesPage extends StatefulWidget {
   final String authToken;
   final String listingId;
@@ -78,6 +78,8 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
   late bool _petsAllowed;
   late bool _smokingAllowed;
   late bool _eventsAllowed;
+  late bool _adultOnly;
+  late bool _familyBookletRequired;
   late bool _curfew;
   late String? _curfewTime;
   late TextEditingController _rulesController;
@@ -89,8 +91,10 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
     _petsAllowed = widget.petsAllowed;
     _smokingAllowed = widget.smokingAllowed;
     _eventsAllowed = widget.eventsAllowed;
+    _adultOnly = widget.adultOnly;
+    _familyBookletRequired = widget.familyBookletRequired;
     _curfew = widget.curfew;
-    _curfewTime = widget.curfewTime;
+    _curfewTime = widget.curfew ? widget.curfewTime : null;
     _rulesController = TextEditingController(text: widget.additionalRules ?? '');
   }
 
@@ -233,7 +237,8 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
                           onPressed: () {
                             setState(() {
                               _curfew = dialogCurfew;
-                              _curfewTime = '${_fmt24(dialogStart)} - ${_fmt24(dialogEnd)}';
+                              // Quiet hours off → no hours saved either.
+                              _curfewTime = dialogCurfew ? '${_fmt24(dialogStart)} - ${_fmt24(dialogEnd)}' : null;
                             });
                             Navigator.of(dialogContext).pop();
                           },
@@ -269,11 +274,11 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
             'petsAllowed': _petsAllowed,
             'smokingAllowed': _smokingAllowed,
             'eventsAllowed': _eventsAllowed,
-            'adultOnly': widget.adultOnly,
+            'adultOnly': _adultOnly,
             'curfew': _curfew,
-            if (_curfewTime != null) 'curfewTime': _curfewTime,
+            if (_curfew && _curfewTime != null) 'curfewTime': _curfewTime,
             'additionalRules': _rulesController.text,
-            'familyBookletRequired': widget.familyBookletRequired,
+            'familyBookletRequired': _familyBookletRequired,
           },
         },
       );
@@ -285,8 +290,10 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
           petsAllowed: _petsAllowed,
           smokingAllowed: _smokingAllowed,
           eventsAllowed: _eventsAllowed,
+          adultOnly: _adultOnly,
+          familyBookletRequired: _familyBookletRequired,
           curfew: _curfew,
-          curfewTime: _curfewTime,
+          curfewTime: _curfew ? _curfewTime : null,
           additionalRules: _rulesController.text,
         ),
       );
@@ -462,6 +469,18 @@ class _HouseRulesPageState extends State<HouseRulesPage> {
                     title: 'Events allowed',
                     value: _eventsAllowed,
                     onChanged: (v) => setState(() => _eventsAllowed = v),
+                  ),
+                  _ruleCard(
+                    icon: Icons.no_adult_content_outlined,
+                    title: 'Adults only',
+                    value: _adultOnly,
+                    onChanged: (v) => setState(() => _adultOnly = v),
+                  ),
+                  _ruleCard(
+                    icon: Icons.family_restroom_outlined,
+                    title: 'Family booklet required for couples',
+                    value: _familyBookletRequired,
+                    onChanged: (v) => setState(() => _familyBookletRequired = v),
                   ),
                   _quietHoursCard(),
 

@@ -121,7 +121,7 @@ class CreateListingIntroPage extends StatelessWidget {
                     const SizedBox(height: 28),
                     _stepRow(1, 'Tell us about your place', 'Share basic info like location and how many guests can stay.'),
                     const SizedBox(height: 14),
-                    _stepRow(2, 'Make it stand out', 'Add 5 or more photos plus a title and description of your authentic stay.'),
+                    _stepRow(2, 'Make it stand out', 'Add at least one photo, plus a title and description of your authentic stay.'),
                     const SizedBox(height: 14),
                     _stepRow(3, 'Finish and publish', "Choose if you'd like to start with an experienced guest, then set your price."),
                     const SizedBox(height: 28),

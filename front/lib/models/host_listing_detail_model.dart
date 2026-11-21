@@ -24,6 +24,8 @@ class HostListingDetailModel {
   final double? longitude;
 
   final double pricePerNight;
+  /// 'nightly' | 'monthly' — pricePerNight is the price per this unit.
+  final String rentalPeriod;
 
   // ── House rules ──────────────────────────────────────
   final bool petsAllowed;
@@ -36,6 +38,10 @@ class HostListingDetailModel {
   final bool familyBookletRequired;
 
   // ── Booking preferences ──────────────────────────────
+  /// Publishing: skip admin review — goes live directly on creation and
+  /// on resume after a pause.
+  final bool autoPublish;
+  /// Guest bookings: auto-confirmed without the host accepting them.
   final bool instantBook;
   final int advanceNoticeHours;
   final int minStayNights;
@@ -47,6 +53,8 @@ class HostListingDetailModel {
   final String checkOutTime;
 
   final String cancellationPolicy; // 'Flexible' | 'Moderate' | 'Firm'
+  /// End of the snooze while visibility == 'snoozed', else null.
+  final DateTime? snoozedUntil;
   final String? checkInInstructions;
 
   final double totalEarnings;
@@ -77,6 +85,7 @@ class HostListingDetailModel {
     required this.latitude,
     required this.longitude,
     required this.pricePerNight,
+    this.rentalPeriod = 'nightly',
     required this.petsAllowed,
     required this.smokingAllowed,
     required this.eventsAllowed,
@@ -85,6 +94,7 @@ class HostListingDetailModel {
     required this.curfewTime,
     required this.additionalRules,
     required this.familyBookletRequired,
+    required this.autoPublish,
     required this.instantBook,
     required this.advanceNoticeHours,
     required this.minStayNights,
@@ -95,6 +105,7 @@ class HostListingDetailModel {
     this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
     required this.cancellationPolicy,
+    this.snoozedUntil,
     required this.checkInInstructions,
     required this.totalEarnings,
     required this.totalViews,
@@ -147,6 +158,7 @@ class HostListingDetailModel {
       latitude: coordsList != null && coordsList.length == 2 ? (coordsList[1] as num).toDouble() : null,
       longitude: coordsList != null && coordsList.length == 2 ? (coordsList[0] as num).toDouble() : null,
       pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
+      rentalPeriod: price['rentalPeriod'] as String? ?? 'nightly',
       petsAllowed: houseRules['petsAllowed'] as bool? ?? false,
       smokingAllowed: houseRules['smokingAllowed'] as bool? ?? false,
       eventsAllowed: houseRules['eventsAllowed'] as bool? ?? false,
@@ -155,6 +167,7 @@ class HostListingDetailModel {
       curfewTime: houseRules['curfewTime'] as String?,
       additionalRules: houseRules['additionalRules'] as String?,
       familyBookletRequired: houseRules['familyBookletRequired'] as bool? ?? false,
+      autoPublish: bookingPreferences['autoPublish'] as bool? ?? false,
       instantBook: bookingPreferences['instantBook'] as bool? ?? false,
       advanceNoticeHours: (bookingPreferences['advanceNoticeHours'] as num?)?.toInt() ?? 24,
       minStayNights: (bookingPreferences['minStayNights'] as num?)?.toInt() ?? 1,
@@ -165,6 +178,7 @@ class HostListingDetailModel {
       checkOutTimeTo: bookingPreferences['checkOutTimeTo'] as String? ?? '12:00',
       checkOutTime: bookingPreferences['checkOutTime'] as String? ?? (bookingPreferences['checkOutTimeFrom'] as String? ?? '11:00'),
       cancellationPolicy: json['cancellationPolicy'] as String? ?? 'Moderate',
+      snoozedUntil: DateTime.tryParse(json['snoozedUntil']?.toString() ?? '')?.toLocal(),
       checkInInstructions: json['checkInInstructions'] as String?,
       totalEarnings: (stats['totalEarnings'] as num?)?.toDouble() ?? 0,
       totalViews: (stats['totalViews'] as num?)?.toInt() ?? 0,

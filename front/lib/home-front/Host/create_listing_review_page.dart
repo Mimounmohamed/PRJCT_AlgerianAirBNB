@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'create_listing_exit.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
@@ -134,21 +135,45 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                 ),
               ),
             ),
+            // Star on every photo: filled on the cover, outlined on the
+            // others (tap the photo to make it the cover).
+            Positioned(
+              left: 4,
+              top: 4,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: isCover ? _teal : Colors.black.withValues(alpha: 0.45),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(isCover ? Icons.star : Icons.star_border, size: 12, color: Colors.white),
+              ),
+            ),
             if (isCover)
               Positioned(
-                left: 4,
-                top: 4,
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: const BoxDecoration(color: _teal, shape: BoxShape.circle),
-                  child: const Icon(Icons.star, size: 12, color: Colors.white),
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    color: _teal,
+                    alignment: Alignment.center,
+                    child: const Text('COVER', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w700, letterSpacing: 0.6)),
+                  ),
                 ),
               ),
             Positioned(
               right: 4,
               top: 4,
               child: GestureDetector(
-                onTap: () => setState(() => widget.draft.removePhotoAt(index)),
+                onTap: () {
+                  // Never published — delete the upload from Cloudinary too.
+                  final url = photo['url'] as String?;
+                  setState(() => widget.draft.removePhotoAt(index));
+                  if (url != null) discardDraftPhotos([url]);
+                },
                 child: Container(
                   padding: const EdgeInsets.all(3),
                   decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.55), shape: BoxShape.circle),
@@ -586,6 +611,18 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
   // ── Publish ──────────────────────────────────────────────
 
   Future<void> _publish() async {
+    if (_isUploadingPhotos) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please wait for your photos to finish uploading.')),
+      );
+      return;
+    }
+    if (widget.draft.photos.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please add at least one photo of your place.')),
+      );
+      return;
+    }
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please give your place a title.')),
@@ -614,26 +651,23 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       );
       if (!mounted) return;
 
-      if (widget.draft.instantBook) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Listing published!')),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => CreateListingConfirmationPage(
-              listingId: listingId,
-              title: widget.draft.title,
-              city: widget.draft.city,
-              wilaya: widget.draft.wilaya,
-              coverPhotoUrl: widget.draft.photos.isNotEmpty
-                  ? widget.draft.photos[widget.draft.coverPhotoIndex]['url'] as String?
-                  : null,
-            ),
+      // Both outcomes get the confirmation page: live right away
+      // (Auto-publish on) or sent to the AKRILI team for review.
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => CreateListingConfirmationPage(
+            listingId: listingId,
+            title: widget.draft.title,
+            city: widget.draft.city,
+            wilaya: widget.draft.wilaya,
+            coverPhotoUrl: widget.draft.photos.isNotEmpty
+                ? widget.draft.photos[widget.draft.coverPhotoIndex.clamp(0, widget.draft.photos.length - 1)]['url'] as String?
+                : null,
+            isLive: widget.draft.autoPublish,
+            instantBook: widget.draft.instantBook,
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -700,6 +734,15 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           _addPhotosTile(),
                         ],
                       ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      widget.draft.photos.isEmpty
+                          ? 'Add at least one photo of your place.'
+                          : widget.draft.photos.length == 1
+                              ? 'This photo is your cover — the one guests see first in Discover.'
+                              : 'Tap a photo to make it your cover — the one guests see first in Discover and in your listing.',
+                      style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 12, height: 1.35),
                     ),
                     const SizedBox(height: 24),
 
@@ -836,9 +879,16 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                       child: Column(
                         children: [
                           _ruleRow(
+                            icon: Icons.publish_outlined,
+                            title: 'Auto-publish',
+                            subtitle: 'Go live directly, without waiting for the AKRILI team to review your listing.',
+                            value: widget.draft.autoPublish,
+                            onChanged: (v) => setState(() => widget.draft.autoPublish = v),
+                          ),
+                          _ruleRow(
                             icon: Icons.flash_on_outlined,
                             title: 'Instant Book',
-                            subtitle: 'Guests can book without waiting for approval.',
+                            subtitle: 'Guests can book without waiting for your approval.',
                             value: widget.draft.instantBook,
                             onChanged: (v) => setState(() => widget.draft.instantBook = v),
                             showDivider: false,
@@ -912,17 +962,17 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                     _cancellationCard(
                       value: 'Flexible',
                       title: 'Flexible',
-                      description: 'Full refund 1 day prior to arrival.',
+                      description: 'Full refund if cancelled at least 24 hours before check-in.',
                     ),
                     _cancellationCard(
                       value: 'Moderate',
                       title: 'Moderate',
-                      description: 'Full refund 5 days prior to arrival.',
+                      description: 'Full refund if cancelled at least 5 days before check-in.',
                     ),
                     _cancellationCard(
                       value: 'Firm',
                       title: 'Firm',
-                      description: 'Full refund if cancelled within 48 hours of booking.',
+                      description: 'Full refund if cancelled at least 30 days before check-in.',
                     ),
                     const SizedBox(height: 10),
 
@@ -943,7 +993,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   TextButton(
-                    onPressed: _isPublishing ? null : () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    onPressed: (_isPublishing || _isUploadingPhotos) ? null : () => exitCreateListingFlow(context, widget.draft),
                     child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(

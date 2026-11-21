@@ -81,6 +81,26 @@ class AlgeriaLocationData {
     return null;
   }
 
+  /// The commune whose center is closest to (lat, lng). Works offline — used
+  /// as the fallback when Nominatim's place name doesn't match the dataset,
+  /// so a moved pin always lands on a wilaya/commune from the app's own list.
+  static AlgeriaCommune? nearestCommune(List<AlgeriaCommune> communes, double lat, double lng) {
+    AlgeriaCommune? best;
+    double bestDistance = double.infinity;
+    for (final c in communes) {
+      // Squared equirectangular distance — plenty accurate for "which
+      // commune center is closest", and avoids trig per row.
+      final dLat = c.lat - lat;
+      final dLng = (c.lng - lng) * 0.8; // ≈ cos(36°), Algeria's populated latitudes
+      final distance = dLat * dLat + dLng * dLng;
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = c;
+      }
+    }
+    return best;
+  }
+
   /// Case-insensitive match — used to reconcile Nominatim's reverse-geocode
   /// result (free text) against the dataset's commune names.
   static AlgeriaCommune? findByCommuneNameLoose(List<AlgeriaCommune> communes, String query) {

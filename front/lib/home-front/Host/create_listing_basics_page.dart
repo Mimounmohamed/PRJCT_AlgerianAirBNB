@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'create_listing_exit.dart';
 import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
 import '../../../models/listing_draft_model.dart'; // adjust path to match your project structure
@@ -259,7 +260,7 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                     // Matches the property-type page: exits the whole
                     // wizard back to the Host dashboard (tab shell root)
                     // instead of just going back one step.
-                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                    onPressed: () => exitCreateListingFlow(context, widget.draft),
                     child: const Text('Exit flow', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
                   ),
                   ElevatedButton(

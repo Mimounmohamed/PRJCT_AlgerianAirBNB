@@ -12,6 +12,7 @@ import '../../services/auth_service.dart'; // adjust path — exposes AuthServic
 import '../../services/amenity_catalog_service.dart'; // adjust path — exposes AmenityCatalogService + AmenityCatalogItem
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
 import '../../models/amenity_model.dart'; // adjust path — for AmenityModel.iconFor()
+import '../../data/algeria_location_data.dart'; // commune/wilaya dataset — keeps a moved pin on the app's own wilaya list
 
 class _PropertyTypeOption {
   final String label;
@@ -113,6 +114,27 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   bool _isLoadingCatalog = true;
   String? _catalogError;
 
+  // ── Location matching ──────────────────────────────────
+  // The commune dataset the Create Listing wizard uses — a moved pin is
+  // always resolved to a wilaya/commune from this list, so the listing
+  // keeps matching the wilaya filter in search.
+  List<AlgeriaCommune> _communes = [];
+  // The in-flight reverse geocode after a pin move. Save waits for it so
+  // it never stores the previous spot's city/address.
+  Future<void>? _pendingGeocode;
+  // Bumped on every pin move — a slower, older lookup that finishes late
+  // is ignored instead of overwriting a newer one.
+  int _geocodeRequestId = 0;
+
+  // ── Unsaved changes / uploaded photo tracking ──────────
+  // Snapshot of every editable field right after loading; compared on
+  // back/discard to decide whether to ask before leaving.
+  String? _initialSnapshot;
+  // Photos uploaded to Cloudinary while on this screen. Any that don't end
+  // up saved (host left, or removed them before saving) are sent to the
+  // backend to delete, so they don't stay on Cloudinary forever.
+  final Set<String> _uploadedThisSession = {};
+
   @override
   void initState() {
     super.initState();
@@ -123,6 +145,9 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     _amenities = [];
     _future = _load();
     _fetchAmenityCatalog();
+    AlgeriaLocationData.load().then((communes) {
+      if (mounted) _communes = communes;
+    }).catchError((_) {});
   }
 
   Future<HostListingDetailModel> _load() async {
@@ -148,9 +173,29 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       _neighborhood = listing.neighborhood;
       _fullAddress = listing.fullAddress;
       _isLoaded = true;
+      _initialSnapshot = _snapshot();
     }
     return listing;
   }
+
+  /// Every field this screen edits, serialized — two equal snapshots mean
+  /// nothing changed.
+  String _snapshot() => jsonEncode({
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'propertyType': _selectedPropertyType,
+        'photos': _photos,
+        'cover': _coverPhotoIndex,
+        'amenities': _amenities,
+        'lat': _lat,
+        'lng': _lng,
+        'wilaya': _wilaya,
+        'city': _city,
+        'neighborhood': _neighborhood,
+        'fullAddress': _fullAddress,
+      });
+
+  bool get _hasUnsavedChanges => _isLoaded && _initialSnapshot != null && _snapshot() != _initialSnapshot;
 
   Future<void> _fetchAmenityCatalog() async {
     setState(() {
@@ -200,6 +245,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       final toUpload = picked.take(remaining).toList();
       for (final img in toUpload) {
         final url = await AuthService.uploadToCloudinary(File(img.path));
+        _uploadedThisSession.add(url);
         if (!mounted) return;
         setState(() {
           _photos.add({'url': url, 'caption': '', 'order': _photos.length});
@@ -233,29 +279,148 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     });
   }
 
+  /// Moves a photo to a new position. The cover star follows the photo it
+  /// was on, not the slot.
+  void _movePhoto(int from, int to) {
+    if (from == to || to < 0 || to >= _photos.length) return;
+    setState(() {
+      final coverUrl = _photos[_coverPhotoIndex.clamp(0, _photos.length - 1)]['url'];
+      final photo = _photos.removeAt(from);
+      _photos.insert(to, photo);
+      final newCover = _photos.indexWhere((p) => p['url'] == coverUrl);
+      _coverPhotoIndex = newCover >= 0 ? newCover : 0;
+    });
+  }
+
+  Future<void> _editCaption(int index) async {
+    final controller = TextEditingController(text: _photos[index]['caption']?.toString() ?? '');
+    final caption = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _cream,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Photo caption', style: TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700)),
+        content: _dialogField(controller: controller, hint: 'e.g. Sunny living room with sea view', maxLines: 2),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel', style: TextStyle(color: _muted, fontWeight: FontWeight.w600)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+            child: const Text('Save', style: TextStyle(color: _teal, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (caption == null || !mounted) return;
+    setState(() => _photos[index]['caption'] = caption);
+  }
+
+  /// Tap on a photo → cover / caption / move / remove.
+  Future<void> _openPhotoOptions(int index) async {
+    final isCover = _coverPhotoIndex == index;
+    final isFirst = index == 0;
+    final isLast = index == _photos.length - 1;
+
+    Widget option(String value, IconData icon, String label, {bool enabled = true, Color color = _dark}) {
+      return ListTile(
+        enabled: enabled,
+        leading: Icon(icon, color: enabled ? color : _muted.withValues(alpha: 0.4)),
+        title: Text(label, style: TextStyle(color: enabled ? color : _muted.withValues(alpha: 0.4), fontWeight: FontWeight.w600)),
+        onTap: () => Navigator.of(context).pop(value),
+      );
+    }
+
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: _cream,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 36, height: 4, decoration: BoxDecoration(color: _border, borderRadius: BorderRadius.circular(4))),
+              const SizedBox(height: 8),
+              option('cover', Icons.star_outline, isCover ? 'This is the cover photo' : 'Set as cover photo', enabled: !isCover),
+              option('caption', Icons.short_text, 'Edit caption'),
+              option('first', Icons.first_page, 'Move to first', enabled: !isFirst),
+              option('earlier', Icons.chevron_left, 'Move earlier', enabled: !isFirst),
+              option('later', Icons.chevron_right, 'Move later', enabled: !isLast),
+              option('remove', Icons.delete_outline, 'Remove photo', color: const Color(0xFFB3261E)),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || action == null) return;
+
+    switch (action) {
+      case 'cover':
+        setState(() => _coverPhotoIndex = index);
+      case 'caption':
+        await _editCaption(index);
+      case 'first':
+        _movePhoto(index, 0);
+      case 'earlier':
+        _movePhoto(index, index - 1);
+      case 'later':
+        _movePhoto(index, index + 1);
+      case 'remove':
+        _removePhotoAt(index);
+    }
+  }
+
   Widget _photoThumbnail(int index) {
     final photo = _photos[index];
     final isCover = _coverPhotoIndex == index;
     final photoUrl = photo['url']?.toString() ?? '';
+    final caption = photo['caption']?.toString() ?? '';
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Image.network(
-            photoUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(
-              color: _border,
-              child: const Icon(Icons.broken_image, color: _muted, size: 24),
+          GestureDetector(
+            onTap: () => _openPhotoOptions(index),
+            child: Image.network(
+              photoUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => Container(
+                color: _border,
+                child: const Icon(Icons.broken_image, color: _muted, size: 24),
+              ),
             ),
           ),
+          if (caption.isNotEmpty)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  color: Colors.black.withValues(alpha: 0.5),
+                  child: Text(
+                    caption,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+            ),
           if (isCover)
-            DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border.all(color: _teal, width: 2),
-                borderRadius: BorderRadius.circular(16),
+            IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border.all(color: _teal, width: 2),
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           Positioned(
@@ -935,30 +1100,107 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   // ── Location ────────────────────────────────────────────
 
-  Future<void> _reverseGeocodeLabel(LatLng point) async {
+  /// Called once the host closes the big map with the pin somewhere new.
+  ///
+  /// Right away (offline): the city/wilaya snap to the nearest commune in
+  /// the app's dataset, and the old neighborhood / street address are
+  /// cleared, since they describe the previous spot. Then a reverse geocode
+  /// refines the commune and fills in the new neighborhood / street.
+  /// Save waits for that lookup (_pendingGeocode).
+  void _onPinMoved(LatLng point) {
+    final nearest = _communes.isEmpty
+        ? null
+        : AlgeriaLocationData.nearestCommune(_communes, point.latitude, point.longitude);
+
+    setState(() {
+      _lat = point.latitude;
+      _lng = point.longitude;
+      if (nearest != null) {
+        _city = nearest.communeNameFr;
+        _wilaya = nearest.wilayaNameFr;
+      }
+      _neighborhood = null;
+      _fullAddress = null;
+    });
+
+    final requestId = ++_geocodeRequestId;
+    final lookup = _reverseGeocode(point, requestId);
+    _pendingGeocode = lookup;
+    unawaited(lookup.whenComplete(() {
+      if (identical(_pendingGeocode, lookup)) _pendingGeocode = null;
+    }));
+  }
+
+  /// Nominatim reverse geocode, matched against the commune dataset the
+  /// same way the Create Listing location step does, so the wilaya/city
+  /// saved are always names from the app's own list (Nominatim's raw
+  /// "state" names like "Wilaya d'Alger" never get saved). Falls back to
+  /// the nearest commune when no name matches or the request fails.
+  Future<void> _reverseGeocode(LatLng point, int requestId) async {
     try {
-      final uri = Uri.parse(
-        'https://nominatim.openstreetmap.org/reverse'
-        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}&accept-language=fr',
-      );
-      final response = await http.get(uri, headers: {'User-Agent': 'Akrili/1.0 (contact: om_mimoun@esi.dz)'});
-      if (response.statusCode != 200) return;
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final address = body['address'] as Map<String, dynamic>? ?? {};
-      final cityGuess = (address['city'] ??
-          address['town'] ??
-          address['municipality'] ??
-          address['village'] ??
-          address['suburb'] ??
-          address['county']) as String?;
-      final wilayaGuess = (address['state'] ?? address['province'] ?? address['region']) as String?;
-      if (!mounted) return;
+      final communes = _communes.isNotEmpty ? _communes : await AlgeriaLocationData.load();
+      _communes = communes;
+      final nearest = AlgeriaLocationData.nearestCommune(communes, point.latitude, point.longitude);
+
+      Map<String, dynamic> address = {};
+      try {
+        final uri = Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}&accept-language=fr',
+        );
+        final response = await http
+            .get(uri, headers: {'User-Agent': 'Akrili/1.0 (contact: om_mimoun@esi.dz)'})
+            .timeout(const Duration(seconds: 8));
+        if (response.statusCode == 200) {
+          final body = jsonDecode(response.body) as Map<String, dynamic>;
+          address = body['address'] as Map<String, dynamic>? ?? {};
+        }
+      } catch (_) {
+        // Offline / slow — the nearest-commune fallback below still applies.
+      }
+
+      // Commune: Nominatim's place name matched against the dataset —
+      // preferring a commune in the same wilaya as the nearest one, since
+      // several wilayas share commune names.
+      final candidates = [
+        address['city'],
+        address['town'],
+        address['municipality'],
+        address['village'],
+        address['suburb'],
+      ].whereType<String>();
+      final sameWilaya = nearest == null
+          ? const <AlgeriaCommune>[]
+          : AlgeriaLocationData.communesForWilaya(communes, nearest.wilayaNameFr);
+      AlgeriaCommune? match;
+      for (final candidate in candidates) {
+        final normalized = candidate.trim().toLowerCase();
+        match = sameWilaya.where((c) => c.communeNameFr.toLowerCase() == normalized).firstOrNull ??
+            AlgeriaLocationData.findByCommuneNameLoose(communes, candidate);
+        if (match != null) break;
+      }
+      match ??= nearest;
+
+      // Neighborhood and street for the NEW spot (null when Nominatim has
+      // none — better empty than the previous spot's address).
+      final neighborhoodGuess = (address['neighbourhood'] ?? address['quarter'] ?? address['suburb'] ?? address['hamlet']) as String?;
+      final road = address['road'] as String?;
+      final houseNumber = address['house_number'] as String?;
+      final streetGuess = road == null ? null : (houseNumber != null ? '$houseNumber $road' : road);
+
+      if (!mounted || requestId != _geocodeRequestId) return; // a newer pin move superseded this one
       setState(() {
-        if (cityGuess != null && cityGuess.isNotEmpty) _city = cityGuess;
-        if (wilayaGuess != null && wilayaGuess.isNotEmpty) _wilaya = wilayaGuess;
+        if (match != null) {
+          _city = match.communeNameFr;
+          _wilaya = match.wilayaNameFr;
+        }
+        _neighborhood = (neighborhoodGuess != null && neighborhoodGuess.toLowerCase() != _city?.toLowerCase())
+            ? neighborhoodGuess
+            : null;
+        _fullAddress = streetGuess;
       });
     } catch (_) {
-      // Keep the moved pin even if the label lookup fails.
+      // Keep the moved pin and the nearest-commune values set in _onPinMoved.
     }
   }
 
@@ -1076,15 +1318,23 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       },
     );
 
+    if (!mounted) return;
     _zoom = expandedZoom;
-    setState(() {
-      _lat = expandedCenter.latitude;
-      _lng = expandedCenter.longitude;
-    });
     try {
       _mapController.move(expandedCenter, expandedZoom);
     } catch (_) {}
-    unawaited(_reverseGeocodeLabel(expandedCenter));
+
+    // Opening and closing the map without panning shouldn't count as a
+    // move (that would wipe the neighborhood/address for nothing).
+    final moved = _lat == null ||
+        _lng == null ||
+        (expandedCenter.latitude - _lat!).abs() > 1e-5 ||
+        (expandedCenter.longitude - _lng!).abs() > 1e-5;
+    if (moved) {
+      _onPinMoved(expandedCenter);
+    } else {
+      setState(() {});
+    }
   }
 
   Widget _locationPreview() {
@@ -1193,10 +1443,21 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       return;
     }
 
+    setState(() => _isSaving = true);
+
+    // A pin move's address lookup still running → wait for it, so the
+    // save never stores the previous spot's city/wilaya/street.
+    final pendingGeocode = _pendingGeocode;
+    if (pendingGeocode != null) {
+      try {
+        await pendingGeocode.timeout(const Duration(seconds: 10));
+      } catch (_) {}
+      if (!mounted) return;
+    }
+
     final effectiveWilaya = (_wilaya != null && _wilaya!.trim().isNotEmpty) ? _wilaya! : (_city ?? 'Algiers');
     final effectiveCity = (_city != null && _city!.trim().isNotEmpty) ? _city! : effectiveWilaya;
 
-    setState(() => _isSaving = true);
     try {
       final normalizedPhotos = [
         for (int i = 0; i < _photos.length; i++)
@@ -1240,6 +1501,15 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         },
       );
 
+      // Saved. Photos uploaded here but removed before saving were never
+      // part of the listing — delete them. (Photos removed from the saved
+      // listing are deleted by the backend's PUT itself.)
+      final savedUrls = normalizedPhotos.map((p) => p['url']).toSet();
+      final unsavedUploads = _uploadedThisSession.where((u) => !savedUrls.contains(u)).toList();
+      _uploadedThisSession.clear();
+      unawaited(HostService.discardUploadedPhotos(authToken: widget.authToken, urls: unsavedUploads));
+      _initialSnapshot = _snapshot();
+
       if (!mounted) return;
       await _showSavedPopup();
       if (!mounted) return;
@@ -1252,7 +1522,52 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
     }
   }
 
+  // ── Leaving without saving ───────────────────────────────
+
   void _discard() => Navigator.of(context).maybePop();
+
+  /// Back button, system back, and Discard all come through here (the
+  /// page's PopScope never pops on its own). No changes → leave right
+  /// away; otherwise ask first.
+  Future<void> _handleBackRequest() async {
+    if (_isSaving) return;
+    if (!_hasUnsavedChanges) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    final leave = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _cream,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Discard changes?', style: TextStyle(color: _dark, fontWeight: FontWeight.w700)),
+        content: const Text(
+          "You have unsaved changes to this listing. If you leave now, they'll be lost.",
+          style: TextStyle(color: _muted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Keep editing', style: TextStyle(color: _teal, fontWeight: FontWeight.w700)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard', style: TextStyle(color: Color(0xFFB3261E), fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+    if (leave == true && mounted) Navigator.of(context).pop();
+  }
+
+  /// The page is closing without a save — delete anything uploaded here.
+  void _discardSessionUploads() {
+    if (_uploadedThisSession.isEmpty) return;
+    final urls = _uploadedThisSession.toList();
+    _uploadedThisSession.clear();
+    unawaited(HostService.discardUploadedPhotos(authToken: widget.authToken, urls: urls));
+  }
 
   // ── Build ────────────────────────────────────────────────
 
@@ -1266,6 +1581,24 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // canPop is always false so every back attempt reaches
+    // _handleBackRequest (an unsaved-changes check can't be decided at
+    // build time — typing in a text field doesn't rebuild). Programmatic
+    // Navigator.pop() still works and lands here with didPop = true.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) {
+          _discardSessionUploads();
+        } else {
+          _handleBackRequest();
+        }
+      },
+      child: _buildScaffold(context),
+    );
+  }
+
+  Widget _buildScaffold(BuildContext context) {
     return Scaffold(
       backgroundColor: _cream,
       resizeToAvoidBottomInset: true,
