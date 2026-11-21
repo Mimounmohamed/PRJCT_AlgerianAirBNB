@@ -24,6 +24,8 @@ import '../../chat/conversation.dart';
 ///   host's number for guests who prefer calling.
 class BookingPage extends StatefulWidget {
   final String listingId;
+  final String hostId;
+  final String hostName;
   final String title;
   final String? coverPhotoUrl;
   final String locationLabel; // e.g. "Algiers, Casbah District"
@@ -42,13 +44,13 @@ class BookingPage extends StatefulWidget {
   final String checkOutTimeTo;
   final String checkOutTime;
   final bool instantBook;
-  final String hostId;
-  final String hostName;
   final int advanceNoticeHours;
 
   const BookingPage({
     super.key,
     required this.listingId,
+    this.hostId = '',
+    this.hostName = 'Host',
     required this.title,
     required this.coverPhotoUrl,
     required this.locationLabel,
@@ -67,8 +69,6 @@ class BookingPage extends StatefulWidget {
     this.checkOutTimeTo = '12:00',
     this.checkOutTime = '11:00',
     this.instantBook = false,
-    this.hostId = '',
-    this.hostName = 'Host',
     this.advanceNoticeHours = 24,
   });
 
@@ -77,6 +77,100 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
+  bool _openingChat = false;
+
+  Future<void> _openChat() async {
+    final token = UserSession.instance.token;
+    if (token == null || token.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please log in to chat with the host.'),
+          backgroundColor: Color(0xFF2A1B12),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final myId = UserSession.instance.currentUser?.id ?? '';
+    if (myId.isNotEmpty && widget.hostId == myId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You are the host of this listing (cannot message yourself).'),
+          backgroundColor: Color(0xFF2A1B12),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (widget.hostId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Host information is not available for this listing.'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _openingChat = true);
+    try {
+      final datesSummary = _nights > 0 && _rangeStart != null && _rangeEnd != null
+          ? ' for ${_formatDate(_rangeStart!)} - ${_formatDate(_rangeEnd!)} ($_nights night${_nights == 1 ? '' : 's'}, $_guests guests)'
+          : '';
+      final initialMessage =
+          'Hi, I\'m interested in booking "${widget.title}"$datesSummary.';
+
+      final result = await AuthService.startConversation(
+        token: token,
+        recipientId: widget.hostId,
+        listingId: widget.listingId,
+        content: initialMessage,
+      );
+
+      final conv = result['conversation'] as Map<String, dynamic>? ?? result;
+      final conversationId = (conv['_id'] ?? conv['id'] ?? '').toString();
+
+      if (conversationId.isEmpty) {
+        throw Exception('Could not find or create conversation.');
+      }
+
+      if (!mounted) return;
+
+      final nameParts = widget.hostName.trim().split(' ');
+      final initials = nameParts.length >= 2
+          ? '${nameParts[0][0]}${nameParts[1][0]}'.toUpperCase()
+          : widget.hostName.isNotEmpty
+              ? widget.hostName[0].toUpperCase()
+              : '?';
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            conversationId: conversationId,
+            otherUserName: widget.hostName,
+            otherUserInitials: initials,
+            listingName: widget.title,
+            listingLocation: widget.locationLabel,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open chat: $e'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _openingChat = false);
+    }
+  }
+
   DateTime? _rangeStart;
   DateTime? _rangeEnd;
   late int _guests = widget.maxGuests >= 2 ? 2 : 1;
@@ -805,9 +899,18 @@ class _BookingPageState extends State<BookingPage> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _openingChat ? null : _messageHost,
-                  icon: const Icon(Icons.chat_bubble_outline, size: 20, color: _teal),
-                  label: const Text('Text', style: TextStyle(color: _teal, fontSize: 15, fontWeight: FontWeight.w700)),
+                  onPressed: _openingChat ? null : _openChat,
+                  icon: _openingChat
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _teal,
+                        ),
+                      )
+                    : const Icon(Icons.chat_bubble_outline, size: 26, color: _teal),
+                  label: const Text('Text', style: TextStyle(color: _teal,fontSize: 16, fontWeight: FontWeight.w700)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: _teal),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),

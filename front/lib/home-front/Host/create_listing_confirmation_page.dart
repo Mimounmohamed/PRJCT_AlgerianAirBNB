@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
+import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
 // TODO: adjust this import to match your actual Listing Detail page's
 // path/constructor — "Preview my listing" pushes to it below.

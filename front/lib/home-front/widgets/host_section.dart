@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Host row shown on the Listing Detail page — avatar, name,
-/// "Superhost since <year>" (or fallback label), and a message button.
+/// "Superhost since [year]" (or fallback label), and a message button.
 class HostSection extends StatelessWidget {
   final String hostName;
   final String? hostProfilePhotoUrl;

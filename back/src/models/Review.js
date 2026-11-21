@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const reviewSchema = new mongoose.Schema(
   {
-    bookingId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: true, unique: true },
+    bookingId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Booking', required: false, sparse: true },
     listingId:  { type: mongoose.Schema.Types.ObjectId, ref: 'Listing', required: true },
     reviewerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     hostId:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -19,6 +19,12 @@ const reviewSchema = new mongoose.Schema(
 
     comment: { type: String, trim: true },
     photos:  [{ type: String }],
+
+    // ── Host Reply ─────────────────────────────────────────
+    hostReply: {
+      comment:   { type: String, trim: true },
+      repliedAt: { type: Date },
+    },
 
     // ── Moderation ─────────────────────────────────────────
     isVisible:   { type: Boolean, default: true },

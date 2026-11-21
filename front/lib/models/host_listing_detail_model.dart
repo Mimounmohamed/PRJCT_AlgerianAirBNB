@@ -3,6 +3,7 @@
 /// Listing, Edit Listing Details, Manage Calendar, and Listing Settings.
 class HostListingDetailModel {
   final String id;
+  final String hostId;
   final String title;
   final String description;
   final String propertyType;
@@ -67,6 +68,7 @@ class HostListingDetailModel {
 
   HostListingDetailModel({
     required this.id,
+    this.hostId = '',
     required this.title,
     required this.description,
     required this.propertyType,
@@ -140,6 +142,7 @@ class HostListingDetailModel {
 
     return HostListingDetailModel(
       id: json['_id'] as String? ?? '',
+      hostId: (json['hostId'] is Map ? (json['hostId']['_id'] ?? '') : (json['hostId'] ?? '')).toString(),
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
       propertyType: json['propertyType'] as String? ?? '',
