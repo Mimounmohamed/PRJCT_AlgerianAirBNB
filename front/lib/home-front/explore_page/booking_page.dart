@@ -44,6 +44,7 @@ class BookingPage extends StatefulWidget {
   final bool instantBook;
   final String hostId;
   final String hostName;
+  final int advanceNoticeHours;
 
   const BookingPage({
     super.key,
@@ -68,6 +69,7 @@ class BookingPage extends StatefulWidget {
     this.instantBook = false,
     this.hostId = '',
     this.hostName = 'Host',
+    this.advanceNoticeHours = 24,
   });
 
   @override
@@ -275,17 +277,45 @@ class _BookingPageState extends State<BookingPage> {
   Map<DateTime, DayAvailability> _monthAvailability(DateTime month) {
     final availability = _availability;
     final base = availability?.basePrice ?? widget.pricePerNight;
+    final earliest = _earliestCheckIn;
     final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
     final result = <DateTime, DayAvailability>{};
     for (int day = 1; day <= daysInMonth; day++) {
       final date = DateTime(month.year, month.month, day);
       final unavailable = availability?.unavailable.contains(date) ?? false;
+      // Too soon for the host's advance notice → can't be a check-in day.
+      final tooSoon = date.isBefore(earliest);
       result[date] = DayAvailability(
-        status: unavailable ? DayStatus.booked : DayStatus.available,
+        status: unavailable ? DayStatus.booked : (tooSoon ? DayStatus.blocked : DayStatus.available),
         price: availability?.prices[date] ?? base,
       );
     }
     return result;
+  }
+
+  /// First day a guest may check in, given the host's advance notice and
+  /// check-in time — the same rule the server applies (times are Algerian
+  /// local time, UTC+1). Days before it are greyed out in the calendar.
+  DateTime get _earliestCheckIn {
+    final nowUtc = DateTime.now().toUtc();
+    final parts = widget.checkInTimeFrom.split(':');
+    final hour = int.tryParse(parts.first) ?? 14;
+    final minute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    final algeriaNow = nowUtc.add(const Duration(hours: 1));
+    var day = DateTime.utc(algeriaNow.year, algeriaNow.month, algeriaNow.day);
+    for (var i = 0; i < 400; i++) {
+      final checkInMomentUtc = DateTime.utc(day.year, day.month, day.day, hour, minute).subtract(const Duration(hours: 1));
+      if (!nowUtc.add(Duration(hours: widget.advanceNoticeHours)).isAfter(checkInMomentUtc)) break;
+      day = day.add(const Duration(days: 1));
+    }
+    return DateTime(day.year, day.month, day.day);
+  }
+
+  String get _noticeLabel {
+    final h = widget.advanceNoticeHours;
+    if (h <= 0) return 'same-day';
+    if (h % 24 == 0) return '${h ~/ 24} day${h == 24 ? '' : 's'}';
+    return '$h hours';
   }
 
   void _openCalendarSheet() {
@@ -332,6 +362,15 @@ class _BookingPageState extends State<BookingPage> {
                         const SizedBox(width: 48), // balances the close button
                       ],
                     ),
+                    if (widget.advanceNoticeHours > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 4),
+                        child: Text(
+                          'This host needs $_noticeLabel notice — earliest check-in is ${BookingUi.longDate(_earliestCheckIn)}.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 12, height: 1.35),
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     if (_loadingAvailability)
                       const Padding(

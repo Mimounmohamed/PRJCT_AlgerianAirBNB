@@ -453,6 +453,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                         checkOutTimeTo: listing.checkOutTimeTo,
                         checkOutTime: listing.checkOutTimeFrom,
                         instantBook: listing.instantBook,
+                        advanceNoticeHours: listing.advanceNoticeHours,
                         hostId: listing.hostId,
                         hostName: listing.hostName,
                       ),
