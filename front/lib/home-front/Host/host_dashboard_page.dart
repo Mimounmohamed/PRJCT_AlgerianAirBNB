@@ -242,16 +242,14 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
               const SizedBox(height: 20),
 
               HostStatsGrid(
-                formattedEarnings: dashboard.formattedEarnings,
+                formattedEarnings: dashboard.formattedProjectedEarnings,
                 activeListings: dashboard.activeListings,
                 avgRating: dashboard.avgRating,
                 formattedViews: dashboard.formattedViews,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-              ..._bookingSections(dashboard),
-
-              // ── Get verified banner ───────────────────────────────────────
+              // ── Get verified banner (right under the stats) ───────────────
               // TODO: wire to a real verification submission flow
               // (POST /api/host/verify needs documentType + documentImageUrl,
               // meaning a document picker + upload UI that doesn't exist yet).
@@ -292,6 +290,9 @@ class _HostDashboardPageState extends State<HostDashboardPage> {
                 ),
               ),
               const SizedBox(height: 24),
+
+              // ── Booking requests · Upcoming stays · History ───────────────
+              ..._bookingSections(dashboard),
 
               // ── Your listings ──────────────────────────────────────────────
               Row(

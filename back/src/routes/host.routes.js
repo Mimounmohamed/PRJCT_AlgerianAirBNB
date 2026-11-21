@@ -52,6 +52,39 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
         .sort(sort)
         .limit(limit);
 
+    // Projected earnings: the host's share of every booking that will be
+    // (or already was) paid — confirmed + completed. Cancelled, declined
+    // and expired bookings never count, and neither do deleted listings.
+    // Older bookings saved before hostPayout existed fall back to
+    // subtotal − service fee.
+    const [projected] = await Booking.aggregate([
+      {
+        $match: {
+          hostId: req.user._id,
+          status: { $in: ['confirmed', 'completed'] },
+          listingId: { $in: listings.map((l) => l._id) },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: {
+              $ifNull: [
+                '$pricing.hostPayout',
+                { $subtract: [{ $ifNull: ['$pricing.subtotal', 0] }, { $ifNull: ['$pricing.serviceFee', 0] }] },
+              ],
+            },
+          },
+          upcoming: {
+            $sum: { $cond: [{ $eq: ['$status', 'confirmed'] }, { $ifNull: ['$pricing.hostPayout', 0] }, 0] },
+          },
+        },
+      },
+    ]);
+    const projectedEarnings = projected?.total || 0;
+    const upcomingEarnings = projected?.upcoming || 0;
+
     const now = new Date();
     const [pendingCount, requests, upcoming, history, recentBookings] = await Promise.all([
       Booking.countDocuments({ hostId: req.user._id, status: 'pending', expiresAt: { $gt: now } }),
@@ -68,7 +101,9 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
     res.json({
       totalListings: listings.length,
       activeListings,
-      totalEarnings,
+      totalEarnings,       // earned: completed stays only
+      projectedEarnings,   // confirmed + completed, cancellations excluded
+      upcomingEarnings,    // confirmed, not completed yet
       totalBookings,
       totalViews,
       avgRating: parseFloat(avgRating.toFixed(2)),

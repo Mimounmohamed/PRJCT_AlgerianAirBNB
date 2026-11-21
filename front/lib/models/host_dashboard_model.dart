@@ -4,7 +4,10 @@ import 'booking_model.dart';
 class HostDashboardModel {
   final int totalListings;
   final int activeListings;
-  final double totalEarnings;
+  final double totalEarnings; // earned — completed stays only
+  /// Host's share of all confirmed + completed bookings (cancelled,
+  /// declined and expired ones excluded). Shown as "Projected Earnings".
+  final double projectedEarnings;
   final int totalBookings;
   final int totalViews;
   final double avgRating;
@@ -19,6 +22,7 @@ class HostDashboardModel {
     required this.totalListings,
     required this.activeListings,
     required this.totalEarnings,
+    this.projectedEarnings = 0,
     required this.totalBookings,
     required this.totalViews,
     required this.avgRating,
@@ -39,6 +43,7 @@ class HostDashboardModel {
       totalListings: (json['totalListings'] as num?)?.toInt() ?? 0,
       activeListings: (json['activeListings'] as num?)?.toInt() ?? 0,
       totalEarnings: (json['totalEarnings'] as num?)?.toDouble() ?? 0,
+      projectedEarnings: (json['projectedEarnings'] as num?)?.toDouble() ?? 0,
       totalBookings: (json['totalBookings'] as num?)?.toInt() ?? 0,
       totalViews: (json['totalViews'] as num?)?.toInt() ?? 0,
       avgRating: (json['avgRating'] as num?)?.toDouble() ?? 0,
@@ -49,9 +54,14 @@ class HostDashboardModel {
     );
   }
 
+  /// Projected earnings as "420 000 DA" — what the dashboard tile shows.
+  String get formattedProjectedEarnings => _formatDa(projectedEarnings);
+
   /// "420 000 DA" — thousands separated with a space.
-  String get formattedEarnings {
-    final rounded = totalEarnings.round().toString();
+  String get formattedEarnings => _formatDa(totalEarnings);
+
+  static String _formatDa(double amount) {
+    final rounded = amount.round().toString();
     final buffer = StringBuffer();
     for (int i = 0; i < rounded.length; i++) {
       final posFromEnd = rounded.length - i;
