@@ -185,10 +185,22 @@ const HOST_EDITABLE_PRICE_FIELDS = [
   'rentalPeriod',
 ];
 
+// The Discover filter chips — must match kListingCategories in the app
+// (front/lib/home-front/widgets/listing_category_picker.dart).
+const LISTING_CATEGORIES = ['Riads', 'Sea view', 'Casbah', 'Desert'];
+const MAX_LISTING_CATEGORIES = 3;
+
 function pickHostEditable(body = {}) {
   const picked = {};
   for (const key of HOST_EDITABLE_FIELDS) {
     if (body[key] !== undefined) picked[key] = body[key];
+  }
+  // Unknown labels are dropped (they'd never match a filter), duplicates
+  // removed, at most 3 kept.
+  if (picked.categories !== undefined) {
+    const list = Array.isArray(picked.categories) ? picked.categories : [];
+    picked.categories = [...new Set(list.filter((c) => LISTING_CATEGORIES.includes(c)))]
+      .slice(0, MAX_LISTING_CATEGORIES);
   }
   if (body.price && typeof body.price === 'object') {
     const price = {};

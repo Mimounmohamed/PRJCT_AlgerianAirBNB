@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'create_listing_exit.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
-import '../widgets/create_listing_pattern_background.dart'; // adjust path if you placed this elsewhere
+import '../widgets/create_listing_pattern_background.dart';
+import '../widgets/listing_category_picker.dart'; // adjust path if you placed this elsewhere
 import '../../models/listing_draft_model.dart'; // adjust path to match your project structure
 import '../../services/auth_service.dart'; // adjust path — exposes AuthService.uploadToCloudinary()
 import '../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
@@ -795,6 +796,14 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                     ),
                     const SizedBox(height: 24),
 
+                    // ── Categories (Discover filter chips) ─
+                    _sectionLabel('Categories'),
+                    ListingCategoryPicker(
+                      selected: widget.draft.categories,
+                      onChanged: (v) => setState(() => widget.draft.categories = v),
+                    ),
+                    const SizedBox(height: 24),
+
                     // ── House rules ────────────────────────
                     _sectionLabel('House rules'),
                     Container(
@@ -827,7 +836,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           _ruleRow(
                             icon: Icons.family_restroom_outlined,
                             title: 'Family booklet required',
-                            subtitle: 'Only married couples can book By providing a family booklet.',
+                            subtitle: 'Couples must show a family booklet (livret de famille) to book.',
                             value: widget.draft.familyBookletRequired,
                             onChanged: (v) => setState(() => widget.draft.familyBookletRequired = v),
                           ),

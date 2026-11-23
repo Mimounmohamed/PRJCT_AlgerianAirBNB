@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'listing_category_picker.dart';
 
 class ExploreFilterItem {
   final String label;
@@ -27,12 +28,10 @@ class _ExploreFilterBarState extends State<ExploreFilterBar> {
   static const Color _selectedColor = Color(0xFF006972);
   static const Color _unselectedColor = Color(0xFF4F4540);
 
-  static const List<ExploreFilterItem> _items = [
-    ExploreFilterItem(label: 'All', icon: Icons.explore_outlined),
-    ExploreFilterItem(label: 'Riads', icon: Icons.apartment_outlined),
-    ExploreFilterItem(label: 'Sea view', icon: Icons.waves),
-    ExploreFilterItem(label: 'Casbah', icon: Icons.fort_outlined),
-    ExploreFilterItem(label: 'Desert', icon: Icons.landscape_outlined),
+  // Same list hosts tag their listings with (creation + Edit listing).
+  static final List<ExploreFilterItem> _items = [
+    const ExploreFilterItem(label: 'All', icon: Icons.explore_outlined),
+    for (final c in kListingCategories) ExploreFilterItem(label: c.label, icon: c.icon),
   ];
 
   int _selectedIndex = 0;

@@ -14,6 +14,7 @@ import '../../models/host_listing_detail_model.dart'; // adjust path to match yo
 import '../../models/amenity_model.dart'; // adjust path — for AmenityModel.iconFor()
 import '../../data/algeria_location_data.dart'; // commune/wilaya dataset — keeps a moved pin on the app's own wilaya list
 import '../../widgets/app_toast.dart';
+import '../widgets/listing_category_picker.dart';
 
 class _PropertyTypeOption {
   final String label;
@@ -34,9 +35,8 @@ class _PropertyTypeOption {
 /// Saves via PUT /api/listings/:id. Because that route does a shallow
 /// merge (see host_service.dart), every save sends COMPLETE `photos`,
 /// `amenities`, and `location` objects/arrays, not partial diffs — and
-/// only sends keys this screen actually edits (no `categories`, since
-/// that's a separate field this screen doesn't touch — omitting it
-/// leaves whatever was there untouched on the backend).
+/// only sends keys this screen actually edits. `categories` (the Discover
+/// filter tags, up to 3) is edited here too.
 class EditListingDetailsPage extends StatefulWidget {
   final String authToken;
   final String listingId;
@@ -95,6 +95,8 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   String? _selectedPropertyType;
+  // Discover filter tags (Riads, Sea view, …) — up to 3.
+  List<String> _categories = [];
 
   // Location — carried through untouched unless the host repositions the
   // pin. wilaya/city/neighborhood/fullAddress are preserved as-is so a
@@ -166,6 +168,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         orElse: () => null,
       );
       _selectedPropertyType = matchedType?.label ?? listing.propertyType;
+      _categories = listing.categories.where((c) => kListingCategories.any((k) => k.label == c)).toList();
       _amenities = listing.amenities.map((a) => Map<String, dynamic>.from(a)).toList();
       _lat = listing.latitude;
       _lng = listing.longitude;
@@ -185,6 +188,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         'title': _titleController.text,
         'description': _descriptionController.text,
         'propertyType': _selectedPropertyType,
+        'categories': _categories,
         'photos': _photos,
         'cover': _coverPhotoIndex,
         'amenities': _amenities,
@@ -1480,6 +1484,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
           'title': _titleController.text.trim(),
           'description': _descriptionController.text.trim(),
           'propertyType': _selectedPropertyType,
+          'categories': _categories,
           'photos': normalizedPhotos,
           'coverPhotoIndex': safeCoverIndex,
           'amenities': normalizedAmenities,
@@ -1705,6 +1710,12 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
                           childAspectRatio: 1.7,
                         ),
                         itemBuilder: (context, index) => _propertyTypeCard(_propertyTypeOptions[index]),
+                      ),
+
+                      _sectionLabel('Categories'),
+                      ListingCategoryPicker(
+                        selected: _categories,
+                        onChanged: (v) => setState(() => _categories = v),
                       ),
 
                       _sectionLabel('Amenities'),
