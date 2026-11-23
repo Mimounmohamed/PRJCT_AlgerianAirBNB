@@ -3,6 +3,7 @@ import '../models/booking_model.dart';
 import '../services/auth_service.dart';
 import '../services/user_session.dart';
 import '../chat/conversation.dart';
+import '../widgets/app_toast.dart';
 
 /// Shared look & helpers for every booking screen (guest trips, host
 /// reservations, booking details, dashboard sections).
@@ -123,7 +124,7 @@ class BookingUi {
       );
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Could not open chat: $e')));
+      AppToast.show(context, 'Could not open chat: $e', type: AppToastType.error);
     }
   }
 }

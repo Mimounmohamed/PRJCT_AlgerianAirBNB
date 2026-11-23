@@ -3,6 +3,7 @@ import '../../models/review_model.dart';
 import '../../services/review_service.dart';
 import '../../services/user_session.dart';
 import '../widgets/add_review_sheet.dart';
+import '../../widgets/app_toast.dart';
 
 class ReviewsPage extends StatefulWidget {
   final String listingId;
@@ -78,13 +79,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
 
   Future<void> _openAddReview() async {
     if (_isHost) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hosts cannot write a review on their own listing.'),
-          backgroundColor: _dark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Hosts cannot write a review on their own listing.', type: AppToastType.error);
       return;
     }
 
@@ -102,26 +97,14 @@ class _ReviewsPageState extends State<ReviewsPage> {
         final sum = _reviews.fold<double>(0, (prev, r) => prev + r.ratingOverall);
         _currentRating = sum / _reviews.length;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Thank you! Your review has been published.'),
-          backgroundColor: _teal,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Thank you! Your review has been published.', type: AppToastType.success);
     }
   }
 
   Future<void> _openHostReplyModal(ReviewModel review) async {
     final token = UserSession.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to reply.'),
-          backgroundColor: _dark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Please log in to reply.', type: AppToastType.info);
       return;
     }
 
@@ -274,22 +257,10 @@ class _ReviewsPageState extends State<ReviewsPage> {
           }
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Response posted successfully!'),
-            backgroundColor: _teal,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.show(context, 'Response posted successfully!', type: AppToastType.success);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: const Color(0xFFB3261E),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
       }
     }
   }

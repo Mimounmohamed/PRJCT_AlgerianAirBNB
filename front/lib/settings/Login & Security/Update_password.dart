@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/app_toast.dart';
 class UpdatePasswordScreen extends StatefulWidget {
   final String token;
   const UpdatePasswordScreen({super.key, required this.token});
@@ -62,19 +63,19 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'AKRILI',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -128,7 +129,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
               'Update Password',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 24,
                 fontFamily: 'CormorantGaramond',
                 fontWeight: FontWeight.w600,
@@ -229,7 +230,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
               ),
@@ -240,7 +241,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
                   const Text(
                     'REQUIREMENTS',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 11,
                       fontFamily: 'HankenGrotesk',
                       fontWeight: FontWeight.w700,
@@ -305,9 +306,7 @@ class _UpdatePasswordScreenState extends State<UpdatePasswordScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    AppToast.show(context, message, type: AppToastType.info);
   }
 }
 
@@ -347,22 +346,22 @@ class _PasswordField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF6),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD3C3BD), width: 1),
+        border: Border.all(color: const Color(0xFFE7DCCB), width: 1),
       ),
       child: TextField(
         controller: controller,
         obscureText: obscureText,
         style: const TextStyle(
-          color: Color(0xFF23130A),
+          color: Color(0xFF2A1B12),
           fontSize: 15,
           fontFamily: 'HankenGrotesk',
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF9B8C7E),
+            color: Color(0xFF8A7B6E),
             fontSize: 15,
             fontFamily: 'HankenGrotesk',
           ),
@@ -372,7 +371,7 @@ class _PasswordField extends StatelessWidget {
           suffixIcon: IconButton(
             icon: Icon(
               obscureText ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: const Color(0xFF9B8C7E),
+              color: const Color(0xFF8A7B6E),
               size: 20,
             ),
             onPressed: onToggleObscure,
@@ -396,22 +395,22 @@ class _PlainPasswordField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF6),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFD3C3BD), width: 1),
+        border: Border.all(color: const Color(0xFFE7DCCB), width: 1),
       ),
       child: TextField(
         controller: controller,
         obscureText: true,
         style: const TextStyle(
-          color: Color(0xFF23130A),
+          color: Color(0xFF2A1B12),
           fontSize: 15,
           fontFamily: 'HankenGrotesk',
         ),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
-            color: Color(0xFF9B8C7E),
+            color: Color(0xFF8A7B6E),
             fontSize: 15,
             fontFamily: 'HankenGrotesk',
           ),
@@ -442,7 +441,7 @@ class _RequirementRow extends StatelessWidget {
             shape: BoxShape.circle,
             color: satisfied ? const Color(0xFF006972) : Colors.transparent,
             border: Border.all(
-              color: satisfied ? const Color(0xFF006972) : const Color(0xFFD3C3BD),
+              color: satisfied ? const Color(0xFF006972) : const Color(0xFFE7DCCB),
               width: 1.5,
             ),
           ),
@@ -454,7 +453,7 @@ class _RequirementRow extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: satisfied ? const Color(0xFF23130A) : const Color(0xFF4F4540),
+            color: satisfied ? const Color(0xFF2A1B12) : const Color(0xFF4F4540),
             fontSize: 14,
             fontFamily: 'HankenGrotesk',
           ),

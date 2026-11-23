@@ -8,6 +8,7 @@ import '../explore_page/reviews_page.dart'; // adjust path if you placed this el
 import 'edit_listing_details_page.dart';
 import 'manage_calendar_page.dart'; // adjust path if you placed this elsewhere
 import 'listing_settings_page.dart'; // adjust path to match your project structure
+import '../../widgets/app_toast.dart';
 
 /// "Manage Listing" — shown when a host taps MANAGE on one of their own
 /// listings (from the Host dashboard or All Listings page). Shows real
@@ -108,9 +109,7 @@ class _ManageListingPageState extends State<ManageListingPage> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isBusy = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
+      AppToast.show(context, '$e', type: AppToastType.error);
     }
   }
 

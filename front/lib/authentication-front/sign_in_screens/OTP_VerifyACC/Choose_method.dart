@@ -4,6 +4,7 @@ import '../../widgets/app_bar.dart';
 import '../../../services/auth_service.dart';
 import '../Mar7aban.dart';
 import 'verifCODE.dart';
+import '../../../widgets/app_toast.dart';
 
 class VerifyAccountScreen extends StatefulWidget {
   const VerifyAccountScreen({
@@ -88,9 +89,7 @@ class _VerifyAccountScreenState extends State<VerifyAccountScreen> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      AppToast.show(context, msg, type: AppToastType.info);
       setState(() => _isLoading = false);
     }
   }

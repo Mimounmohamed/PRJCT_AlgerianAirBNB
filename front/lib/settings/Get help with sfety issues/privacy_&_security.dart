@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 /// Colors sampled directly (pixel-picked) from the reference design so the
 /// palette is consistent with the rest of the app / the Notifications screen.
 class _C {
-  static const pageBg = Color(0xFFFFF9EE);
-  static const cardBg = Color(0xFFFFFCF6);
+  static const pageBg = Color(0xFFFBF3E7);
+  static const cardBg = Color(0xFFFFFFFF);
   static const border = Color(0xFFEFE6D6); // also used for footer bg + divider
   static const teal = Color(0xFF006972);
   static const darkText = Color(0xFF2A1B12);
   static const bodyText = Color(0xFF4F4540);
-  static const mutedText = Color(0xFF9B8C7E);
-  static const captionText = Color(0xFF81756F);
+  static const mutedText = Color(0xFF8A7B6E);
+  static const captionText = Color(0xFF8A7B6E);
   static const badgeBg = Color(0xFF9CEEF7);
   static const authBannerBg = Color(0xFFE8F3F4);
   static const darkCardBg = Color(0xFF3A271D);
@@ -18,7 +18,7 @@ class _C {
   static const warningIcon = Color(0xFFC1633D);
   static const darkCardBodyText = Color(0xFFA89684);
   static const successGreen = Color(0xFF2E9B6F);
-  static const appbarIcon = Color(0xFF23130A);
+  static const appbarIcon = Color(0xFF2A1B12);
 }
 
 class PrivacySecurityScreen extends StatelessWidget {
@@ -38,7 +38,7 @@ class PrivacySecurityScreen extends StatelessWidget {
         title: const Text(
           'Privacy & Security',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -122,7 +122,7 @@ class _YourSafeJourneyCard extends StatelessWidget {
                     const Text(
                       'Your Safe Journey',
                       style: TextStyle(
-                        color: Color(0xFF23130A),
+                        color: Color(0xFF2A1B12),
                         fontSize: 24,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w700,
@@ -209,7 +209,7 @@ class _TwoStepCard extends StatelessWidget {
           const Text(
             'Two-step verification',
             style: TextStyle(
-              color: Color(0xFF23130A),
+              color: Color(0xFF2A1B12),
               fontSize: 20,
               fontFamily: 'HankenGrotesk',
               fontWeight: FontWeight.w700,
@@ -281,7 +281,7 @@ class _PasswordCard extends StatelessWidget {
           const Text(
             'Protecting your password',
             style: TextStyle(
-              color: Color(0xFF23130A),
+              color: Color(0xFF2A1B12),
               fontSize: 20,
               fontFamily: 'HankenGrotesk',
               fontWeight: FontWeight.w700,

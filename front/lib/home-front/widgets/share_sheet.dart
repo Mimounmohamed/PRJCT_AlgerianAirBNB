@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../models/listing_detail_model.dart'; // adjust path to match your project structure
+import '../../widgets/app_toast.dart';
 
 /// Bottom sheet shown when tapping the share button on Listing Detail.
 ///
@@ -54,9 +55,7 @@ class _ShareSheetContent extends StatelessWidget {
     // TODO: replace with a real web/deep-link URL once one exists.
     final placeholderLink = 'https://akrili.app/listing/$listingId';
     Clipboard.setData(ClipboardData(text: placeholderLink));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Link copied')),
-    );
+    AppToast.show(context, 'Link copied', type: AppToastType.success);
   }
 
   Widget _shareOption({
@@ -84,7 +83,7 @@ class _ShareSheetContent extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             label,
-            style: const TextStyle(color: _dark, fontSize: 12, fontFamily: 'HenkenGrotesk'),
+            style: const TextStyle(color: _dark, fontSize: 12, fontFamily: 'HankenGrotesk'),
           ),
         ],
       ),

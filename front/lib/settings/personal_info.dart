@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../authentication-front/Login_screens/courtyard.dart';
+import '../widgets/app_toast.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   final String token;
@@ -41,9 +42,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
     }
   }
 
@@ -54,14 +53,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
         fields: {fieldName: value},
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Updated successfully')),
-      );
+      AppToast.show(context, 'Updated successfully', type: AppToastType.success);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
     }
   }
 
@@ -75,9 +70,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
     }
   }
 
@@ -85,18 +78,18 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         appBar: AppBar(
-          backgroundColor: const Color(0xFFFFF9EE),
+          backgroundColor: const Color(0xFFFBF3E7),
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+            icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
             onPressed: () => Navigator.of(context).pop(),
           ),
           title: const Text(
             'Personal info',
             style: TextStyle(
-              color: Color(0xFF23130A),
+              color: Color(0xFF2A1B12),
               fontSize: 28,
               fontFamily: 'CormorantGaramond',
               fontWeight: FontWeight.w600,
@@ -110,18 +103,18 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Personal info',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -197,9 +190,9 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFBF7EF),
+                  color: const Color(0xFFFBF3E7),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFD3C3BD)),
+                  border: Border.all(color: const Color(0xFFE7DCCB)),
                 ),
                 child: const Text(
                   'Not provided',
@@ -226,7 +219,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFCDE6E8), width: 1),
                 boxShadow: [
@@ -264,7 +257,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                         Text(
                           _identityVerified ? 'Identity verified' : 'Identity not verified',
                           style: const TextStyle(
-                            color: Color(0xFF23130A),
+                            color: Color(0xFF2A1B12),
                             fontSize: 20,
                             fontFamily: 'HankenGrotesk',
                             fontWeight: FontWeight.w700,
@@ -291,7 +284,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
             const SizedBox(height: 32),
 
             const Divider(
-              color: Color(0xFFD3C3BD),
+              color: Color(0xFFE7DCCB),
               thickness: 0.7,
               height: 20,
             ),
@@ -307,7 +300,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
               label: const Text(
                 'Deactivate account',
                 style: TextStyle(
-                  color: Color(0xFFB23A3A),
+                  color: Color(0xFFB3261E),
                   fontSize: 16,
                   fontFamily: 'HankenGrotesk',
                   fontWeight: FontWeight.w500,
@@ -329,7 +322,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       builder: (context) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFFFFCF6),
+            color: Color(0xFFFFFFFF),
             borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
           ),
           padding: EdgeInsets.fromLTRB(
@@ -346,7 +339,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD3C3BD),
+                  color: const Color(0xFFE7DCCB),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -359,7 +352,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 ),
                 child: const Icon(
                   Icons.person_off_outlined,
-                  color: Color(0xFFB23A3A),
+                  color: Color(0xFFB3261E),
                   size: 28,
                 ),
               ),
@@ -368,7 +361,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 'Deactivate your account?',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF23130A),
+                  color: Color(0xFF2A1B12),
                   fontSize: 28,
                   fontFamily: 'CormorantGaramond',
                   fontWeight: FontWeight.w600,
@@ -395,7 +388,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                     _deactivateAccount();
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFB23A3A),
+                    backgroundColor: const Color(0xFFB3261E),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -419,7 +412,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFD3C3BD)),
+                    side: const BorderSide(color: Color(0xFFE7DCCB)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -427,7 +420,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                   child: const Text(
                     'Keep my account',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 20,
                       fontFamily: 'HankenGrotesk',
                       fontWeight: FontWeight.w700,
@@ -439,7 +432,7 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
               const Text(
                 'ACTION CANNOT BE UNDONE AUTOMATICALLY',
                 style: TextStyle(
-                  color: Color(0xFF81756F),
+                  color: Color(0xFF8A7B6E),
                   fontSize: 11,
                   fontFamily: 'HankenGrotesk',
                   fontWeight: FontWeight.w400,
@@ -466,14 +459,10 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
       },
     );
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Phone updated successfully')),
-    );
+    AppToast.show(context, 'Phone updated successfully', type: AppToastType.success);
   } catch (e) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-    );
+    AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
   }
 }
 }
@@ -583,10 +572,10 @@ class _InfoFieldState extends State<_InfoField> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: const Color(0xFFFBF7EF),
+            color: const Color(0xFFFBF3E7),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: _isEditing ? const Color(0xFF006972) : const Color(0xFFD3C3BD),
+              color: _isEditing ? const Color(0xFF006972) : const Color(0xFFE7DCCB),
               width: _isEditing ? 1.4 : 1,
             ),
           ),

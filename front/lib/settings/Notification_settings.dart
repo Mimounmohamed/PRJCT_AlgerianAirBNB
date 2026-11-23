@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../services/user_session.dart';
 import '../services/base_client.dart';
+import '../widgets/app_toast.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -72,18 +73,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Preferences saved'),
-          backgroundColor: Color(0xFF006972),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Preferences saved', type: AppToastType.success);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e'), backgroundColor: Colors.red),
-      );
+      AppToast.show(context, 'Failed to save: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -92,18 +85,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF23130A)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Notifications',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 24,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w700,
@@ -112,7 +105,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       bottomNavigationBar: Container(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        color: const Color(0xFFFBF6EF),
+        color: const Color(0xFFFBF3E7),
         child: ElevatedButton(
           onPressed: _saving ? null : _save,
           style: ElevatedButton.styleFrom(
@@ -247,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     child: Text(
                       'IMPORTANT SERVICE UPDATES CANNOT BE DISABLED',
                       style: TextStyle(
-                        color: Color(0xFF81756F),
+                        color: Color(0xFF8A7B6E),
                         fontSize: 11,
                         fontFamily: 'HankenGrotesk',
                         fontWeight: FontWeight.w400,
@@ -331,7 +324,7 @@ class _ToggleItem extends StatelessWidget {
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Color(0xFF9B8C7E),
+                        color: Color(0xFF8A7B6E),
                         fontSize: 12,
                         fontFamily: 'HankenGrotesk',
                       ),
@@ -344,7 +337,7 @@ class _ToggleItem extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          const Divider(height: 1, thickness: 0.7, color: Color(0xFFD3C3BD)),
+          const Divider(height: 1, thickness: 0.7, color: Color(0xFFE7DCCB)),
       ],
     );
   }

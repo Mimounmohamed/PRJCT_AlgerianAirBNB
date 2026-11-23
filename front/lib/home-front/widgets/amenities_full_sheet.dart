@@ -94,7 +94,7 @@ class _AmenitiesFullSheet extends StatelessWidget {
                                 color: Color(0xFF2A1B12),
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
-                                fontFamily: 'HenkenGrotesk',
+                                fontFamily: 'HankenGrotesk',
                               ),
                             ),
                             if (description.isNotEmpty) ...[
@@ -104,7 +104,7 @@ class _AmenitiesFullSheet extends StatelessWidget {
                                 style: const TextStyle(
                                   color: Color(0xFF8A7B6E),
                                   fontSize: 13,
-                                  fontFamily: 'HenkenGrotesk',
+                                  fontFamily: 'HankenGrotesk',
                                   height: 1.4,
                                 ),
                               ),

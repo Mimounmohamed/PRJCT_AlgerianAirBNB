@@ -5,6 +5,7 @@ import '../sign_in_screens/Mar7aban.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
 import '../../home-front/explore_page/landing_page.dart'; // NEW
+import '../../widgets/app_toast.dart';
 
 class GoogleSignInScreen extends StatelessWidget {
   const GoogleSignInScreen({super.key});
@@ -63,9 +64,7 @@ class GoogleSignInScreen extends StatelessWidget {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
     }
   }
 

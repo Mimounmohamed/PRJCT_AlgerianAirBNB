@@ -5,6 +5,7 @@ import 'package:video_player/video_player.dart';
 import '../services/auth_service.dart';
 import '../services/user_session.dart';
 import '../services/socket_service.dart';
+import '../widgets/app_toast.dart';
 
 class _C {
   static const pageBg = Color(0xFFFBF7EF);
@@ -143,9 +144,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _messages.removeWhere((m) => m['_id'] == optimistic['_id']));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send message'), backgroundColor: Colors.red),
-      );
+      AppToast.show(context, 'Failed to send message', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -274,9 +273,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
       if (duration.inSeconds > 60) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('⚠️ Video must be 1 minute or less'), backgroundColor: Colors.red),
-        );
+        AppToast.show(context, '⚠️ Video must be 1 minute or less', type: AppToastType.error);
         return;
       }
 
@@ -311,7 +308,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _messages.removeWhere((m) => m['_id'] == tempId));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      AppToast.show(context, 'Failed: $e', type: AppToastType.error);
     } finally {
       if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
@@ -343,7 +340,7 @@ class _ChatScreenState extends State<ChatScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _messages.removeWhere((m) => m['_id'] == tempId));
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      AppToast.show(context, 'Failed: $e', type: AppToastType.error);
     } finally {
       if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
     }
@@ -351,15 +348,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _showUploadSnackbar(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)),
-        const SizedBox(width: 12),
-        Text(msg, style: const TextStyle(fontFamily: 'HankenGrotesk')),
-      ]),
-      duration: const Duration(seconds: 30),
-      backgroundColor: const Color(0xFF006972),
-    ));
+    AppToast.loading(context, msg, duration: const Duration(seconds: 30));
   }
 
   @override

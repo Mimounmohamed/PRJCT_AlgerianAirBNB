@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
+import '../../widgets/app_toast.dart';
 
 class TwoStepVerificationScreen extends StatefulWidget {
   const TwoStepVerificationScreen({super.key});
@@ -67,21 +68,12 @@ class _TwoStepVerificationScreenState
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            _emailEnabled
+      AppToast.show(context, _emailEnabled
                 ? '2FA enabled — a code will be sent to your email at each login.'
-                : '2FA disabled.',
-          ),
-          backgroundColor: const Color(0xFF006972),
-        ),
-      );
+                : '2FA disabled.', type: AppToastType.success);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e')),
-      );
+      AppToast.show(context, 'Failed to save: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -92,14 +84,14 @@ class _TwoStepVerificationScreenState
   Widget build(BuildContext context) {
     if (_loading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFFFF9EE),
+        backgroundColor: Color(0xFFFBF3E7),
         body: Center(
           child: CircularProgressIndicator(color: Color(0xFF006972)),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       body: SafeArea(
         child: Column(
           children: [
@@ -139,7 +131,7 @@ class _TwoStepVerificationScreenState
                     const Text(
                       'Two-step verification',
                       style: TextStyle(
-                        color: Color(0xFF23130A),
+                        color: Color(0xFF2A1B12),
                         fontSize: 28,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w600,
@@ -343,10 +335,10 @@ class _VerificationTile extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF6),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: value ? const Color(0xFF006972) : const Color(0xFFD3C3BD),
+          color: value ? const Color(0xFF006972) : const Color(0xFFE7DCCB),
           width: value ? 1.4 : 1,
         ),
       ),
@@ -369,7 +361,7 @@ class _VerificationTile extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF23130A),
+                    color: Color(0xFF2A1B12),
                     fontSize: 15,
                     fontFamily: 'HankenGrotesk',
                     fontWeight: FontWeight.w700,

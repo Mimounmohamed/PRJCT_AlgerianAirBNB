@@ -80,7 +80,7 @@ class HostProfilePage extends StatelessWidget {
                     style: const TextStyle(
                       color: Color(0xFF8A7B6E),
                       fontSize: 14,
-                      fontFamily: 'HenkenGrotesk',
+                      fontFamily: 'HankenGrotesk',
                     ),
                   ),
                 ],
@@ -143,7 +143,7 @@ class _PlaceholderStatsRow extends StatelessWidget {
                   color: Color(0xFF2A1B12),
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'HenkenGrotesk',
+                  fontFamily: 'HankenGrotesk',
                 ),
               ),
               const SizedBox(height: 4),
@@ -153,7 +153,7 @@ class _PlaceholderStatsRow extends StatelessWidget {
                 style: const TextStyle(
                   color: Color(0xFF8A7B6E),
                   fontSize: 12,
-                  fontFamily: 'HenkenGrotesk',
+                  fontFamily: 'HankenGrotesk',
                 ),
               ),
             ],

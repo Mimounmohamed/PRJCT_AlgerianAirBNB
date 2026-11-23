@@ -6,6 +6,7 @@ import '../../services/user_session.dart';
 import '../../bookings/booking_result_page.dart';
 import '../../bookings/booking_ui.dart';
 import '../../chat/conversation.dart';
+import '../../widgets/app_toast.dart';
 
 /// Booking Overview page — shown after tapping "Book now" on Listing Detail.
 ///
@@ -82,36 +83,18 @@ class _BookingPageState extends State<BookingPage> {
   Future<void> _openChat() async {
     final token = UserSession.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to chat with the host.'),
-          backgroundColor: Color(0xFF2A1B12),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Please log in to chat with the host.', type: AppToastType.info);
       return;
     }
 
     final myId = UserSession.instance.currentUser?.id ?? '';
     if (myId.isNotEmpty && widget.hostId == myId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You are the host of this listing (cannot message yourself).'),
-          backgroundColor: Color(0xFF2A1B12),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'You are the host of this listing (cannot message yourself).', type: AppToastType.error);
       return;
     }
 
     if (widget.hostId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Host information is not available for this listing.'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Host information is not available for this listing.', type: AppToastType.error);
       return;
     }
 
@@ -159,13 +142,7 @@ class _BookingPageState extends State<BookingPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open chat: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Could not open chat: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _openingChat = false);
     }
@@ -413,7 +390,7 @@ class _BookingPageState extends State<BookingPage> {
                             color: Color(0xFF2A1B12),
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            fontFamily: 'HenkenGrotesk',
+                            fontFamily: 'HankenGrotesk',
                           ),
                         ),
                         const SizedBox(width: 48), // balances the close button
@@ -582,7 +559,7 @@ class _BookingPageState extends State<BookingPage> {
       color: const Color(0xFF2A1B12),
       fontSize: isTotal ? 17 : 14,
       fontWeight: isTotal ? FontWeight.w700 : FontWeight.w400,
-      fontFamily: 'HenkenGrotesk',
+      fontFamily: 'HankenGrotesk',
     );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
@@ -673,7 +650,7 @@ class _BookingPageState extends State<BookingPage> {
                           color: Color(0xFF2A1B12),
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          fontFamily: 'HenkenGrotesk',
+                          fontFamily: 'HankenGrotesk',
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -750,7 +727,7 @@ class _BookingPageState extends State<BookingPage> {
           // ── Price details ────────────────────────────────────────────
           const Text(
             'Price Details',
-            style: TextStyle(color: Color(0xFF2A1B12), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'HenkenGrotesk'),
+            style: TextStyle(color: Color(0xFF2A1B12), fontSize: 16, fontWeight: FontWeight.w700, fontFamily: 'HankenGrotesk'),
           ),
           const SizedBox(height: 8),
           if (_nights == 0)

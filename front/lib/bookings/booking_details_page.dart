@@ -6,6 +6,7 @@ import '../services/host_service.dart';
 import '../services/user_session.dart';
 import 'booking_ui.dart';
 import '../home-front/widgets/add_review_sheet.dart';
+import '../widgets/app_toast.dart';
 
 /// One booking, for its guest or its host (the server says which via
 /// viewerRole, and the actions follow):
@@ -77,10 +78,10 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
         _future = Future.value(updated);
         _changed = true;
       });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(successMessage)));
+      AppToast.show(context, successMessage, type: AppToastType.success);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      AppToast.show(context, '$e', type: AppToastType.error);
       _reload(); // e.g. the request expired meanwhile
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -205,9 +206,7 @@ class _BookingDetailsPageState extends State<BookingDetailsPage> {
     );
     if (review == null || !mounted) return;
     _changed = true;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thank you! Your review has been published.')),
-    );
+    AppToast.show(context, 'Thank you! Your review has been published.', type: AppToastType.success);
     _reload(); // the booking now has its review — the button goes away
   }
 

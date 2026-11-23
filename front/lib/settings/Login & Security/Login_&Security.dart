@@ -4,6 +4,7 @@ import 'Two_step_verif.dart';
 import 'Delete_acc.dart';
 import '../../services/auth_service.dart';
 import 'Update_password.dart';
+import '../../widgets/app_toast.dart';
 
 class LoginSecurityScreen extends StatefulWidget {
   final String token;
@@ -37,19 +38,19 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Login & security',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 24,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -69,7 +70,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFCF6),
+                      color: const Color(0xFFFFFFFF),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: const Color(0xFFEFE6D6),
@@ -129,7 +130,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
               _SecurityCard(
                 icon: Icons.key_outlined,
                 iconColor: _isGoogleLinked
-                    ? const Color(0xFF9B8C7E)
+                    ? const Color(0xFF8A7B6E)
                     : const Color(0xFF2A1B12),
                 title: 'Password',
                 subtitle: _isGoogleLinked
@@ -138,15 +139,15 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                 trailing: Icon(
                   Icons.chevron_right,
                   color: _isGoogleLinked
-                      ? const Color(0xFF9B8C7E)
-                      : const Color(0xFF23130A),
+                      ? const Color(0xFF8A7B6E)
+                      : const Color(0xFF2A1B12),
                 ),
                 onTap: () {
                   if (_isGoogleLinked) {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        backgroundColor: const Color(0xFFFFFCF6),
+                        backgroundColor: const Color(0xFFFFFFFF),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -156,7 +157,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                             fontFamily: 'CormorantGaramond',
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF23130A),
+                            color: Color(0xFF2A1B12),
                           ),
                         ),
                         content: const Text(
@@ -200,7 +201,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
                 boxShadow: const [
@@ -311,7 +312,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFFCF6),
+                  color: const Color(0xFFFFFFFF),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
                   boxShadow: const [
@@ -338,7 +339,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                           Text(
                             'Two-step verification',
                             style: TextStyle(
-                              color: Color(0xFF23130A),
+                              color: Color(0xFF2A1B12),
                               fontSize: 20,
                               fontFamily: 'HankenGrotesk',
                               fontWeight: FontWeight.w700,
@@ -356,7 +357,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                         ],
                       ),
                     ),
-                    Icon(Icons.chevron_right, color: Color(0xFF9B8C7E)),
+                    Icon(Icons.chevron_right, color: Color(0xFF8A7B6E)),
                   ],
                 ),
               ),
@@ -366,13 +367,13 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
             // Account deletion card
             _SecurityCard(
               icon: Icons.person_off_outlined,
-              iconColor: const Color(0xFFB23A3A),
+              iconColor: const Color(0xFFB3261E),
               title: 'Account deletion',
-              titleColor: const Color(0xFFB23A3A),
+              titleColor: const Color(0xFFB3261E),
               subtitle: 'Permanently close your account',
               trailing: const Icon(
                 Icons.chevron_right,
-                color: Color(0xFF9B8C7E),
+                color: Color(0xFF8A7B6E),
               ),
               onTap: () {
                 Navigator.push(
@@ -435,7 +436,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
         builder: (ctx, setSheetState) {
           return Container(
             decoration: const BoxDecoration(
-              color: Color(0xFFFFFCF6),
+              color: Color(0xFFFFFFFF),
               borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
             padding: EdgeInsets.fromLTRB(
@@ -449,14 +450,14 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   width: 40, height: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFD3C3BD),
+                    color: const Color(0xFFE7DCCB),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
                 const Text(
                   'Create a password',
                   style: TextStyle(
-                    color: Color(0xFF23130A),
+                    color: Color(0xFF2A1B12),
                     fontSize: 24,
                     fontFamily: 'CormorantGaramond',
                     fontWeight: FontWeight.w600,
@@ -479,16 +480,16 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'New password',
-                    labelStyle: const TextStyle(color: Color(0xFF9B8C7E)),
+                    labelStyle: const TextStyle(color: Color(0xFF8A7B6E)),
                     filled: true,
-                    fillColor: const Color(0xFFFBF7EF),
+                    fillColor: const Color(0xFFFBF3E7),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                      borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                      borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -502,16 +503,16 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: 'Confirm password',
-                    labelStyle: const TextStyle(color: Color(0xFF9B8C7E)),
+                    labelStyle: const TextStyle(color: Color(0xFF8A7B6E)),
                     filled: true,
-                    fillColor: const Color(0xFFFBF7EF),
+                    fillColor: const Color(0xFFFBF3E7),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                      borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                      borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -535,19 +536,11 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                               );
                               if (!mounted) return;
                               Navigator.of(ctx).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Google disconnected. Use your email and password to log in.'),
-                                ),
-                              );
+                              AppToast.show(context, 'Google disconnected. Use your email and password to log in.', type: AppToastType.info);
                               setState(() {});
                             } catch (e) {
                               setSheetState(() => isLoading = false);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(e.toString().replaceAll('Exception: ', '')),
-                                ),
-                              );
+                              AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
                             }
                           },
                     style: ElevatedButton.styleFrom(
@@ -579,7 +572,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(ctx).pop(),
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFD3C3BD)),
+                      side: const BorderSide(color: Color(0xFFE7DCCB)),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -588,7 +581,7 @@ class _LoginSecurityScreenState extends State<LoginSecurityScreen> {
                     child: const Text(
                       'Cancel',
                       style: TextStyle(
-                        color: Color(0xFF23130A),
+                        color: Color(0xFF2A1B12),
                         fontSize: 15,
                         fontFamily: 'HankenGrotesk',
                         fontWeight: FontWeight.w600,
@@ -633,7 +626,7 @@ class _SecurityCard extends StatelessWidget {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFCF6),
+          color: const Color(0xFFFFFFFF),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
           boxShadow: const [
@@ -667,7 +660,7 @@ class _SecurityCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: const TextStyle(
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       fontSize: 13,
                       fontFamily: 'HankenGrotesk',
                     ),

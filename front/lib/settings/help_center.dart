@@ -21,18 +21,18 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Help Center',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -53,7 +53,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                   const Text(
                     'How can we help you today?',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 24,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w600,
@@ -77,7 +77,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     child: TextField(
                       controller: _searchController,
@@ -95,7 +95,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                         ),
                         prefixIcon: Icon(
                           Icons.search,
-                          color: Color(0xFF9B8C7E),
+                          color: Color(0xFF8A7B6E),
                           size: 20,
                         ),
                         border: InputBorder.none,
@@ -148,7 +148,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       const Text(
                         'BOOKING & STAYS',
                         style: TextStyle(
-                          color: Color(0xFF81756F),
+                          color: Color(0xFF8A7B6E),
                           fontSize: 11,
                           fontFamily: 'HankenGrotesk',
                           fontWeight: FontWeight.w700,
@@ -174,7 +174,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     child: Column(
                       children: [
@@ -212,7 +212,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                       const Text(
                         'ACCOUNT & SECURITY',
                         style: TextStyle(
-                          color: Color(0xFF81756F),
+                          color: Color(0xFF8A7B6E),
                           fontSize: 11,
                           fontFamily: 'HankenGrotesk',
                           fontWeight: FontWeight.w700,
@@ -238,7 +238,7 @@ class _HelpCenterScreenState extends State<HelpCenterScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     child: Column(
                       children: [
@@ -367,7 +367,7 @@ class _CategoryCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFD3C3BD)),
+          border: Border.all(color: const Color(0xFFE7DCCB)),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         child: Row(
@@ -438,7 +438,7 @@ class _FAQItem extends StatelessWidget {
                       isExpanded
                           ? Icons.keyboard_arrow_up
                           : Icons.keyboard_arrow_down,
-                      color: const Color(0xFF9B8C7E),
+                      color: const Color(0xFF8A7B6E),
                       size: 20,
                     ),
                   ],
@@ -463,7 +463,7 @@ class _FAQItem extends StatelessWidget {
           const Divider(
             height: 1,
             thickness: 0.7,
-            color: Color(0xFFD3C3BD),
+            color: Color(0xFFE7DCCB),
           ),
       ],
     );

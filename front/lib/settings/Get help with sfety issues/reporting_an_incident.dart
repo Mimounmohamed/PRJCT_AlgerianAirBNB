@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../services/user_session.dart';
+import '../../widgets/app_toast.dart';
 
 class ReportingIncidentScreen extends StatefulWidget {
   const ReportingIncidentScreen({super.key});
@@ -28,9 +29,7 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
   Future<void> _submitReport() async {
     final desc = _descController.text.trim();
     if (desc.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please describe the incident first.')),
-      );
+      AppToast.show(context, 'Please describe the incident first.', type: AppToastType.info);
       return;
     }
 
@@ -53,7 +52,7 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
         context: context,
         barrierDismissible: false,
         builder: (_) => Dialog(
-          backgroundColor: const Color(0xFFFFFCF5),
+          backgroundColor: const Color(0xFFFFFFFF),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           insetPadding: const EdgeInsets.symmetric(horizontal: 32),
           child: Padding(
@@ -75,7 +74,7 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
                   style: TextStyle(
                     fontFamily: 'CormorantGaramond',
                     fontSize: 24, fontWeight: FontWeight.w700,
-                    color: Color(0xFF23130A),
+                    color: Color(0xFF2A1B12),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -134,9 +133,7 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to submit: $e')),
-      );
+      AppToast.show(context, 'Failed to submit: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -145,18 +142,18 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Reporting an Incident',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -377,7 +374,7 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
                   const Text(
                     'Describe the incident',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 15,
                       fontFamily: 'HankenGrotesk',
                       fontWeight: FontWeight.w600,
@@ -390,19 +387,19 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
                     decoration: InputDecoration(
                       hintText: 'Tell us what happened...',
                       hintStyle: const TextStyle(
-                        color: Color(0xFF9B8C7E),
+                        color: Color(0xFF8A7B6E),
                         fontFamily: 'HankenGrotesk',
                         fontSize: 14,
                       ),
                       filled: true,
-                      fillColor: const Color(0xFFFFFCF6),
+                      fillColor: const Color(0xFFFFFFFF),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                        borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD3C3BD)),
+                        borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -445,12 +442,12 @@ class _ReportingIncidentScreenState extends State<ReportingIncidentScreen> {
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.lock_outline, color: Color(0xFF9B8C7E), size: 12),
+                      Icon(Icons.lock_outline, color: Color(0xFF8A7B6E), size: 12),
                       SizedBox(width: 4),
                       Text(
                         'SECURE ENCRYPTED SUBMISSION',
                         style: TextStyle(
-                          color: Color(0xFF81756F),
+                          color: Color(0xFF8A7B6E),
                           fontSize: 12,
                           fontFamily: 'HankenGrotesk',
                           fontWeight: FontWeight.w700,
@@ -491,7 +488,7 @@ class _StepItem extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFCF6),
+            color: const Color(0xFFFFFFFF),
             shape: BoxShape.circle,
             border: Border.all(color: const Color(0xFFEFE6D6), width: 1),
           ),
@@ -515,7 +512,7 @@ class _StepItem extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Color(0xFF23130A),
+                  color: Color(0xFF2A1B12),
                   fontSize: 20,
                   fontFamily: 'HankenGrotesk',
                   fontWeight: FontWeight.w700,
@@ -541,9 +538,9 @@ class _TagChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFFBF6EF),
+        color: const Color(0xFFFBF3E7),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFD3C3BD)),
+        border: Border.all(color: const Color(0xFFE7DCCB)),
       ),
       child: Text(
         label,
@@ -583,7 +580,7 @@ class _AttachBox extends StatelessWidget {
       ),
       child: CustomPaint(
         painter: _DashedBorderPainter(
-          color: const Color(0xFFD3C3BD),
+          color: const Color(0xFFE7DCCB),
           strokeWidth: 1.5,
           gap: 5,
           radius: 12,

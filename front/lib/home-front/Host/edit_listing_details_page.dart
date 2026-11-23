@@ -13,6 +13,7 @@ import '../../services/amenity_catalog_service.dart'; // adjust path — exposes
 import '../../models/host_listing_detail_model.dart'; // adjust path to match your project structure
 import '../../models/amenity_model.dart'; // adjust path — for AmenityModel.iconFor()
 import '../../data/algeria_location_data.dart'; // commune/wilaya dataset — keeps a moved pin on the app's own wilaya list
+import '../../widgets/app_toast.dart';
 
 class _PropertyTypeOption {
   final String label;
@@ -252,15 +253,11 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         });
       }
       if (picked.length > remaining && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Added $remaining photo(s). Maximum is $_maxPhotos.')),
-        );
+        AppToast.show(context, 'Added $remaining photo(s). Maximum is $_maxPhotos.', type: AppToastType.success);
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Photo upload failed: $e')),
-      );
+      AppToast.show(context, 'Photo upload failed: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isUploadingPhoto = false);
     }
@@ -646,9 +643,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
         });
         sheetSetState(() {});
       } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('"$customName" is already in your amenities list.')),
-        );
+        AppToast.show(context, '"$customName" is already in your amenities list.', type: AppToastType.info);
       }
     }
   }
@@ -1423,23 +1418,23 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
 
   Future<void> _save() async {
     if (_isUploadingPhoto) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please wait for photo upload to finish.')));
+      AppToast.show(context, 'Please wait for photo upload to finish.', type: AppToastType.error);
       return;
     }
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please give your place a title.')));
+      AppToast.show(context, 'Please give your place a title.', type: AppToastType.info);
       return;
     }
     if (_descriptionController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add a description.')));
+      AppToast.show(context, 'Please add a description.', type: AppToastType.info);
       return;
     }
     if (_photos.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please add at least one photo.')));
+      AppToast.show(context, 'Please add at least one photo.', type: AppToastType.info);
       return;
     }
     if (_selectedPropertyType == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please choose a stay category.')));
+      AppToast.show(context, 'Please choose a stay category.', type: AppToastType.info);
       return;
     }
 
@@ -1516,7 +1511,7 @@ class _EditListingDetailsPageState extends State<EditListingDetailsPage> {
       Navigator.of(context).pop(true); // true = caller should refresh
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      AppToast.show(context, '$e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

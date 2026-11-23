@@ -122,7 +122,7 @@ class _ListingCardState extends State<ListingCard> {
                                 style: const TextStyle(
                                   color: Color(0xFF2A1B12),
                                   fontSize: 16,
-                                  fontFamily: 'HenkenGrotesk',
+                                  fontFamily: 'HankenGrotesk',
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -131,7 +131,7 @@ class _ListingCardState extends State<ListingCard> {
                                 style: const TextStyle(
                                   color: Color(0xFF9A8C7F),
                                   fontSize: 16,
-                                  fontFamily: 'HenkenGrotesk',
+                                  fontFamily: 'HankenGrotesk',
                                   fontWeight: FontWeight.w400,
                                 ),
                               ),
@@ -151,7 +151,7 @@ class _ListingCardState extends State<ListingCard> {
               style: const TextStyle(
                 color: Color(0xFF61564D),
                 fontSize: 18,
-                fontFamily: 'HenkenGrotesk',
+                fontFamily: 'HankenGrotesk',
               ),
             ),
             const SizedBox(height: 4),
@@ -164,7 +164,7 @@ class _ListingCardState extends State<ListingCard> {
               style: TextStyle(
                 color: Color(0xFF8A7B6E),
                 fontSize: 18,
-                fontFamily: 'HenkenGrotesk',
+                fontFamily: 'HankenGrotesk',
               ),
             ),
             const SizedBox(height: 6),
@@ -179,7 +179,7 @@ class _ListingCardState extends State<ListingCard> {
                       color: Color(0xFF2A1B12),
                       fontSize: 22,
                       fontWeight: FontWeight.w500,
-                      fontFamily: 'HenkenGrotesk',
+                      fontFamily: 'HankenGrotesk',
                     ),
                   ),
                   const TextSpan(
@@ -188,7 +188,7 @@ class _ListingCardState extends State<ListingCard> {
                       color: Color(0xFF8A7B6E),
                       fontSize: 15,
                       fontWeight: FontWeight.w400,
-                      fontFamily: 'HenkenGrotesk',
+                      fontFamily: 'HankenGrotesk',
                     ),
                   ),
                 ],

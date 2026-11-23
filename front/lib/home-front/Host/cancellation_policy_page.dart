@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/host_service.dart'; // adjust path to match your project structure
+import '../../widgets/app_toast.dart';
 
 /// One cancellation policy as shown to hosts. [refundShare] is how much of
 /// the timeline bar is green (refundable) — purely visual.
@@ -110,7 +111,7 @@ class _CancellationPolicyPageState extends State<CancellationPolicyPage> {
       Navigator.of(context).pop(_selected);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+      AppToast.show(context, e.toString().replaceFirst('Exception: ', ''), type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

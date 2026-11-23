@@ -21,18 +21,18 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF23130A)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Safety & Trust',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -51,14 +51,14 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
               children: const [
                 Icon(
                   Icons.emergency_outlined,
-                  color: Color(0xFFB23A3A),
+                  color: Color(0xFFB3261E),
                   size: 20,
                 ),
                 SizedBox(width: 8),
                 Text(
                   'Emergency Support',
                   style: TextStyle(
-                    color: Color(0xFF23130A),
+                    color: Color(0xFF2A1B12),
                     fontSize: 20,
                     fontFamily: 'HankenGrotesk',
                     fontWeight: FontWeight.w600,
@@ -74,7 +74,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -152,7 +152,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
             const Text(
               'Safety Guides',
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 20,
                 fontFamily: 'HankenGrotesk',
                 fontWeight: FontWeight.w600,
@@ -163,7 +163,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               child: Column(
                 children: [
@@ -211,7 +211,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
             const Text(
               'Report a problem',
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 20,
                 fontFamily: 'HankenGrotesk',
                 fontWeight: FontWeight.w600,
@@ -223,7 +223,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               padding: const EdgeInsets.all(20),
               child: Column(
@@ -244,9 +244,9 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                   // Text area
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFBF6EF),
+                      color: const Color(0xFFFBF3E7),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     child: TextField(
                       controller: _issueController,
@@ -274,9 +274,9 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                     onTap: () {},
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFBF6EF),
+                        color: const Color(0xFFFBF3E7),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFD3C3BD)),
+                        border: Border.all(color: const Color(0xFFE7DCCB)),
                       ),
                       padding: const EdgeInsets.symmetric(
                           vertical: 12, horizontal: 16),
@@ -284,12 +284,12 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.camera_alt_outlined,
-                              color: Color(0xFF9B8C7E), size: 18),
+                              color: Color(0xFF8A7B6E), size: 18),
                           SizedBox(width: 8),
                           Text(
                             'Upload photo/evidence',
                             style: TextStyle(
-                              color: Color(0xFF9B8C7E),
+                              color: Color(0xFF8A7B6E),
                               fontSize: 13,
                               fontFamily: 'HankenGrotesk',
                             ),
@@ -370,7 +370,7 @@ class _SafetyTrustScreenState extends State<SafetyTrustScreen> {
               child: Text(
                 'Typical response time: Under 15 minutes',
                 style: TextStyle(
-                  color: Color(0xFF81756F),
+                  color: Color(0xFF8A7B6E),
                   fontSize: 13,
                   fontFamily: 'HankenGrotesk',
                 ),
@@ -432,7 +432,7 @@ class _SafetyGuideItem extends StatelessWidget {
                 ),
                 const Icon(
                   Icons.chevron_right,
-                  color: Color(0xFF9B8C7E),
+                  color: Color(0xFF8A7B6E),
                   size: 20,
                 ),
               ],
@@ -443,7 +443,7 @@ class _SafetyGuideItem extends StatelessWidget {
           const Divider(
             height: 1,
             thickness: 0.7,
-            color: Color(0xFFD3C3BD),
+            color: Color(0xFFE7DCCB),
             indent: 16,
             endIndent: 16,
           ),

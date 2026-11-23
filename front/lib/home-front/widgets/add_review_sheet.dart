@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../services/user_session.dart';
 import '../../services/review_service.dart';
 import '../../models/review_model.dart';
+import '../../widgets/app_toast.dart';
 
 /// "Write a review" sheet. A review always belongs to one completed stay
 /// (booking): pass [bookingId] when you already know it (e.g. from My
@@ -33,21 +34,13 @@ class AddReviewSheet extends StatefulWidget {
     if (stayId == null) {
       final token = UserSession.instance.token;
       if (token == null || token.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please log in to write a review.'), behavior: SnackBarBehavior.floating),
-        );
+        AppToast.show(context, 'Please log in to write a review.', type: AppToastType.info);
         return null;
       }
       final eligibility = await ReviewService.checkEligibility(token: token, listingId: listingId);
       if (!context.mounted) return null;
       if (!eligibility.canReview) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(eligibility.reason.isNotEmpty ? eligibility.reason : 'Only guests who stayed here can write a review.'),
-            backgroundColor: const Color(0xFF2A1B12),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        AppToast.show(context, eligibility.reason.isNotEmpty ? eligibility.reason : 'Only guests who stayed here can write a review.', type: AppToastType.info);
         return null;
       }
       stayId = eligibility.bookingId!;
@@ -112,36 +105,18 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
   Future<void> _submit() async {
     final currentUserId = UserSession.instance.currentUser?.id;
     if (currentUserId != null && widget.hostId.isNotEmpty && currentUserId == widget.hostId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hosts cannot write a review on their own listing.'),
-          backgroundColor: _dark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Hosts cannot write a review on their own listing.', type: AppToastType.error);
       return;
     }
     final token = UserSession.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to submit a review.'),
-          backgroundColor: _dark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Please log in to submit a review.', type: AppToastType.info);
       return;
     }
 
     final comment = _commentController.text.trim();
     if (comment.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please write a short comment about your experience.'),
-          backgroundColor: _dark,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Please write a short comment about your experience.', type: AppToastType.info);
       return;
     }
 
@@ -166,13 +141,7 @@ class _AddReviewSheetState extends State<AddReviewSheet> {
       Navigator.of(context).pop(review);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, e.toString().replaceFirst('Exception: ', ''), type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

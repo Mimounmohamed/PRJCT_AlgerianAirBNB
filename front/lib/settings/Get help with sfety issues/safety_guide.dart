@@ -6,18 +6,18 @@ class SafetyGuideScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Safety Guide',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize:28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -59,7 +59,7 @@ class SafetyGuideScreen extends StatelessWidget {
                   const Text(
                     'Host with confidence',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 28,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w600,
@@ -81,9 +81,9 @@ class SafetyGuideScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFCF6),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -97,7 +97,7 @@ class SafetyGuideScreen extends StatelessWidget {
                             Text(
                               'Know your guest',
                               style: TextStyle(
-                                color: Color(0xFF23130A),
+                                color: Color(0xFF2A1B12),
                                 fontSize: 24,
                                 fontFamily: 'CormorantGaramond',
                                 fontWeight: FontWeight.w600,
@@ -130,9 +130,9 @@ class SafetyGuideScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFFFCF6),
+                      color: const Color(0xFFFFFFFF),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: const Color(0xFFD3C3BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -157,7 +157,7 @@ class SafetyGuideScreen extends StatelessWidget {
                             const Text(
                               'Set clear rules',
                               style: TextStyle(
-                                color: Color(0xFF23130A),
+                                color: Color(0xFF2A1B12),
                                 fontSize: 24,
                                 fontFamily: 'CormorantGaramond',
                                 fontWeight: FontWeight.w600,
@@ -513,9 +513,9 @@ class _RuleChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFCF6),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFFD3C3BD)),
+        border: Border.all(color: const Color(0xFFE7DCCB)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

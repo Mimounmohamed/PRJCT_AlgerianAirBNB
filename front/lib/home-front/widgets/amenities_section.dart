@@ -26,7 +26,7 @@ class AmenitiesSection extends StatelessWidget {
             style: const TextStyle(
               color: Color(0xFF2A1B12),
               fontSize: 16,
-              fontFamily: 'HenkenGrotesk',
+              fontFamily: 'HankenGrotesk',
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -91,7 +91,7 @@ class AmenitiesSection extends StatelessWidget {
                 color: Color(0xFF2A1B12),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                fontFamily: 'HenkenGrotesk',
+                fontFamily: 'HankenGrotesk',
               ),
             ),
           ),

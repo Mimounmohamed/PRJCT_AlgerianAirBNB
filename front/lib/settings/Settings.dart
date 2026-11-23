@@ -6,12 +6,12 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -33,7 +33,7 @@ class SettingsScreen extends StatelessWidget {
             const Text(
               'Preferences',
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 24,
                 fontFamily: 'CormorantGaramond',
                 fontWeight: FontWeight.w600,
@@ -42,9 +42,9 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               child: Column(
                 children: [
@@ -57,7 +57,7 @@ class SettingsScreen extends StatelessWidget {
                     showDivider: true,
                     trailing: const Icon(
                       Icons.chevron_right,
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       size: 20,
                     ),
                   ),
@@ -70,7 +70,7 @@ class SettingsScreen extends StatelessWidget {
                     showDivider: true,
                     trailing: const Icon(
                       Icons.chevron_right,
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       size: 20,
                     ),
                   ),
@@ -83,7 +83,7 @@ class SettingsScreen extends StatelessWidget {
                     showDivider: false,
                     trailing: const Icon(
                       Icons.chevron_right,
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       size: 20,
                     ),
                   ),
@@ -96,7 +96,7 @@ class SettingsScreen extends StatelessWidget {
             const Text(
               'About',
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 24,
                 fontFamily: 'CormorantGaramond',
                 fontWeight: FontWeight.w600,
@@ -105,9 +105,9 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               child: Column(
                 children: [
@@ -129,7 +129,7 @@ class SettingsScreen extends StatelessWidget {
                     showDivider: true,
                     trailing: const Icon(
                       Icons.open_in_new,
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       size: 18,
                     ),
                   ),
@@ -142,7 +142,7 @@ class SettingsScreen extends StatelessWidget {
                     showDivider: false,
                     trailing: const Icon(
                       Icons.chevron_right,
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       size: 22,
                     ),
                   ),
@@ -166,7 +166,7 @@ class SettingsScreen extends StatelessWidget {
                       title: const Text(
                         'Sign Out',
                         style: TextStyle(
-                          color: Color(0xFFB23A3A),
+                          color: Color(0xFFB3261E),
                           fontFamily: 'CormorantGaramond',
                           fontSize: 22,
                           fontWeight: FontWeight.w600,
@@ -186,7 +186,7 @@ class SettingsScreen extends StatelessWidget {
                           child: const Text(
                             'Cancel',
                             style: TextStyle(
-                              color: Color(0xFF9B8C7E),
+                              color: Color(0xFF8A7B6E),
                               fontFamily: 'HankenGrotesk',
                               fontWeight: FontWeight.w600,
                             ),
@@ -209,7 +209,7 @@ class SettingsScreen extends StatelessWidget {
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: Color(0x1AB23A3A)), // rgba(178,58,58,0.10)
-                  backgroundColor: const Color(0x0DB23A3A),         // rgba(178,58,58,0.05)
+                  backgroundColor: const Color(0x0DB3261E),         // rgba(178,58,58,0.05)
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
@@ -234,7 +234,7 @@ class SettingsScreen extends StatelessWidget {
                 '© 2024 AKRILI STAYS. ALL RIGHTS RESERVED.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFFD3C3BD),
+                  color: Color(0xFFE7DCCB),
                   fontSize: 10,
                   fontFamily: 'HankenGrotesk',
                   fontWeight: FontWeight.w600,
@@ -308,7 +308,7 @@ class _SettingsItem extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: const TextStyle(
-                            color: Color(0xFF9B8C7E),
+                            color: Color(0xFF8A7B6E),
                             fontSize: 13,
                             fontFamily: 'HankenGrotesk',
                             fontWeight: FontWeight.w400,
@@ -327,7 +327,7 @@ class _SettingsItem extends StatelessWidget {
           const Divider(
             height: 1,
             thickness: 0.7,
-            color: Color(0xFFD3C3BD),
+            color: Color(0xFFE7DCCB),
             indent: 16,
             endIndent: 16,
           ),

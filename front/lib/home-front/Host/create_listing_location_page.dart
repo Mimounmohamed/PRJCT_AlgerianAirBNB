@@ -11,6 +11,7 @@ import '../../models/listing_draft_model.dart'; // adjust path to match your pro
 import '../../data/algeria_location_data.dart'; // adjust path to match your project structure
 import '../widgets/app_search_sheet_picker.dart'; // adjust path if you placed this elsewhere
 import 'create_listing_amenities_page.dart'; // adjust path if you placed this elsewhere
+import '../../widgets/app_toast.dart';
 
 /// Step 3 of the Create Listing wizard — location. Wilaya and Baladiya
 /// (commune) are searchable dropdowns sourced from the bundled
@@ -318,9 +319,7 @@ class _CreateListingLocationPageState extends State<CreateListingLocationPage> {
       widget.draft.lng ??= _center.longitude;
 
       if (widget.draft.wilaya == null || widget.draft.city == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please choose your Wilaya and Baladiya, or move the pin to your place.')),
-        );
+        AppToast.show(context, 'Please choose your Wilaya and Baladiya, or move the pin to your place.', type: AppToastType.info);
         return;
       }
 

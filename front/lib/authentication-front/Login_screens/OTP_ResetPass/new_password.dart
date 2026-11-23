@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/app_bar.dart';
 import '../Login_email_or_phone.dart';
 import '../../../services/auth_service.dart';
+import '../../../widgets/app_toast.dart';
 
 
 class NewPasswordScreen extends StatefulWidget {
@@ -51,9 +52,7 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
       );
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password reset successfully!')),
-      );
+      AppToast.show(context, 'Password reset successfully!', type: AppToastType.success);
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (context) => const LoginEmailOrPhoneScreen(),

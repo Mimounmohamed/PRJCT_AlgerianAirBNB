@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../services/auth_service.dart';
 import '../../authentication-front/Login_screens/courtyard.dart';
+import '../../widgets/app_toast.dart';
 
 class DeleteAccountScreen extends StatefulWidget {
   final String token;
@@ -78,9 +79,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isDeleting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-      );
+      AppToast.show(context, e.toString().replaceAll('Exception: ', ''), type: AppToastType.error);
     }
   }
 
@@ -93,15 +92,15 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         automaticallyImplyLeading: false,
         title: const Text(
           'AKRILI',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -110,7 +109,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.close, color: Color(0xFF23130A)),
+            icon: const Icon(Icons.close, color: Color(0xFF2A1B12)),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ],
@@ -123,7 +122,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
             Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFFCF6),
+                color: const Color(0xFFFFFFFF),
                 borderRadius: BorderRadius.circular(20),
                 border: const Border(
                   top: BorderSide(color: Color(0xFFB85C3A), width: 4),
@@ -150,7 +149,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     ),
                     child: const Icon(
                       Icons.warning_amber_rounded,
-                      color: Color(0xFFB23A3A),
+                      color: Color(0xFFB3261E),
                       size: 28,
                     ),
                   ),
@@ -161,7 +160,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     'Delete your account?',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 26,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w600,
@@ -187,9 +186,9 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                   Container(
                     width: double.infinity,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFBF7EF),
+                      color: const Color(0xFFFBF3E7),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFD2C2BD)),
+                      border: Border.all(color: const Color(0xFFE7DCCB)),
                     ),
                     padding: const EdgeInsets.all(12),
                     child: Row(
@@ -199,7 +198,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                           child: Container(
                             width: 48,
                             height: 48,
-                            color: const Color(0xFFD2C2BD),
+                            color: const Color(0xFFE7DCCB),
                             child: const Icon(
                               Icons.person,
                               color: Colors.white,
@@ -214,7 +213,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                             Text(
                               _userName.isNotEmpty ? _userName : 'Loading...',
                               style: const TextStyle(
-                                color: Color(0xFF23130A),
+                                color: Color(0xFF2A1B12),
                                 fontSize: 15,
                                 fontFamily: 'HankenGrotesk',
                                 fontWeight: FontWeight.w700,
@@ -258,7 +257,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     controller: _controller,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 14,
                       fontFamily: 'HankenGrotesk',
                       letterSpacing: 2,
@@ -266,20 +265,20 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                     decoration: InputDecoration(
                       hintText: 'DELETE',
                       hintStyle: const TextStyle(
-                        color: Color(0xFFD8CAC3),
+                        color: Color(0xFFE7DCCB),
                         fontSize: 14,
                         fontFamily: 'HankenGrotesk',
                         letterSpacing: 2,
                       ),
                       filled: true,
-                      fillColor: const Color(0xFFFBF7EF),
+                      fillColor: const Color(0xFFFBF3E7),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD8CAC3)),
+                        borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFD8CAC3)),
+                        borderSide: const BorderSide(color: Color(0xFFE7DCCB)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -343,7 +342,7 @@ class _DeleteAccountScreenState extends State<DeleteAccountScreen> {
                       child: const Text(
                         'Keep Account',
                         style: TextStyle(
-                          color: Color(0xFF23130A),
+                          color: Color(0xFF2A1B12),
                           fontSize: 15,
                           fontFamily: 'HankenGrotesk',
                           fontWeight: FontWeight.w600,

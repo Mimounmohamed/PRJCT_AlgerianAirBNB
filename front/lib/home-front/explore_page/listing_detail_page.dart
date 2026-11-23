@@ -17,6 +17,7 @@ import '../widgets/amenities_section.dart';
 import 'amenities_page.dart';
 import '../widgets/location_map_preview.dart';
 import '../widgets/booking_bottom_bar.dart';
+import '../../widgets/app_toast.dart';
 
 /// Listing Detail page — fetches the full listing by id and renders the
 /// photo carousel, title/rating, host row, description, amenities preview,
@@ -41,24 +42,12 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
   Future<void> _openWriteReview(ListingDetailModel listing) async {
     final currentUserId = UserSession.instance.currentUser?.id;
     if (currentUserId != null && currentUserId == listing.hostId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Hosts cannot write a review on their own listing.'),
-          backgroundColor: Color(0xFF2A1B12),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Hosts cannot write a review on their own listing.', type: AppToastType.error);
       return;
     }
     final token = UserSession.instance.token;
     if (token == null || token.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please log in to write a review.'),
-          backgroundColor: Color(0xFF2A1B12),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Please log in to write a review.', type: AppToastType.info);
       return;
     }
 
@@ -70,13 +59,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
     );
 
     if (newReview != null && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Review submitted! Thank you for your feedback.'),
-          backgroundColor: Color(0xFF006972),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Review submitted! Thank you for your feedback.', type: AppToastType.success);
       _refreshListing();
     }
   }
@@ -420,13 +403,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Could not open chat: $e'),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      AppToast.show(context, 'Could not open chat: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _openingChat = false);
     }
@@ -513,7 +490,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                                 style: const TextStyle(
                                   color: Color(0xFF61564D),
                                   fontSize: 16,
-                                  fontFamily: 'HenkenGrotesk',
+                                  fontFamily: 'HankenGrotesk',
                                 ),
                               ),
                             ],
@@ -622,7 +599,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                                 color: Color(0xFF2A1B12),
                                 fontSize: 16,
                                 height: 1.5,
-                                fontFamily: 'HenkenGrotesk',
+                                fontFamily: 'HankenGrotesk',
                               ),
                             ),
 
@@ -642,7 +619,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                                         color: Color(0xFF2A1B12),
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
-                                        fontFamily: 'HenkenGrotesk',
+                                        fontFamily: 'HankenGrotesk',
                                       ),
                                     ),
                                     const SizedBox(height: 6),
@@ -837,7 +814,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
               color: Color(0xFF61564D),
               fontSize: 10,
               fontWeight: FontWeight.w700,
-              fontFamily: 'HenkenGrotesk',
+              fontFamily: 'HankenGrotesk',
             ),
           ),
           const SizedBox(height: 2),
@@ -847,7 +824,7 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
               color: Color(0xFF2A1B12),
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              fontFamily: 'HenkenGrotesk',
+              fontFamily: 'HankenGrotesk',
             ),
           ),
         ],

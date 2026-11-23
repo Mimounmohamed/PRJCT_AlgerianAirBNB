@@ -67,7 +67,7 @@ class _ExploreFilterBarState extends State<ExploreFilterBar> {
                       item.label,
                       style: TextStyle(
                         fontSize: 14,
-                        fontFamily: 'HenkenGrotesk',
+                        fontFamily: 'HankenGrotesk',
                         fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                         color: color,
                       ),

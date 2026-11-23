@@ -103,7 +103,7 @@ class AmenitiesPage extends StatelessWidget {
                                     color: Color(0xFF2A1B12),
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    fontFamily: 'HenkenGrotesk',
+                                    fontFamily: 'HankenGrotesk',
                                   ),
                                 ),
                                 if (amenity.description.isNotEmpty) ...[
@@ -113,7 +113,7 @@ class AmenitiesPage extends StatelessWidget {
                                     style: const TextStyle(
                                       color: Color(0xFF8A7B6E),
                                       fontSize: 15,
-                                      fontFamily: 'HenkenGrotesk',
+                                      fontFamily: 'HankenGrotesk',
                                       height: 1.4,
                                     ),
                                   ),
@@ -169,7 +169,7 @@ class _FooterCard extends StatelessWidget {
                       color: Color(0xFF2A1B12),
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
-                      fontFamily: 'HenkenGrotesk',
+                      fontFamily: 'HankenGrotesk',
                     ),
                   ),
                   if (blurb.isNotEmpty) ...[
@@ -179,7 +179,7 @@ class _FooterCard extends StatelessWidget {
                       style: const TextStyle(
                         color: Color(0xFF8A7B6E),
                         fontSize: 15,
-                        fontFamily: 'HenkenGrotesk',
+                        fontFamily: 'HankenGrotesk',
                         height: 1.4,
                       ),
                     ),

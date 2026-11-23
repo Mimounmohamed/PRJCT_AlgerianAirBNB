@@ -7,18 +7,18 @@ class HowItWorksScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF23130A)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Andalus',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -124,7 +124,7 @@ class HowItWorksScreen extends StatelessWidget {
                         style: TextStyle(
                           color: Color(0xFF006972),
                           fontSize: 10,
-                          fontFamily: 'IBMPlexSans',
+                          fontFamily: 'HankenGrotesk',
                           fontWeight: FontWeight.w400,
                           letterSpacing: 1.5,
                         ),
@@ -135,7 +135,7 @@ class HowItWorksScreen extends StatelessWidget {
                   const Text(
                     '2. Book with Confidence',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 26,
                       fontFamily: 'CormorantGaramond',
                       fontWeight: FontWeight.w600,
@@ -229,7 +229,7 @@ class HowItWorksScreen extends StatelessWidget {
                       'Ready to start your adventure?',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFF23130A),
+                        color: Color(0xFF2A1B12),
                         fontSize: 28,
                         fontFamily: 'CormorantGaramond',
                         fontWeight: FontWeight.w600,
@@ -285,7 +285,7 @@ class HowItWorksScreen extends StatelessWidget {
                   const Text(
                     'ANDALUS EXPERIENCE © 2024',
                     style: TextStyle(
-                      color: Color(0xFF9B8C7E),
+                      color: Color(0xFF8A7B6E),
                       fontSize: 10,
                       fontFamily: 'HankenGrotesk',
                       letterSpacing: 1.2,
@@ -370,7 +370,7 @@ class _StepSection extends StatelessWidget {
                 style: const TextStyle(
                   color: Color(0xFF006972),
                   fontSize: 10,
-                  fontFamily: 'IBMPlexSans',
+                  fontFamily: 'HankenGrotesk',
                   fontWeight: FontWeight.w400,
                   letterSpacing: 1.5,
                 ),
@@ -381,7 +381,7 @@ class _StepSection extends StatelessWidget {
           Text(
             title,
             style: const TextStyle(
-              color: Color(0xFF23130A),
+              color: Color(0xFF2A1B12),
               fontSize: 26,
               fontFamily: 'CormorantGaramond',
               fontWeight: FontWeight.w600,

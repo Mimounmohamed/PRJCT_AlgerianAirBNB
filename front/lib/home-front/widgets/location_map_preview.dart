@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/app_toast.dart';
 
 /// "Where you'll be" map preview for the Listing Detail page.
 ///
@@ -44,15 +45,11 @@ class LocationMapPreview extends StatelessWidget {
     try {
       final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!launched && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't open a maps app on this device.")),
-        );
+        AppToast.show(context, "Couldn't open a maps app on this device.", type: AppToastType.error);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Couldn't open a maps app on this device.")),
-        );
+        AppToast.show(context, "Couldn't open a maps app on this device.", type: AppToastType.error);
       }
     }
   }
@@ -207,7 +204,7 @@ class LocationMapPreview extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     locationLabel,
-                    style: const TextStyle(color: _muted, fontSize: 14, fontFamily: 'HenkenGrotesk'),
+                    style: const TextStyle(color: _muted, fontSize: 14, fontFamily: 'HankenGrotesk'),
                   ),
                 ],
               ),

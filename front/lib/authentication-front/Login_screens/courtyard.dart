@@ -75,7 +75,7 @@ class AuthScreen extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.white70,
                           fontSize: 17,
-                          fontFamily: 'HenkenGrotesk',
+                          fontFamily: 'HankenGrotesk',
                           height: 1.4,
                         ),
                       ),
@@ -120,7 +120,7 @@ class AuthScreen extends StatelessWidget {
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w400,
-                              fontFamily: 'HenkenGrotesk',
+                              fontFamily: 'HankenGrotesk',
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
@@ -203,7 +203,7 @@ class AuthScreen extends StatelessWidget {
                               color: Colors.white,
                               fontSize: 15,
                               fontWeight: FontWeight.w400,
-                              fontFamily: 'HenkenGrotesk',
+                              fontFamily: 'HankenGrotesk',
                             ),
                           ),
                           style: OutlinedButton.styleFrom(
@@ -224,7 +224,7 @@ class AuthScreen extends StatelessWidget {
                           style: const TextStyle(
                             color: Colors.white70,
                             fontSize: 15,
-                            fontFamily: 'HenkenGrotesk',
+                            fontFamily: 'HankenGrotesk',
                           ),
                           children: [
                             const TextSpan(text: "Don't have an account? "),
@@ -233,7 +233,7 @@ class AuthScreen extends StatelessWidget {
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w400,
-                                fontFamily: 'HenkenGrotesk',
+                                fontFamily: 'HankenGrotesk',
                               ),
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
@@ -273,7 +273,7 @@ class AuthScreen extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 11,
-                          fontFamily: 'HenkenGrotesk',
+                          fontFamily: 'HankenGrotesk',
                           fontStyle: FontStyle.normal,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 1.54,

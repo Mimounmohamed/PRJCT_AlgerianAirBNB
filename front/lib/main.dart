@@ -34,6 +34,29 @@ class MyApp extends StatelessWidget {
         // AKRILI teal — also what default widgets (date/time pickers,
         // dialogs, chips without explicit colors) pick up.
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF006972)),
+        // App body font. Titles set CormorantGaramond explicitly; every
+        // other text (including widgets that don't set a font at all) uses
+        // Hanken Grotesk instead of falling back to Roboto.
+        fontFamily: 'HankenGrotesk',
+        scaffoldBackgroundColor: const Color(0xFFFBF3E7),
+        // Default dialogs match the app's cream popups.
+        dialogTheme: DialogThemeData(
+          backgroundColor: const Color(0xFFFBF3E7),
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          titleTextStyle: const TextStyle(color: Color(0xFF2A1B12), fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'HankenGrotesk'),
+          contentTextStyle: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 14, height: 1.4, fontFamily: 'HankenGrotesk'),
+        ),
+        // Any snackbar not created through AppToast still looks close to it.
+        snackBarTheme: SnackBarThemeData(
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: const Color(0xFFFBF3E7),
+          contentTextStyle: const TextStyle(color: Color(0xFF2A1B12), fontSize: 14, fontWeight: FontWeight.w600, fontFamily: 'HankenGrotesk'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: const BorderSide(color: Color(0xFFE7DCCB)),
+          ),
+        ),
         // Material 3 tints and shades an app bar once content scrolls under
         // it, which turned every cream app bar a muddy grey/purple. Keep
         // app bars exactly the color each screen sets.

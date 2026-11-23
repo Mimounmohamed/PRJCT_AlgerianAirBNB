@@ -15,6 +15,7 @@ import 'package:image_picker/image_picker.dart';
 import '../services/auth_service.dart';
 import '../bookings/bookings_list_page.dart';
 import '../services/push_notification_service.dart';
+import '../widgets/app_toast.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({
@@ -30,11 +31,11 @@ class ProfileSettingsScreen extends StatefulWidget {
 
   // Shared color constants accessible by private helper widgets in this file
   static const _bg        = Color(0xFFFBF3E7);
-  static const _cardFill  = Color(0xFFFFFCF5);
-  static const _dark      = Color(0xFF1A1A1A);
-  static const _muted     = Color(0xFF9A9188);
+  static const _cardFill  = Color(0xFFFFFFFF);
+  static const _dark      = Color(0xFF2A1B12);
+  static const _muted     = Color(0xFF8A7B6E);
   static const _teal      = Color(0xFF006972);
-  static const _logoutRed = Color(0xFFC1440E);
+  static const _logoutRed = Color(0xFFB3261E);
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
@@ -68,9 +69,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       UserSession.instance.updateProfilePhoto(url);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update photo: $e')),
-        );
+        AppToast.show(context, 'Failed to update photo: $e', type: AppToastType.error);
       }
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
@@ -87,9 +86,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       UserSession.instance.updateProfilePhoto(null);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to remove photo: $e')),
-        );
+        AppToast.show(context, 'Failed to remove photo: $e', type: AppToastType.error);
       }
     } finally {
       if (mounted) setState(() => _uploadingPhoto = false);
@@ -103,7 +100,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFFFFCF5),
+          color: Color(0xFFFFFFFF),
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
@@ -114,7 +111,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               width: 40, height: 4,
               margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: const Color(0xFFD3C3BD),
+                color: const Color(0xFFE7DCCB),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -124,7 +121,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 fontFamily: 'CormorantGaramond',
                 fontSize: 22,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
               ),
             ),
             const SizedBox(height: 20),
@@ -144,7 +141,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               _PhotoOption(
                 icon: Icons.delete_outline,
                 label: 'Remove photo',
-                color: const Color(0xFFC1440E),
+                color: const Color(0xFFB3261E),
                 onTap: _removePhoto,
               ),
             ],
@@ -183,7 +180,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   fontFamily: 'CormorantGaramond',
                   fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF23130A),
+                  color: Color(0xFF2A1B12),
                 ),
               ),
               const SizedBox(height: 10),
@@ -242,7 +239,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Color(0xFFD3C3BD)),
+                    side: const BorderSide(color: Color(0xFFE7DCCB)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -251,7 +248,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   child: const Text(
                     'Stay Logged In',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 15,
                       fontFamily: 'HankenGrotesk',
                       fontWeight: FontWeight.w600,

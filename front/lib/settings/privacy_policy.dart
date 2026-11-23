@@ -7,18 +7,18 @@ class PrivacyPolicyScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF6EF),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFBF6EF),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Privacy Policy',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'HankenGrotesk',
             fontWeight: FontWeight.w600,
@@ -46,7 +46,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             const Text(
               'Commitment to Your Privacy',
               style: TextStyle(
-                color: Color(0xFF23130A),
+                color: Color(0xFF2A1B12),
                 fontSize: 48,
                 fontFamily: 'CormorantGaramond',
                 fontWeight: FontWeight.w500,
@@ -224,7 +224,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
                     'Have questions about our privacy practices?',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF81756F),
+                      color: Color(0xFF8A7B6E),
                       fontSize: 15,
                       fontFamily: 'HankenGrotesk',
                     ),

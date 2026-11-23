@@ -4,6 +4,7 @@ import '../../widgets/app_bar.dart';
 import '../../sign_in_screens/OTP_VerifyACC/verifCODE.dart';
 import '../../../services/auth_service.dart';
 import 'new_password.dart';
+import '../../../widgets/app_toast.dart';
 
 class ResetPasswordMethodScreen extends StatefulWidget {
   const ResetPasswordMethodScreen({
@@ -81,9 +82,7 @@ class _ResetPasswordMethodScreenState extends State<ResetPasswordMethodScreen> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      AppToast.show(context, msg, type: AppToastType.info);
       setState(() => _isLoading = false);
     }
   }

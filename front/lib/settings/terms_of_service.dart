@@ -7,18 +7,18 @@ class TermsOfServiceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF9EE),
+      backgroundColor: const Color(0xFFFBF3E7),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFFFF9EE),
+        backgroundColor: const Color(0xFFFBF3E7),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF2A1B12)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF006972)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
           'Terms of Service',
           style: TextStyle(
-            color: Color(0xFF23130A),
+            color: Color(0xFF2A1B12),
             fontSize: 28,
             fontFamily: 'CormorantGaramond',
             fontWeight: FontWeight.w600,
@@ -36,7 +36,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                 children: [
                   const Expanded(
                     child: Divider(
-                      color: Color(0xFFD3C3BD),
+                      color: Color(0xFFE7DCCB),
                       thickness: 0.7,
                     ),
                   ),
@@ -50,7 +50,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   ),
                   const Expanded(
                     child: Divider(
-                      color: Color(0xFFD3C3BD),
+                      color: Color(0xFFE7DCCB),
                       thickness: 0.7,
                     ),
                   ),
@@ -124,7 +124,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                       color: const Color(0x80FFFFFF),
                       borderRadius: BorderRadius.circular(9999),
                       border: Border.all(
-                          color: const Color(0xFFD3C3BD), width: 1),
+                          color: const Color(0xFFE7DCCB), width: 1),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withOpacity(0.05),
@@ -152,7 +152,7 @@ class TermsOfServiceScreen extends StatelessWidget {
               child: Text(
                 'Last Updated: October 24, 2023',
                 style: TextStyle(
-                  color: const Color(0xFF81756F),
+                  color: const Color(0xFF8A7B6E),
                   fontSize: 14,
                   fontFamily: 'HankenGrotesk',
                 ),
@@ -218,7 +218,7 @@ class TermsOfServiceScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFFD3C3BD)),
+                border: Border.all(color: const Color(0xFFE7DCCB)),
               ),
               padding: const EdgeInsets.all(20),
               child: const Text(
@@ -295,7 +295,7 @@ class TermsOfServiceScreen extends StatelessWidget {
                   Text(
                     'Late Cancellation',
                     style: TextStyle(
-                      color: Color(0xFF23130A),
+                      color: Color(0xFF2A1B12),
                       fontSize: 20,
                       fontFamily: 'HankenGrotesk',
                       fontWeight: FontWeight.w700,

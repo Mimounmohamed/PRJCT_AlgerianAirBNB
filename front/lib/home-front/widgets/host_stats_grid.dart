@@ -41,7 +41,7 @@ class HostStatsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const valueStyle = TextStyle(color: Color(0xFF2A1B12), fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'HenkenGrotesk');
+    const valueStyle = TextStyle(color: Color(0xFF2A1B12), fontSize: 18, fontWeight: FontWeight.w700, fontFamily: 'HankenGrotesk');
 
     return Column(
       children: [

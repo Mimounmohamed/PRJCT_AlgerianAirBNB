@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../../services/host_service.dart'; // adjust path to match your project structure
+import '../../widgets/app_toast.dart';
 
 /// Returned to the caller (ListingSettingsPage) after a successful save,
 /// so it can keep its own in-memory copy of these fields in sync without
@@ -165,7 +166,7 @@ class _BookingPreferencesPageState extends State<BookingPreferencesPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      AppToast.show(context, '$e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

@@ -9,6 +9,7 @@ import '../../services/auth_service.dart'; // adjust path — exposes AuthServic
 import '../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
 import '../../services/user_session.dart'; // adjust path to match your project structure — exposes UserSession.instance.token
 import 'create_listing_confirmation_page.dart'; // adjust path if you placed this elsewhere
+import '../../widgets/app_toast.dart';
 
 /// Final step of the Create Listing wizard — Review & Submit. Pulls
 /// together photos, title, house rules, booking preferences, rental
@@ -97,9 +98,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Some photos failed to upload: $e')),
-      );
+      AppToast.show(context, 'Some photos failed to upload: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isUploadingPhotos = false);
     }
@@ -612,33 +611,23 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
 
   Future<void> _publish() async {
     if (_isUploadingPhotos) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please wait for your photos to finish uploading.')),
-      );
+      AppToast.show(context, 'Please wait for your photos to finish uploading.', type: AppToastType.error);
       return;
     }
     if (widget.draft.photos.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one photo of your place.')),
-      );
+      AppToast.show(context, 'Please add at least one photo of your place.', type: AppToastType.info);
       return;
     }
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please give your place a title.')),
-      );
+      AppToast.show(context, 'Please give your place a title.', type: AppToastType.info);
       return;
     }
     if (_descriptionController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add a description.')),
-      );
+      AppToast.show(context, 'Please add a description.', type: AppToastType.info);
       return;
     }
     if (widget.draft.pricePerNight == null || widget.draft.pricePerNight! <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please set a price.')),
-      );
+      AppToast.show(context, 'Please set a price.', type: AppToastType.info);
       return;
     }
 
@@ -670,9 +659,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to publish: $e')),
-      );
+      AppToast.show(context, 'Failed to publish: $e', type: AppToastType.error);
     } finally {
       if (mounted) setState(() => _isPublishing = false);
     }

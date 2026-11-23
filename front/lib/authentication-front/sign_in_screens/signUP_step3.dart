@@ -5,6 +5,7 @@ import '../widgets/app_bar.dart';
 import '../widgets/signin_progressbar.dart';
 import '../../services/auth_service.dart';
 import 'OTP_VerifyACC/Choose_method.dart';
+import '../../widgets/app_toast.dart';
 
 class SignUpStep3 extends StatefulWidget {
   final String token;
@@ -86,9 +87,7 @@ class _SignUpStep3State extends State<SignUpStep3> {
     } catch (e) {
       final msg = e.toString().replaceAll('Exception: ', '');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg)),
-      );
+      AppToast.show(context, msg, type: AppToastType.info);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
