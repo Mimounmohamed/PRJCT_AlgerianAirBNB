@@ -10,8 +10,10 @@ class HostListingRow extends StatelessWidget {
   const HostListingRow({super.key, required this.listing, this.onTap});
 
   Color get _statusColor {
-    switch (listing.status) {
+    switch (listing.displayStatus) {
       case 'active': return const Color(0xFF006972);
+      case 'snoozed':
+      case 'unlisted': return const Color(0xFF8A7B6E);
       case 'pending_review': return const Color(0xFFB8860B);
       case 'inactive': return const Color(0xFF9A8C7F);
       case 'rejected': return const Color(0xFFB3261E);
@@ -81,14 +83,17 @@ class HostListingRow extends StatelessWidget {
                   Row(
                     children: [
                       Icon(
-                        listing.status == 'active' ? Icons.calendar_today_outlined : Icons.info_outline,
+                        listing.status == 'active' ? (listing.isSnoozed ? Icons.bedtime_outlined : Icons.calendar_today_outlined) : Icons.info_outline,
                         size: 13,
                         color: const Color(0xFF8A7B6E),
                       ),
                       const SizedBox(width: 5),
-                      Text(
-                        listing.statusSubtitle,
-                        style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 13),
+                      Expanded(
+                        child: Text(
+                          listing.statusSubtitle,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Color(0xFF8A7B6E), fontSize: 13),
+                        ),
                       ),
                     ],
                   ),

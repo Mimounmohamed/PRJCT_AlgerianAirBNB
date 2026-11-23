@@ -339,6 +339,8 @@ class _ManageListingPageState extends State<ManageListingPage> {
                         _statBox(label: 'VIEWS', value: Text(listing.formattedViews, style: const TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700))),
                         const SizedBox(width: 12),
                         _statBox(label: 'BOOKINGS', value: Text(listing.formattedBookings, style: const TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700))),
+                        const SizedBox(width: 12),
+                        _statBox(label: 'SAVED', value: Text(listing.formattedFavorites, style: const TextStyle(color: _dark, fontSize: 18, fontWeight: FontWeight.w700))),
                       ],
                     ),
                     const SizedBox(height: 12),

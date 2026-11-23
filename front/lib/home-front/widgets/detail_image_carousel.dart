@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../services/saved_service.dart';
+import '../../widgets/app_toast.dart';
 
 /// Swipeable photo carousel for the top of the Listing Detail page —
 /// back / share / favorite overlay buttons and a "1 / 12" counter.
 ///
-/// Favoriting is local UI state only for now (no backend call yet).
+/// With [listingId], the heart saves/unsaves that listing for the
+/// logged-in guest (SavedService); without it, it's local state only.
 class DetailImageCarousel extends StatefulWidget {
   final List<String> photoUrls;
+  final String? listingId;
   final bool initialIsFavorite;
   final VoidCallback? onBackTap;
   final VoidCallback? onShareTap;
@@ -14,6 +18,7 @@ class DetailImageCarousel extends StatefulWidget {
   const DetailImageCarousel({
     super.key,
     required this.photoUrls,
+    this.listingId,
     this.initialIsFavorite = false,
     this.onBackTap,
     this.onShareTap,
@@ -35,6 +40,16 @@ class _DetailImageCarouselState extends State<DetailImageCarousel> {
   void initState() {
     super.initState();
     _isFavorite = widget.initialIsFavorite;
+    if (widget.listingId != null) SavedService.instance.ensureLoaded();
+  }
+
+  Future<void> _toggleSaved(bool save) async {
+    try {
+      await SavedService.instance.setSaved(widget.listingId!, save);
+      widget.onFavoriteToggle?.call(save);
+    } catch (e) {
+      if (mounted) AppToast.show(context, e.toString(), type: AppToastType.info);
+    }
   }
 
   @override
@@ -103,14 +118,27 @@ class _DetailImageCarouselState extends State<DetailImageCarousel> {
                     children: [
                       _circleButton(icon: Icons.share, onTap: widget.onShareTap),
                       const SizedBox(width: 8),
-                      _circleButton(
-                        icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
-                        iconColor: _isFavorite ? const Color(0xFFE8543E) : Colors.white,
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          widget.onFavoriteToggle?.call(_isFavorite);
-                        },
-                      ),
+                      if (widget.listingId == null)
+                        _circleButton(
+                          icon: _isFavorite ? Icons.favorite : Icons.favorite_border,
+                          iconColor: _isFavorite ? const Color(0xFFE8543E) : Colors.white,
+                          onTap: () {
+                            setState(() => _isFavorite = !_isFavorite);
+                            widget.onFavoriteToggle?.call(_isFavorite);
+                          },
+                        )
+                      else
+                        ValueListenableBuilder<Set<String>>(
+                          valueListenable: SavedService.instance.ids,
+                          builder: (context, savedIds, _) {
+                            final saved = savedIds.contains(widget.listingId);
+                            return _circleButton(
+                              icon: saved ? Icons.favorite : Icons.favorite_border,
+                              iconColor: saved ? const Color(0xFFE8543E) : Colors.white,
+                              onTap: () => _toggleSaved(!saved),
+                            );
+                          },
+                        ),
                     ],
                   ),
                 ],

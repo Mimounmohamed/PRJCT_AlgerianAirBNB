@@ -23,14 +23,16 @@ class AllListingsPage extends StatefulWidget {
   State<AllListingsPage> createState() => _AllListingsPageState();
 }
 
-/// 'all' plus the raw `status` values worth filtering on from the UI.
-enum _StatusFilter { all, active, pendingReview, inactive }
+/// 'all' plus the row statuses worth filtering on (see
+/// HostListingSummaryModel.displayStatus — "active" excludes snoozed).
+enum _StatusFilter { all, active, snoozed, pendingReview, inactive }
 
 extension on _StatusFilter {
   String get label {
     switch (this) {
       case _StatusFilter.all: return 'All';
       case _StatusFilter.active: return 'Active';
+      case _StatusFilter.snoozed: return 'Snoozed';
       case _StatusFilter.pendingReview: return 'In Review';
       case _StatusFilter.inactive: return 'Paused';
     }
@@ -40,6 +42,7 @@ extension on _StatusFilter {
     switch (this) {
       case _StatusFilter.all: return null;
       case _StatusFilter.active: return 'active';
+      case _StatusFilter.snoozed: return 'snoozed';
       case _StatusFilter.pendingReview: return 'pending_review';
       case _StatusFilter.inactive: return 'inactive';
     }
@@ -95,6 +98,8 @@ class _AllListingsPageState extends State<AllListingsPage> {
   Color _statusColor(String status) {
     switch (status) {
       case 'active': return _teal;
+      case 'snoozed':
+      case 'unlisted': return _muted;
       case 'pending_review': return const Color(0xFFB8860B);
       case 'inactive': return const Color(0xFF9A8C7F);
       case 'rejected': return const Color(0xFFB3261E);
@@ -102,10 +107,17 @@ class _AllListingsPageState extends State<AllListingsPage> {
     }
   }
 
+  bool _matchesFilter(HostListingSummaryModel listing) {
+    final value = _filter.statusValue;
+    if (value == 'active') return listing.status == 'active' && !listing.isSnoozed;
+    if (value == 'snoozed') return listing.isSnoozed;
+    return listing.status == value;
+  }
+
   List<HostListingSummaryModel> get _filtered {
     final normalizedQuery = _query.trim().toLowerCase();
     return _listings.where((listing) {
-      final matchesFilter = _filter.statusValue == null || listing.status == _filter.statusValue;
+      final matchesFilter = _filter.statusValue == null || _matchesFilter(listing);
       final matchesQuery = normalizedQuery.isEmpty || listing.title.toLowerCase().contains(normalizedQuery);
       return matchesFilter && matchesQuery;
     }).toList();
@@ -148,7 +160,7 @@ class _AllListingsPageState extends State<AllListingsPage> {
   }
 
   Widget _listingRow(HostListingSummaryModel listing) {
-    final statusColor = _statusColor(listing.status);
+    final statusColor = _statusColor(listing.displayStatus);
 
     return GestureDetector(
       onTap: () => _openManageListing(listing),
@@ -204,6 +216,12 @@ class _AllListingsPageState extends State<AllListingsPage> {
                   Text(
                     '${listing.propertyType}, ${listing.city}',
                     style: const TextStyle(color: _muted, fontSize: 13),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    listing.statusSubtitle,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(color: _muted, fontSize: 12),
                   ),
                   const SizedBox(height: 10),
                   Row(

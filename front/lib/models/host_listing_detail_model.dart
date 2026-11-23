@@ -61,6 +61,7 @@ class HostListingDetailModel {
   final double totalEarnings;
   final int totalViews;
   final int totalBookings;
+  final int totalFavorites; // guests who saved it (❤️)
 
   final double ratingOverall;
   final int reviewCount;
@@ -112,6 +113,7 @@ class HostListingDetailModel {
     required this.totalEarnings,
     required this.totalViews,
     required this.totalBookings,
+    this.totalFavorites = 0,
     required this.ratingOverall,
     required this.reviewCount,
     required this.isGuestFavorite,
@@ -186,6 +188,7 @@ class HostListingDetailModel {
       totalEarnings: (stats['totalEarnings'] as num?)?.toDouble() ?? 0,
       totalViews: (stats['totalViews'] as num?)?.toInt() ?? 0,
       totalBookings: (stats['totalBookings'] as num?)?.toInt() ?? 0,
+      totalFavorites: (stats['totalFavorites'] as num?)?.toInt() ?? 0,
       ratingOverall: (rating['overall'] as num?)?.toDouble() ?? 0,
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
       isGuestFavorite: json['isGuestFavorite'] as bool? ?? false,
@@ -229,6 +232,7 @@ class HostListingDetailModel {
 
   String get formattedViews => _grouped(totalViews);
   String get formattedBookings => _grouped(totalBookings);
+  String get formattedFavorites => _grouped(totalFavorites);
 
   /// "Casbah, Algiers, Algeria"-style caption for the location preview.
   String get locationLabel {

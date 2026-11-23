@@ -34,6 +34,9 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const GUEST_FAVORITE_MIN_REVIEWS = 5;
+const GUEST_FAVORITE_MIN_RATING = 4.8;
+
 // ── Post-save: update listing aggregated rating ────────────
 reviewSchema.post('save', async function () {
   const Listing = mongoose.model('Listing');
@@ -47,8 +50,14 @@ reviewSchema.post('save', async function () {
   const avg = (field) =>
     reviews.reduce((sum, r) => sum + r.ratings[field], 0) / reviews.length;
 
+  const overall = parseFloat(avg('overall').toFixed(2));
+
   await Listing.findByIdAndUpdate(this.listingId, {
-    'rating.overall':       parseFloat(avg('overall').toFixed(2)),
+    // Guest Favorite: earned, never set by hand — at least
+    // GUEST_FAVORITE_MIN_REVIEWS reviews averaging GUEST_FAVORITE_MIN_RATING.
+    isGuestFavorite:
+      reviews.length >= GUEST_FAVORITE_MIN_REVIEWS && overall >= GUEST_FAVORITE_MIN_RATING,
+    'rating.overall':       overall,
     'rating.cleanliness':   parseFloat(avg('cleanliness').toFixed(2)),
     'rating.communication': parseFloat(avg('communication').toFixed(2)),
     'rating.checkIn':       parseFloat(avg('checkIn').toFixed(2)),

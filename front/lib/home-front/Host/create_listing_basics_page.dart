@@ -216,9 +216,6 @@ class _CreateListingBasicsPageState extends State<CreateListingBasicsPage> {
                           AspectRatio(
                             aspectRatio: 1.5,
                             child: Image.asset(
-                              // TODO: replace with the actual filename once added
-                              // under front/assets/images/ (same pattern as the
-                              // intro page's showcase image).
                               'assets/images/authentic_stays.png',
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>

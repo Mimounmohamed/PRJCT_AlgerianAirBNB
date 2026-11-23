@@ -519,7 +519,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
 
   Widget _priceCard() {
     final price = num.tryParse(_priceController.text) ?? 0;
-    final fee = price * (widget.draft.serviceFeePercent / 100);
+    final fee = price * (ListingDraft.serviceFeePercent / 100);
     final earn = price - fee;
 
     return Container(
@@ -583,7 +583,7 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'AKRILI SERVICE FEE (${widget.draft.serviceFeePercent.toStringAsFixed(0)}%)',
+                'AKRILI SERVICE FEE (${ListingDraft.serviceFeePercent.toStringAsFixed(0)}%)',
                 style: const TextStyle(color: Colors.white60, fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 0.4),
               ),
               Text(

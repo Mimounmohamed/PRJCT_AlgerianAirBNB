@@ -297,22 +297,7 @@ router.put('/:id', protect, requireHost, async (req, res) => {
   }
 });
 
-// DELETE /api/listings/:id — Deactivate (pause) listing (host only).
-// Legacy — the app uses POST /api/host/listings/:id/pause instead. Same
-// rule: only an active listing can be paused, so a pending/rejected
-// listing can't be paused and then resumed to skip review.
-router.delete('/:id', protect, requireHost, async (req, res) => {
-  try {
-    const listing = await Listing.findOneAndUpdate(
-      { _id: req.params.id, hostId: req.user._id, isDeleted: { $ne: true }, status: 'active' },
-      { status: 'inactive', visibility: 'unlisted' },
-      { new: true }
-    );
-    if (!listing) return res.status(404).json({ error: 'Listing not found, or not active.' });
-    res.json({ message: 'Listing deactivated.' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Pausing and deleting a listing live in host.routes.js
+// (POST /api/host/listings/:id/pause, DELETE /api/host/listings/:id).
 
 module.exports = router;

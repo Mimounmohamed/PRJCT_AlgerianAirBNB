@@ -30,8 +30,11 @@ class ListingDraft {
   // ── Pricing ────────────────────────────────────────────
   num? pricePerNight;
   String currency = 'DZD';
-  double touristTaxPercent = 5.5;
-  double serviceFeePercent = 10; // Akrili's cut
+  // Platform fees: set by the server (Listing.price defaults), never sent
+  // from the app — these only label the fee preview on the Review step and
+  // must match back/src/models/Listing.js.
+  static const double touristTaxPercent = 5.5;
+  static const double serviceFeePercent = 10; // Akrili's cut
   double weeklyDiscountPercent = 0;
   double monthlyDiscountPercent = 0;
 
@@ -230,8 +233,6 @@ class ListingDraft {
       'price': {
         'perNight': pricePerNight ?? 0,
         'currency': currency,
-        'touristTaxPercent': touristTaxPercent,
-        'serviceFeePercent': serviceFeePercent,
         'weeklyDiscountPercent': weeklyDiscountPercent,
         'monthlyDiscountPercent': monthlyDiscountPercent,
         'rentalPeriod': rentalPeriod,

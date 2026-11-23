@@ -460,11 +460,9 @@ class _ListingDetailPageState extends State<ListingDetailPage> {
                   children: [
                     DetailImageCarousel(
                       photoUrls: listing.photoUrls,
+                      listingId: listing.id,
                       onBackTap: () => Navigator.of(context).pop(),
                       onShareTap: () => showShareSheet(context, listing),
-                      onFavoriteToggle: (isFav) {
-                        // TODO: wire favorite persistence
-                      },
                     ),
                     Padding(
                       padding: const EdgeInsets.all(20),

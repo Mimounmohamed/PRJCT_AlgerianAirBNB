@@ -118,8 +118,23 @@ router.get('/dashboard', protect, requireHost, async (req, res) => {
 // GET /api/host/listings — Get all host's listings
 router.get('/listings', protect, requireHost, async (req, res) => {
   try {
-    const listings = await Listing.find({ hostId: req.user._id, ...notDeleted }).sort({ createdAt: -1 });
-    res.json(listings);
+    const listings = await Listing.find({ hostId: req.user._id, ...notDeleted }).sort({ createdAt: -1 }).lean();
+
+    // nextCheckIn per listing: the earliest confirmed stay that hasn't
+    // started yet ("Next check-in: Nov 28" on the host's listing rows).
+    const upcoming = await Booking.aggregate([
+      {
+        $match: {
+          listingId: { $in: listings.map((l) => l._id) },
+          status: 'confirmed',
+          checkIn: { $gte: new Date(new Date().setUTCHours(0, 0, 0, 0)) },
+        },
+      },
+      { $group: { _id: '$listingId', nextCheckIn: { $min: '$checkIn' } } },
+    ]);
+    const nextByListing = new Map(upcoming.map((u) => [u._id.toString(), u.nextCheckIn]));
+
+    res.json(listings.map((l) => ({ ...l, nextCheckIn: nextByListing.get(l._id.toString()) || null })));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../models/listing_model.dart'; // adjust path to match your project structure
+import '../../services/saved_service.dart';
+import '../../widgets/app_toast.dart';
 
 /// A single listing card for the Explore feed — hero photo with a favorite
 /// heart overlay, title, location, and rating/price row below.
 ///
-/// Favoriting is local UI state only for now (no backend call yet) —
-/// [onFavoriteToggle] fires so that logic can be wired in later.
+/// The heart saves/unsaves the listing for the logged-in guest
+/// (SavedService); [onFavoriteToggle] still fires after a tap.
 class ListingCard extends StatefulWidget {
   final ListingModel listing;
   final VoidCallback? onTap;
@@ -23,12 +25,20 @@ class ListingCard extends StatefulWidget {
 }
 
 class _ListingCardState extends State<ListingCard> {
-  late bool _isFavorite;
-
   @override
   void initState() {
     super.initState();
-    _isFavorite = widget.listing.isGuestFavorite;
+    SavedService.instance.ensureLoaded();
+  }
+
+  Future<void> _toggleFavorite(bool isFavorite) async {
+    final next = !isFavorite;
+    try {
+      await SavedService.instance.setSaved(widget.listing.id, next);
+      widget.onFavoriteToggle?.call(next);
+    } catch (e) {
+      if (mounted) AppToast.show(context, e.toString(), type: AppToastType.info);
+    }
   }
 
   @override
@@ -65,23 +75,26 @@ class _ListingCardState extends State<ListingCard> {
                     Positioned(
                       top: 12,
                       right: 12,
-                      child: GestureDetector(
-                        onTap: () {
-                          setState(() => _isFavorite = !_isFavorite);
-                          widget.onFavoriteToggle?.call(_isFavorite);
+                      child: ValueListenableBuilder<Set<String>>(
+                        valueListenable: SavedService.instance.ids,
+                        builder: (context, savedIds, _) {
+                          final isFavorite = savedIds.contains(listing.id);
+                          return GestureDetector(
+                            onTap: () => _toggleFavorite(isFavorite),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.25),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                isFavorite ? Icons.favorite : Icons.favorite_border,
+                                size: 18,
+                                color: isFavorite ? const Color(0xFFE8543E) : Colors.white,
+                              ),
+                            ),
+                          );
                         },
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.25),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _isFavorite ? Icons.favorite : Icons.favorite_border,
-                            size: 18,
-                            color: _isFavorite ? const Color(0xFFE8543E) : Colors.white,
-                          ),
-                        ),
                       ),
                     ),
                   ],

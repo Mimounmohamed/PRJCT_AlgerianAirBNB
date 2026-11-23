@@ -1,6 +1,7 @@
 /// Parses one listing document as returned by GET /api/host/listings
-/// (raw Listing docs, unlike the public /api/listings endpoint's shaped
-/// response). Used for the "Your listings" rows on the Host dashboard.
+/// (raw Listing docs plus `nextCheckIn`, unlike the public /api/listings
+/// endpoint's shaped response). Used for the "Your listings" rows on the
+/// Host dashboard and the All listings page.
 class HostListingSummaryModel {
   final String id;
   final String title;
@@ -10,6 +11,10 @@ class HostListingSummaryModel {
   final String status; // 'draft' | 'pending_review' | 'active' | 'inactive' | 'rejected'
   final double pricePerNight;
   final String currency;
+  final String visibility; // 'listed' | 'unlisted' | 'snoozed'
+  final DateTime? snoozedUntil;
+  // Earliest confirmed stay that hasn't started yet, or null.
+  final DateTime? nextCheckIn;
 
   HostListingSummaryModel({
     required this.id,
@@ -20,6 +25,9 @@ class HostListingSummaryModel {
     required this.status,
     required this.pricePerNight,
     required this.currency,
+    this.visibility = 'listed',
+    this.snoozedUntil,
+    this.nextCheckIn,
   });
 
   factory HostListingSummaryModel.fromJson(Map<String, dynamic> json) {
@@ -43,13 +51,30 @@ class HostListingSummaryModel {
       status: json['status'] as String? ?? 'draft',
       pricePerNight: (price['perNight'] as num?)?.toDouble() ?? 0,
       currency: price['currency'] as String? ?? 'DZD',
+      visibility: json['visibility'] as String? ?? 'listed',
+      snoozedUntil: DateTime.tryParse(json['snoozedUntil']?.toString() ?? '')?.toLocal(),
+      // Booking days are stored as UTC midnight — keep the UTC calendar day.
+      nextCheckIn: DateTime.tryParse(json['nextCheckIn']?.toString() ?? '')?.toUtc(),
     );
   }
 
-  /// "ACTIVE" / "IN REVIEW" / "PAUSED" / "DRAFT" / "REJECTED"
+  /// An active listing the host snoozed (hidden from guests until a date).
+  bool get isSnoozed =>
+      status == 'active' && visibility == 'snoozed' && snoozedUntil != null && snoozedUntil!.isAfter(DateTime.now());
+
+  /// An active listing the host hid from search (Listing visibility → Unlisted).
+  bool get isUnlisted => status == 'active' && visibility == 'unlisted';
+
+  /// What the row shows: the status, except that an active listing hidden
+  /// from guests shows 'snoozed' / 'unlisted' instead of 'active'.
+  String get displayStatus => isSnoozed ? 'snoozed' : (isUnlisted ? 'unlisted' : status);
+
+  /// "ACTIVE" / "SNOOZED" / "UNLISTED" / "IN REVIEW" / "PAUSED" / "DRAFT" / "REJECTED"
   String get statusLabel {
-    switch (status) {
+    switch (displayStatus) {
       case 'active': return 'ACTIVE';
+      case 'snoozed': return 'SNOOZED';
+      case 'unlisted': return 'UNLISTED';
       case 'pending_review': return 'IN REVIEW';
       case 'inactive': return 'PAUSED';
       case 'rejected': return 'REJECTED';
@@ -57,13 +82,20 @@ class HostListingSummaryModel {
     }
   }
 
-  /// Status-derived subtitle. TODO: replace the 'active' case with a real
-  /// "Next check-in: <date>" once a per-listing upcoming-booking query
-  /// exists — the current dashboard endpoint only returns host-wide
-  /// recentBookings, not per-listing next-checkin dates.
+  static const _months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  static String _shortDate(DateTime d) => '${_months[d.month - 1]} ${d.day}';
+
+  /// "Next check-in: Nov 28" / "No upcoming stays" for a live listing,
+  /// "Snoozed until Dec 3" for a snoozed one, otherwise status-derived.
   String get statusSubtitle {
-    switch (status) {
-      case 'active': return 'Active listing';
+    switch (displayStatus) {
+      case 'active':
+      case 'unlisted':
+        final next = nextCheckIn;
+        final stays = next == null ? 'No upcoming stays' : 'Next check-in: ${_shortDate(next)}';
+        return displayStatus == 'unlisted' ? 'Hidden from search · $stays' : stays;
+      case 'snoozed':
+        return 'Snoozed until ${_shortDate(snoozedUntil!)}';
       case 'pending_review': return 'Pending approval';
       case 'inactive': return 'Paused by host';
       case 'rejected': return 'Rejected — needs changes';
