@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 import 'property_types.dart';
 
-/// Stay-type shortcuts under the search bar on Explore: "All" plus every
-/// property type a host can list (Apartment, House, Villa, …). Scrolls
-/// sideways. [onTypeSelected] fires with the type label, or null for All.
+/// Stay shortcuts under the search bar on Explore: "All" plus 4 groups
+/// (Apartments, Houses, Hotels, Cabins), each covering 2 property types —
+/// see kStayGroups. Fits the screen width, no scrolling.
 ///
-/// [selected] is owned by the page, so picking a type in Filters or on the
-/// search screen highlights the matching shortcut here too.
+/// [selectedTypes] is owned by the page: a shortcut is highlighted when
+/// the current type filter is exactly its group (or empty for All), so
+/// picking types in Filters stays in sync. [onSelected] fires with the
+/// group's types, or an empty set for All.
 class ExploreFilterBar extends StatelessWidget {
-  final String? selected;
-  final ValueChanged<String?>? onTypeSelected;
+  final Set<String> selectedTypes;
+  final ValueChanged<Set<String>>? onSelected;
 
-  const ExploreFilterBar({super.key, this.selected, this.onTypeSelected});
+  const ExploreFilterBar({super.key, this.selectedTypes = const {}, this.onSelected});
 
   static const Color _selectedColor = Color(0xFF006972);
   static const Color _unselectedColor = Color(0xFF4F4540);
@@ -24,16 +26,16 @@ class ExploreFilterBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 26, color: color),
+              Icon(icon, size: 28, color: color),
               const SizedBox(height: 6),
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 14,
                   fontFamily: 'HankenGrotesk',
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
                   color: color,
@@ -55,24 +57,24 @@ class ExploreFilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 76,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
+    final selectedGroup = stayGroupFor(selectedTypes);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _item(
             label: 'All',
             icon: Icons.explore_outlined,
-            isSelected: selected == null,
-            onTap: () => onTypeSelected?.call(null),
+            isSelected: selectedTypes.isEmpty,
+            onTap: () => onSelected?.call(const {}),
           ),
-          for (final t in kPropertyTypes)
+          for (final g in kStayGroups)
             _item(
-              label: t.label,
-              icon: t.icon,
-              isSelected: selected == t.label,
-              onTap: () => onTypeSelected?.call(t.label),
+              label: g.label,
+              icon: g.icon,
+              isSelected: selectedGroup == g,
+              onTap: () => onSelected?.call(g.types),
             ),
         ],
       ),

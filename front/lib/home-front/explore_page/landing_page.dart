@@ -13,6 +13,7 @@ import 'listing_card.dart';
 import 'listing_detail_page.dart';
 import 'filters_page.dart';
 import 'search_discovery_page.dart';
+import '../widgets/property_types.dart';
 import '../Host/host_tab_entry.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
@@ -128,8 +129,14 @@ class _LandingPageState extends State<LandingPage> {
     final parts = <String>['Anytime'];
     parts.add(_filters.guests > 0 ? '${_filters.guests}+ guests' : 'Add guests');
     final types = _filters.propertyTypes;
-    if (types.length == 1) parts.add(types.first);
-    if (types.length > 1) parts.add('${types.length} types');
+    final group = stayGroupFor(types);
+    if (group != null) {
+      parts.add(group.label);
+    } else if (types.length == 1) {
+      parts.add(types.first);
+    } else if (types.length > 1) {
+      parts.add('${types.length} types');
+    }
     return parts.join(' · ');
   }
 
@@ -242,8 +249,8 @@ class _LandingPageState extends State<LandingPage> {
         ),
         const SizedBox(height: 12),
         ExploreFilterBar(
-          selected: _filters.propertyTypes.length == 1 ? _filters.propertyTypes.first : null,
-          onTypeSelected: (type) => _fetchListings(_filters.withPropertyTypes(type == null ? {} : {type})),
+          selectedTypes: _filters.propertyTypes,
+          onSelected: (types) => _fetchListings(_filters.withPropertyTypes({...types})),
         ),
         const SizedBox(height: 8),
         Expanded(child: _buildListingsBody()),
