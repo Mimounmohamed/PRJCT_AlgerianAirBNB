@@ -8,17 +8,18 @@ const Listing = require('../models/Listing');
 // listing.stats.totalFavorites follows the saves: +1 on save, -1 on unsave,
 // so the host sees how many guests saved each listing.
 
-// GET /api/saved — Get user's saved stays
+// GET /api/saved — Get user's saved stays, newest first. Listings the host
+// deleted are left out (the save stays, in case it ever matters).
 router.get('/', protect, async (req, res) => {
   try {
     const saved = await SavedStay.find({ userId: req.user._id })
       .populate({
         path: 'listingId',
-        select: 'title photos location price rating categories',
+        select: 'title photos coverPhotoIndex location.city location.wilaya price rating propertyType isGuestFavorite status visibility isDeleted',
         populate: { path: 'hostId', select: 'fullName profilePhoto' },
       })
       .sort({ savedAt: -1 });
-    res.json(saved);
+    res.json(saved.filter((s) => s.listingId && !s.listingId.isDeleted));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

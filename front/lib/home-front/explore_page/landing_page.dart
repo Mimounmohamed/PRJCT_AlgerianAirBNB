@@ -19,6 +19,7 @@ import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
 import '../../settings/Profile_&_Settings.dart';
 import '../../chat/msg_center.dart';
+import '../saved/saved_page.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({
@@ -291,6 +292,7 @@ class _LandingPageState extends State<LandingPage> {
       case 2:
         return _buildHostTab();
       case 1:
+        return const SavedPage();
       default:
         return const SizedBox.shrink();
     }

@@ -11,6 +11,7 @@ class ListingModel {
   final int reviewCount;
   final String? coverPhotoUrl;
   final bool isGuestFavorite;
+  final String propertyType;
 
   ListingModel({
     required this.id,
@@ -23,6 +24,7 @@ class ListingModel {
     required this.reviewCount,
     required this.coverPhotoUrl,
     required this.isGuestFavorite,
+    this.propertyType = '',
   });
 
   factory ListingModel.fromJson(Map<String, dynamic> json) {
@@ -49,6 +51,7 @@ class ListingModel {
       reviewCount: (rating['totalReviews'] as num?)?.toInt() ?? 0,
       coverPhotoUrl: coverUrl,
       isGuestFavorite: json['isGuestFavorite'] as bool? ?? false,
+      propertyType: json['propertyType'] as String? ?? '',
     );
   }
 

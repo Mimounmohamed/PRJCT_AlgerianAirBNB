@@ -3,6 +3,13 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'base_client.dart';
 import 'user_session.dart';
+import '../models/listing_model.dart';
+
+class SavedListing {
+  final ListingModel listing;
+  final DateTime savedAt;
+  const SavedListing({required this.listing, required this.savedAt});
+}
 
 /// The guest's saved listings (the ❤️ on Discover cards and the listing
 /// page). Every heart listens to [ids], so saving on the listing page
@@ -47,6 +54,28 @@ class SavedService {
     } catch (_) {
       _loadedFor = null;
     }
+  }
+
+  /// GET /api/saved — the saved listings themselves, newest first (Saved
+  /// tab). Also refreshes [ids] so every heart agrees.
+  Future<List<SavedListing>> fetchSaved() async {
+    final token = UserSession.instance.token;
+    if (token == null || token.isEmpty) return [];
+    final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/saved'), headers: _headers(token));
+    if (response.statusCode != 200) {
+      throw Exception('Could not load your saved stays (${response.statusCode}).');
+    }
+    final list = (jsonDecode(response.body) as List<dynamic>)
+        .map((e) => e as Map<String, dynamic>)
+        .where((e) => e['listingId'] is Map<String, dynamic>)
+        .map((e) => SavedListing(
+              listing: ListingModel.fromJson(e['listingId'] as Map<String, dynamic>),
+              savedAt: DateTime.tryParse(e['savedAt']?.toString() ?? '') ?? DateTime.now(),
+            ))
+        .toList();
+    _loadedFor = token;
+    ids.value = list.map((s) => s.listing.id).toSet();
+    return list;
   }
 
   /// Saves or unsaves. The heart changes right away and goes back if the

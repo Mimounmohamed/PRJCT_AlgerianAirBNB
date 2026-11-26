@@ -1,17 +1,17 @@
 # Graph Report - PRJCT_AlgerianAirBNB  (2026-11-26)
 
 ## Corpus Check
-- 201 files · ~178,331 words
+- 201 files · ~178,471 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 59 file(s) not represented in the graph (top: (none) 12, .xcconfig 8, .xml 7)
 
 ## Summary
-- 3327 nodes · 4426 edges · 176 communities (145 shown, 31 thin omitted)
+- 3331 nodes · 4432 edges · 181 communities (148 shown, 33 thin omitted)
 - Extraction: 98% EXTRACTED · 2% INFERRED · 0% AMBIGUOUS · INFERRED: 85 edges (avg confidence: 0.87)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `a0b5a11b`
+- Built from commit: `1fb4fd7c`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -130,7 +130,7 @@
 - Dart Analyzer Config
 - Maghrebi Heritage Imagery
 - Project Docs & Web Entry
-- FlutterActivity
+- List
 - aairbnb
 - SMS Service
 - Maghrebi Architecture Imagery
@@ -170,18 +170,23 @@
 - BookingPage
 - host_profile_page.dart
 - review.routes.js
-- Color
+- Settings.dart
 - host_section.dart
 - saved_service.dart
-- CustomPainter
+- property_types.dart
 - EditListingDetailsPage
 - recent_searches.dart
 - cloudinary.js
 - dart:convert
-- FiltersPage
-- BookingApiException
-- SearchDiscoveryPage
+- ../../widgets/app_toast.dart
+- host_stats_grid.dart
+- amenities_section.dart
 - Point
+- ChatScreen
+- _FullscreenVideo
+- _VideoThumbnail
+- CreateListingLocationPage
+- ProfileSettingsScreen
 
 ## God Nodes (most connected - your core abstractions)
 1. `mongoose` - 23 edges
@@ -226,7 +231,7 @@
 - **Mar7aban welcome screen Algerian heritage icons (mosque, mountains, kasbah)** — front_assets_icons_icon__1__icon, front_assets_icons_icon__2__icon, front_assets_icons_icon__3__icon [INFERRED 0.95]
 - **Web favicon and PWA icon set** — front_web_favicon_icon, front_web_icons_icon_192_icon, front_web_icons_icon_512_icon, front_web_icons_icon_maskable_192_icon, front_web_icons_icon_maskable_512_icon [INFERRED 0.95]
 
-## Communities (176 total, 31 thin omitted)
+## Communities (181 total, 33 thin omitted)
 
 ### Community 0 - "Edit Listing Details Page"
 Cohesion: 0.02
@@ -234,7 +239,7 @@ Nodes (100): accentColor, _addCustomAmenityChip, _addPhoto, _addPhotoTile, _amen
 
 ### Community 1 - "Chat Conversation Screen"
 Cohesion: 0.03
-Nodes (60): _addButtonKey, border, borderRadius, build, _C, cardBg, ChatScreen, _ChatScreenState (+52 more)
+Nodes (59): _addButtonKey, _AvatarWithBadge, border, borderRadius, build, _C, cardBg, _ChatBubble (+51 more)
 
 ### Community 2 - "Listing Draft Model"
 Cohesion: 0.04
@@ -278,7 +283,7 @@ Nodes (53): advanceNoticeHours, _availability, _book, _booking, build, _canBook,
 
 ### Community 12 - "Create Listing Location Page"
 Cohesion: 0.05
-Nodes (39): _border, build, _center, _communes, CreateListingLocationPage, _CreateListingLocationPageState, createState, _dark (+31 more)
+Nodes (37): _border, build, _center, _communes, createState, _dark, _debounce, _defaultCenter (+29 more)
 
 ### Community 13 - "House Rules Page"
 Cohesion: 0.05
@@ -298,7 +303,7 @@ Nodes (32): authToken, _border, color, _confirmAndRun, _cream, createState, _dan
 
 ### Community 17 - "Profile & Settings Screen"
 Cohesion: 0.06
-Nodes (27): appVersion, _bg, _cardFill, color, createState, _dark, _handleLogout, icon (+19 more)
+Nodes (25): appVersion, _bg, _cardFill, color, createState, _dark, _handleLogout, icon (+17 more)
 
 ### Community 18 - "Manage Calendar Page"
 Cohesion: 0.04
@@ -329,8 +334,8 @@ Cohesion: 0.07
 Nodes (26): _addCustomChip, _amenityChip, _border, _catalog, _categorySection, CreateListingAmenitiesPage, _CreateListingAmenitiesPageState, createState (+18 more)
 
 ### Community 25 - "Privacy & Security Screen"
-Cohesion: 0.07
-Nodes (33): _AvatarWithBadge, _ChatBubble, _DatePill, _MessageInputBar, _RegardingStayCard, appbarIcon, authBannerBg, badgeBg (+25 more)
+Cohesion: 0.09
+Nodes (28): appbarIcon, authBannerBg, badgeBg, bodyText, border, build, _C, captionText (+20 more)
 
 ### Community 26 - "Update Password Screen"
 Cohesion: 0.07
@@ -346,7 +351,7 @@ Nodes (11): mongoose, mongoose, conversationSchema, mongoose, listingViewSchema,
 
 ### Community 29 - "Report Incident Screen"
 Cohesion: 0.08
-Nodes (26): _AttachBox, _bodyStyle, build, color, content, createState, _descController, dispose (+18 more)
+Nodes (24): _AttachBox, _bodyStyle, build, color, content, createState, _descController, dispose (+16 more)
 
 ### Community 30 - "Linux Runner (GTK)"
 Cohesion: 0.10
@@ -354,15 +359,15 @@ Nodes (13): main(), first_frame_cb(), my_application_activate(), my_application_
 
 ### Community 31 - "Sign-Up Step 2"
 Cohesion: 0.08
-Nodes (22): _baladiya, _birthday, _birthdayError, build, createState, dispose, email, _fullAddressController (+14 more)
+Nodes (23): _baladiya, _birthday, _birthdayError, build, createState, dispose, email, _fullAddressController (+15 more)
 
 ### Community 32 - "Message Center"
 Cohesion: 0.08
-Nodes (23): conversationId, _conversations, _ConversationTile, createState, dispose, _error, _formatTime, hasUnread (+15 more)
+Nodes (24): build, conversationId, _conversations, _ConversationTile, createState, dispose, _error, _formatTime (+16 more)
 
 ### Community 33 - "Sign-Up Step 1"
 Cohesion: 0.08
-Nodes (21): build, createState, dispose, _emailController, _emailError, _fullNameController, _fullNameError, _generalError (+13 more)
+Nodes (22): build, createState, dispose, _emailController, _emailError, _fullNameController, _fullNameError, _generalError (+14 more)
 
 ### Community 34 - "Wilaya Data & Help Center"
 Cohesion: 0.12
@@ -373,8 +378,8 @@ Cohesion: 0.08
 Nodes (25): AllListingsPage, _AllListingsPageState, authToken, _border, build, Extension on _StatusFilter, _cream, createState (+17 more)
 
 ### Community 36 - "Two-Step Verification Screen"
-Cohesion: 0.08
-Nodes (24): build, child, color, createState, _DashedBorderContainer, _emailEnabled, icon, initState (+16 more)
+Cohesion: 0.09
+Nodes (22): build, child, color, createState, _DashedBorderContainer, _emailEnabled, icon, initState (+14 more)
 
 ### Community 37 - "Listing Detail Page"
 Cohesion: 0.08
@@ -389,8 +394,8 @@ Cohesion: 0.08
 Nodes (24): _ago, _border, build, _cream, createState, _danger, _dark, dispose (+16 more)
 
 ### Community 40 - "Login & Security Screen"
-Cohesion: 0.08
-Nodes (21): build, confirmController, createState, icon, iconColor, initState, _isGoogleLinked, isLoading (+13 more)
+Cohesion: 0.09
+Nodes (19): build, confirmController, createState, icon, iconColor, initState, _isGoogleLinked, isLoading (+11 more)
 
 ### Community 41 - "Sign-Up Step 3 (Photo)"
 Cohesion: 0.09
@@ -413,12 +418,12 @@ Cohesion: 0.16
 Nodes (8): EnableNonClientDpiScaling, Scale(), Win32Window::Win32Window(), WindowClassRegistrar, class_registered_, WindowClassRegistrar::GetWindowClass(), instance_, WindowClassRegistrar::UnregisterWindowClass()
 
 ### Community 46 - "package:flutter/material.dart"
-Cohesion: 0.07
-Nodes (20): AuthenticallyAlgerianScreen, build, build, OnboardingScreen, build, HostHospitalityScreen, build, CreateListingProgressDots (+12 more)
+Cohesion: 0.09
+Nodes (13): AuthenticallyAlgerianScreen, build, build, OnboardingScreen, build, HostHospitalityScreen, build, CreateListingProgressDots (+5 more)
 
 ### Community 47 - "otp_code_input.dart"
-Cohesion: 0.06
-Nodes (34): accept, _action, basePrice, BookingService, cancel, cancellationPolicy, create, currency (+26 more)
+Cohesion: 0.05
+Nodes (35): accept, _action, basePrice, BookingApiException, BookingService, cancel, cancellationPolicy, create (+27 more)
 
 ### Community 48 - "listing.routes.js"
 Cohesion: 0.09
@@ -430,7 +435,7 @@ Nodes (18): _bathrooms, _bedrooms, _border, build, _counterRow, CreateListingBas
 
 ### Community 50 - "Email/Phone Login Screen"
 Cohesion: 0.11
-Nodes (16): build, createState, dispose, _generalError, _identifierController, _identifierError, _isLoading, _labeledField (+8 more)
+Nodes (17): build, createState, dispose, _generalError, _identifierController, _identifierError, _isLoading, _labeledField (+9 more)
 
 ### Community 51 - "Account OTP Verify Screen"
 Cohesion: 0.11
@@ -461,8 +466,8 @@ Cohesion: 0.15
 Nodes (7): Size, height, width, Win32Window, child_content_, quit_on_close_, window_handle_
 
 ### Community 58 - "New Password Screen"
-Cohesion: 0.12
-Nodes (16): build, _confirmPasswordController, createState, dispose, email, _errorText, _isLoading, _newPasswordController (+8 more)
+Cohesion: 0.13
+Nodes (15): build, _confirmPasswordController, createState, dispose, email, _errorText, _isLoading, _newPasswordController (+7 more)
 
 ### Community 59 - "Location Map Preview"
 Cohesion: 0.12
@@ -497,11 +502,11 @@ Cohesion: 0.14
 Nodes (11): bookingId, canReview, checkEligibility, fetchReviews, _maxPages, _pageSize, reason, replyToReview (+3 more)
 
 ### Community 67 - "Navigation Handlers"
-Cohesion: 0.11
-Nodes (18): _onSignUp, _onContinue, _onContinue, openChat, _openFullscreen, build, _openChat, _buildListingsBody (+10 more)
+Cohesion: 0.13
+Nodes (14): openChat, _openFullscreen, _openChat, _buildListingsBody, build, _buildReviewsSection, _openChat, build (+6 more)
 
 ### Community 68 - "listing_service.dart"
-Cohesion: 0.17
+Cohesion: 0.20
 Nodes (7): countListings, createListing, fetchListingById, fetchListings, fetchTypeCounts, ListingService, _search
 
 ### Community 69 - "Desktop CMake Build"
@@ -557,19 +562,19 @@ Cohesion: 0.13
 Nodes (12): build, createState, dispose, initState, LandingAppBar, _NotificationBell, _NotificationBellState, _open (+4 more)
 
 ### Community 82 - "how_works.dart"
-Cohesion: 0.09
-Nodes (18): blurb, icon, kPropertyTypes, label, null, PropertyType, propertyTypeByLabel, build (+10 more)
+Cohesion: 0.15
+Nodes (11): build, description, HowItWorksScreen, icon, iconColor, image, showWatchFilm, stepNumber (+3 more)
 
 ### Community 83 - "Hex Pattern Background"
-Cohesion: 0.18
-Nodes (8): build, child, CreateListingPatternBackground, _drawHexagon, _hexSize, _lineColor, paint, shouldRepaint
+Cohesion: 0.10
+Nodes (15): _DashedPathPainter, _DashedRectPainter, _DashedRectPainter, _DashedRectPainter, build, child, CreateListingPatternBackground, _drawHexagon (+7 more)
 
 ### Community 84 - "Amenity Model"
 Cohesion: 0.17
 Nodes (10): AmenityModel, catalogKey, category, description, fromJson, icon, iconFor, iconName (+2 more)
 
 ### Community 85 - "Host Service API"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (12): becomeHost, deleteListing, discardUploadedPhotos, _errorFrom, fetchBookingOnDate, fetchDashboard, fetchHostListings, fetchListingDetail (+4 more)
 
 ### Community 86 - "Privacy Policy Screen"
@@ -582,7 +587,7 @@ Nodes (6): _accent, build, CreateListingIntroPage, _dark, _stepRow, _teal
 
 ### Community 88 - "search_discovery_page.dart"
 Cohesion: 0.05
-Nodes (38): _border, build, _chip, _clearRecent, _controller, _cream, createState, _dark (+30 more)
+Nodes (40): _border, build, _chip, _clearRecent, _controller, _cream, createState, _dark (+32 more)
 
 ### Community 89 - "courtyard.dart"
 Cohesion: 0.11
@@ -597,11 +602,11 @@ Cohesion: 0.24
 Nodes (8): availabilitySchema, mongoose, buildAvailabilityDocs(), daysFromNow(), dns, mongoose, sampleListings, seed()
 
 ### Community 92 - "static const Color"
-Cohesion: 0.08
-Nodes (13): AuthScreen, build, build, GoogleSignInScreen, _onContinueWithGoogle, build, _buildHeritageSection, _buildHero (+5 more)
+Cohesion: 0.11
+Nodes (10): AuthScreen, build, build, _buildHeritageSection, _buildHero, _categoryCard, _onStartExploring, token (+2 more)
 
 ### Community 93 - "host_section.dart"
-Cohesion: 0.22
+Cohesion: 0.20
 Nodes (6): AkriliAppBar, build, onBack, preferredSize, showBackButton, title
 
 ### Community 94 - "reviews_page.dart"
@@ -617,7 +622,7 @@ Cohesion: 0.09
 Nodes (22): checkIn, cleanliness, comment, communication, copyWith, createdAt, fromJson, hasHostReply (+14 more)
 
 ### Community 98 - "socket_service.dart"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (13): _baseUrl, connect, disconnect, instance, isConnected, joinConversation, leaveConversation, offConversationUpdated (+5 more)
 
 ### Community 99 - "Sign-In Progress Bar"
@@ -680,9 +685,9 @@ Nodes (6): incident.png - Safety First Banner, khayt.png - Stitched Leather Text
 Cohesion: 0.40
 Nodes (5): iOS Launch Screen Assets, aairbnb Flutter Project README, Flutter Framework, flutter_bootstrap.js loader, Flutter Web Entry Page (index.html)
 
-### Community 114 - "FlutterActivity"
-Cohesion: 0.15
-Nodes (10): amenities, _AmenitiesFullSheet, build, showAmenitiesFullSheet, showModalBottomSheet, amenities, AmenitiesSection, _amenityItem (+2 more)
+### Community 114 - "List"
+Cohesion: 0.29
+Nodes (5): amenities, _AmenitiesFullSheet, build, showAmenitiesFullSheet, showModalBottomSheet
 
 ### Community 115 - "aairbnb"
 Cohesion: 0.07
@@ -718,11 +723,11 @@ Nodes (21): BookingsListPage, _BookingsListPageState, build, _changed, createSta
 
 ### Community 129 - "filters_page.dart"
 Cohesion: 0.05
-Nodes (36): _amenities, _amenityChip, _bathrooms, _bedrooms, _border, build, _card, _changed (+28 more)
+Nodes (38): _amenities, _amenityChip, _bathrooms, _bedrooms, _border, build, _card, _changed (+30 more)
 
 ### Community 130 - "State"
-Cohesion: 0.29
-Nodes (6): _NotificationsScreenState, _NotificationsScreenState, _InfoField, _InfoFieldState, PersonalInfoScreen, _PersonalInfoScreenState
+Cohesion: 0.17
+Nodes (13): NotificationsScreen, _NotificationsScreenState, ReportingIncidentScreen, _ReportingIncidentScreenState, LoginSecurityScreen, _LoginSecurityScreenState, TwoStepVerificationScreen, _TwoStepVerificationScreenState (+5 more)
 
 ### Community 132 - "DateTime"
 Cohesion: 0.18
@@ -737,7 +742,7 @@ Cohesion: 0.18
 Nodes (8): AvailabilityDayModel, bookingId, bookingStatus, date, fromJson, hasGuestBooking, priceOverride, status
 
 ### Community 148 - "otp_method_selector.dart"
-Cohesion: 0.17
+Cohesion: 0.15
 Nodes (12): build, createState, initialMethod, maskedEmail, maskedPhone, _methodCard, onSendCode, OtpMethod (+4 more)
 
 ### Community 149 - "listing_card.dart"
@@ -762,35 +767,35 @@ Nodes (4): booking, BookingResultPage, build, BookingModel
 
 ### Community 155 - "explore_filter_bar.dart"
 Cohesion: 0.20
-Nodes (7): build, ExploreFilterBar, _item, onTypeSelected, selected, _selectedColor, _unselectedColor
+Nodes (7): build, ExploreFilterBar, _item, onSelected, _selectedColor, selectedTypes, _unselectedColor
 
 ### Community 156 - "explore_filters.dart"
 Cohesion: 0.06
 Nodes (31): amenities, AmenityFilterOption, bathrooms, bedrooms, clearPlace, DiscoverRegion, empty, ExploreFilters (+23 more)
 
 ### Community 158 - "host_profile_page.dart"
-Cohesion: 0.08
-Nodes (22): build, child, hostName, HostProfilePage, hostProfilePhotoUrl, hostSinceLabel, lines, _PlaceholderBlock (+14 more)
+Cohesion: 0.15
+Nodes (12): build, child, hostName, HostProfilePage, hostProfilePhotoUrl, hostSinceLabel, lines, _PlaceholderBlock (+4 more)
 
 ### Community 159 - "review.routes.js"
 Cohesion: 0.09
 Nodes (16): listingSchema, mongoose, photoSchema, mongoose, reviewSchema, mongoose, savedStaySchema, express (+8 more)
 
-### Community 160 - "Color"
-Cohesion: 0.17
-Nodes (10): build, _DarkGuideItem, description, _GuideItem, icon, iconColor, label, _RuleChip (+2 more)
+### Community 160 - "Settings.dart"
+Cohesion: 0.09
+Nodes (20): build, _DarkGuideItem, description, _GuideItem, icon, iconColor, label, _RuleChip (+12 more)
 
 ### Community 161 - "host_section.dart"
 Cohesion: 0.22
 Nodes (8): build, hostName, hostProfilePhotoUrl, HostSection, hostSinceLabel, isChatLoading, onHostTap, onMessageTap
 
 ### Community 162 - "saved_service.dart"
-Cohesion: 0.18
+Cohesion: 0.17
 Nodes (8): ensureLoaded, _headers, ids, instance, isSaved, _loadedFor, SavedService, setSaved
 
-### Community 163 - "CustomPainter"
-Cohesion: 0.25
-Nodes (7): _DashedPathPainter, _DashedRectPainter, _DashedRectPainter, _DashedRectPainter, _HexPatternPainter, _DashedBorderPainter, _DashedRRectPainter
+### Community 163 - "property_types.dart"
+Cohesion: 0.15
+Nodes (11): blurb, icon, kPropertyTypes, kStayGroups, label, null, PropertyType, propertyTypeByLabel (+3 more)
 
 ### Community 165 - "recent_searches.dart"
 Cohesion: 0.12
@@ -804,29 +809,41 @@ Nodes (8): crypto, destroyImageIfUnused(), destroyImagesInBackground(), getConfi
 Cohesion: 0.22
 Nodes (6): AvailabilityService, dayString, _errorFrom, fetchHostMonth, fetchMonth, updateDates
 
+### Community 169 - "../../widgets/app_toast.dart"
+Cohesion: 0.25
+Nodes (3): build, GoogleSignInScreen, _onContinueWithGoogle
+
+### Community 170 - "host_stats_grid.dart"
+Cohesion: 0.25
+Nodes (7): activeListings, avgRating, build, formattedEarnings, formattedViews, HostStatsGrid, _statBox
+
+### Community 171 - "amenities_section.dart"
+Cohesion: 0.29
+Nodes (5): amenities, AmenitiesSection, _amenityItem, build, onShowAllTap
+
 ### Community 172 - "Point"
 Cohesion: 0.50
 Nodes (3): Point, x, y
 
 ## Knowledge Gaps
-- **2189 isolated node(s):** `draft`, `_dark`, `_teal`, `_tealTint`, `_muted` (+2184 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2561 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **31 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **2193 isolated node(s):** `showCompleteProfileDialog`, `_currentIndex`, `_hasUnreadMessages`, `_listings`, `_isLoadingListings` (+2188 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 2565 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **33 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `Win32Window` connect `Win32 Geometry Types` to `Win32 Message Handling`, `String?`, `Point`, `Win32 Window Impl`, `Windows Flutter Window`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
-- **What connects `draft`, `_dark`, `_teal` to the rest of the system?**
-  _2189 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _High betweenness centrality (0.015) - this node is a cross-community bridge._
+- **What connects `showCompleteProfileDialog`, `_currentIndex`, `_hasUnreadMessages` to the rest of the system?**
+  _2193 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Edit Listing Details Page` be split into smaller, more focused modules?**
   _Cohesion score 0.019417475728155338 - nodes in this community are weakly interconnected._
-- **Why does `mongoose` connect `Conversation Model & Seeds` to `cloudinary.js`, `server.js`, `Backend Dependencies (npm)`, `listing.routes.js`, `auth.routes.js`, `Seedlistings.js`, `review.routes.js`?**
-  _High betweenness centrality (0.002) - this node is a cross-community bridge._
+- **Why does `FlutterWindow` connect `Windows Flutter Window` to `Win32 Geometry Types`, `String?`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Should `Chat Conversation Screen` be split into smaller, more focused modules?**
-  _Cohesion score 0.031207598371777476 - nodes in this community are weakly interconnected._
-- **Why does `ListingDraft` connect `Create Listing Basics Page` to `Create Listing Amenities Page`, `Listing Draft Model`, `Create Listing Location Page`, `Create Listing Review Page`?**
-  _High betweenness centrality (0.002) - this node is a cross-community bridge._
+  _Cohesion score 0.030303030303030304 - nodes in this community are weakly interconnected._
+- **Why does `mongoose` connect `Conversation Model & Seeds` to `cloudinary.js`, `server.js`, `Backend Dependencies (npm)`, `listing.routes.js`, `auth.routes.js`, `Seedlistings.js`, `review.routes.js`?**
+  _High betweenness centrality (0.003) - this node is a cross-community bridge._
 - **Should `Listing Draft Model` be split into smaller, more focused modules?**
   _Cohesion score 0.03508771929824561 - nodes in this community are weakly interconnected._
