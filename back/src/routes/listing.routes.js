@@ -8,36 +8,94 @@ const { MAX_SNOOZE_DAYS, listedFilter } = require('../utils/snooze');
 const Availability = require('../models/Availability');
 const { parseDay, dayKey, bookedNightsInRange } = require('../utils/bookingNights');
 
-// GET /api/listings — Browse all active listings (public)
+// Comma-separated query value → trimmed non-empty list.
+const listParam = (value) =>
+  String(value || '')
+    .split(',')
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+// Builds the Discover search filter from the query string. Shared by the
+// list and the count endpoints so "Show N stays" matches the results.
+//
+//   propertyType  one or several types, comma-separated (any of them)
+//   wilaya        one or several wilayas, comma-separated (a region)
+//   search        partial words match title / city / wilaya ("ora" → Oran)
+//   guests, bedrooms, bathrooms   minimums
+//   minPrice, maxPrice            per-night price range
+//   amenities     catalogKeys, comma-separated, all required; "a|b" means
+//                 either one (e.g. private_pool|shared_pool)
+//   instantBook   'true' → only listings guests can book without waiting
+function buildSearchFilter(query) {
+  const {
+    propertyType, wilaya, minPrice, maxPrice, guests, bedrooms, bathrooms,
+    amenities, instantBook, search,
+  } = query;
+
+  const filter = { status: 'active', isDeleted: { $ne: true }, ...listedFilter() };
+  const and = [];
+
+  const types = listParam(propertyType);
+  if (types.length) filter.propertyType = { $in: types };
+
+  const wilayas = listParam(wilaya);
+  if (wilayas.length) filter['location.wilaya'] = { $in: wilayas };
+
+  const min = (v) => {
+    const n = parseInt(v, 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  };
+  if (min(guests)) filter['capacity.guests'] = { $gte: min(guests) };
+  if (min(bedrooms)) filter['capacity.bedrooms'] = { $gte: min(bedrooms) };
+  if (min(bathrooms)) filter['capacity.bathrooms'] = { $gte: min(bathrooms) };
+
+  if (min(minPrice) || min(maxPrice)) {
+    filter['price.perNight'] = {};
+    if (min(minPrice)) filter['price.perNight'].$gte = min(minPrice);
+    if (min(maxPrice)) filter['price.perNight'].$lte = min(maxPrice);
+  }
+
+  for (const item of listParam(amenities)) {
+    and.push({ 'amenities.catalogKey': { $in: item.split('|').filter(Boolean) } });
+  }
+
+  if (instantBook === 'true') filter['bookingPreferences.instantBook'] = true;
+
+  const text = String(search || '').trim().slice(0, 80);
+  if (text) {
+    const rx = new RegExp(escapeRegex(text), 'i');
+    and.push({ $or: [{ title: rx }, { 'location.city': rx }, { 'location.wilaya': rx }, { propertyType: rx }] });
+  }
+
+  if (and.length) filter.$and = and;
+  return filter;
+}
+
+// GET /api/listings/type-counts — { Apartment: 12, Villa: 3, ... } for the
+// "Popular stay types" cards on the search screen (live listings only).
+router.get('/type-counts', async (req, res) => {
+  try {
+    const rows = await Listing.aggregate([
+      { $match: buildSearchFilter({}) },
+      { $group: { _id: '$propertyType', count: { $sum: 1 } } },
+    ]);
+    res.json(Object.fromEntries(rows.map((r) => [r._id, r.count])));
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/listings — Browse all active listings (public). Filters: see
+// buildSearchFilter above.
 router.get('/', async (req, res) => {
   try {
-    const {
-      category,
-      propertyType,
-      wilaya,
-      minPrice,
-      maxPrice,
-      guests,
-      search,
-      sort = 'rating',
-      page = 1,
-      limit = 20,
-    } = req.query;
+    const { sort = 'rating' } = req.query;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 50);
 
-    const filter = { status: 'active', isDeleted: { $ne: true }, ...listedFilter() };
-
-    if (category)     filter.categories = category;
-    if (propertyType) filter.propertyType = propertyType;
-    if (wilaya)       filter['location.wilaya'] = wilaya;
-    if (guests)       filter['capacity.guests'] = { $gte: parseInt(guests) };
-    if (minPrice || maxPrice) {
-      filter['price.perNight'] = {};
-      if (minPrice) filter['price.perNight'].$gte = parseInt(minPrice);
-      if (maxPrice) filter['price.perNight'].$lte = parseInt(maxPrice);
-    }
-    // Uses the text index on title/description/location.city/location.wilaya
-    // defined in the Listing schema (listing_text_search).
-    if (search) filter.$text = { $search: search };
+    const filter = buildSearchFilter(req.query);
 
     const sortOptions = {
       rating:      { 'rating.overall': -1 },
@@ -185,22 +243,10 @@ const HOST_EDITABLE_PRICE_FIELDS = [
   'rentalPeriod',
 ];
 
-// The Discover filter chips — must match kListingCategories in the app
-// (front/lib/home-front/widgets/listing_category_picker.dart).
-const LISTING_CATEGORIES = ['Riads', 'Sea view', 'Casbah', 'Desert'];
-const MAX_LISTING_CATEGORIES = 3;
-
 function pickHostEditable(body = {}) {
   const picked = {};
   for (const key of HOST_EDITABLE_FIELDS) {
     if (body[key] !== undefined) picked[key] = body[key];
-  }
-  // Unknown labels are dropped (they'd never match a filter), duplicates
-  // removed, at most 3 kept.
-  if (picked.categories !== undefined) {
-    const list = Array.isArray(picked.categories) ? picked.categories : [];
-    picked.categories = [...new Set(list.filter((c) => LISTING_CATEGORIES.includes(c)))]
-      .slice(0, MAX_LISTING_CATEGORIES);
   }
   if (body.price && typeof body.price === 'object') {
     const price = {};

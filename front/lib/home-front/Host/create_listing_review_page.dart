@@ -4,7 +4,6 @@ import 'create_listing_exit.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../authentication-front/widgets/app_bar.dart'; // adjust path to match your project structure
 import '../widgets/create_listing_pattern_background.dart';
-import '../widgets/listing_category_picker.dart'; // adjust path if you placed this elsewhere
 import '../../models/listing_draft_model.dart'; // adjust path to match your project structure
 import '../../services/auth_service.dart'; // adjust path — exposes AuthService.uploadToCloudinary()
 import '../../services/listing_service.dart'; // adjust path — exposes ListingService.createListing()
@@ -793,14 +792,6 @@ class _CreateListingReviewPageState extends State<CreateListingReviewPage> {
                           hintStyle: TextStyle(color: _muted, fontWeight: FontWeight.normal),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // ── Categories (Discover filter chips) ─
-                    _sectionLabel('Categories'),
-                    ListingCategoryPicker(
-                      selected: widget.draft.categories,
-                      onChanged: (v) => setState(() => widget.draft.categories = v),
                     ),
                     const SizedBox(height: 24),
 

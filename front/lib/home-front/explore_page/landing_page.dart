@@ -5,11 +5,14 @@ import '../../services/auth_service.dart';
 import '../../services/socket_service.dart';
 import '../../services/listing_service.dart';
 import '../../models/listing_model.dart';
+import '../../models/explore_filters.dart';
 import '../widgets/landing_app_bar.dart';
 import '../widgets/explore_search_bar.dart';
 import '../widgets/explore_filter_bar.dart';
 import 'listing_card.dart';
 import 'listing_detail_page.dart';
+import 'filters_page.dart';
+import 'search_discovery_page.dart';
 import '../Host/host_tab_entry.dart';
 import '../nav_bar/nav_bar.dart';
 import '../widgets/landing_profile_side_panel.dart';
@@ -32,12 +35,13 @@ class _LandingPageState extends State<LandingPage> {
   int _currentIndex = 0;
   bool _hasUnreadMessages = false;
 
-  List<ListingModel> _baseListings = [];
   List<ListingModel> _listings = [];
   bool _isLoadingListings = true;
   String? _listingsError;
-  String _searchQuery = '';
-  String? _activeCategory;
+  // Place (search screen) + Filters page + stay-type shortcut.
+  ExploreFilters _filters = ExploreFilters.empty;
+  // Ignores a slower, older response that finishes after a newer one.
+  int _fetchRequest = 0;
 
   @override
   void initState() {
@@ -85,102 +89,48 @@ class _LandingPageState extends State<LandingPage> {
     } catch (_) {}
   }
 
-  /// Fetches listings from backend and applies search filtering.
-  Future<void> _fetchListings({
-    String? search,
-    String? category,
-    bool clearSearch = false,
-  }) async {
-    final prevSearch = _searchQuery;
-    final newSearch = clearSearch ? '' : (search ?? prevSearch);
-    final newCategory = category ?? _activeCategory;
-
+  /// Loads the Explore list for [_filters] (pass [filters] to change them).
+  Future<void> _fetchListings([ExploreFilters? filters]) async {
+    final request = ++_fetchRequest;
     setState(() {
-      _searchQuery = newSearch;
-      if (category != null) _activeCategory = category;
+      if (filters != null) _filters = filters;
+      _isLoadingListings = true;
+      _listingsError = null;
     });
-
-    // 1. Instant local filter if we already have base listings
-    if (newSearch.isNotEmpty && _baseListings.isNotEmpty) {
-      final q = newSearch.toLowerCase();
-      final localMatches = _baseListings.where((item) {
-        return item.title.toLowerCase().contains(q) ||
-            item.city.toLowerCase().contains(q) ||
-            item.wilaya.toLowerCase().contains(q);
-      }).toList();
-
-      setState(() {
-        _listings = localMatches;
-        _isLoadingListings = false;
-        _listingsError = null;
-      });
-    } else if (newSearch.isEmpty && _baseListings.isNotEmpty && category == null) {
-      // Instant restore on clear
-      setState(() {
-        _listings = _baseListings;
-        _isLoadingListings = false;
-        _listingsError = null;
-      });
-      return;
-    } else {
-      setState(() {
-        _isLoadingListings = true;
-        _listingsError = null;
-      });
-    }
-
-    // 2. Fetch from backend
-    final effectiveSearch = newSearch.isNotEmpty ? newSearch : null;
-    final effectiveCategory = newCategory;
-
     try {
-      final serverListings = await ListingService.fetchListings(
-        category: effectiveCategory,
-        search: effectiveSearch,
-      );
-      if (!mounted) return;
-
-      if (effectiveSearch == null) {
-        // Base category listings updated
-        setState(() {
-          _baseListings = serverListings;
-          _listings = serverListings;
-          _isLoadingListings = false;
-        });
-      } else {
-        // Combine server matches with local substring matches
-        final combined = <String, ListingModel>{};
-        for (final item in serverListings) {
-          combined[item.id] = item;
-        }
-
-        // Substring fallback for partial search keywords (e.g. "ta", "djan")
-        final q = effectiveSearch.toLowerCase();
-        for (final item in _baseListings) {
-          if (item.title.toLowerCase().contains(q) ||
-              item.city.toLowerCase().contains(q) ||
-              item.wilaya.toLowerCase().contains(q)) {
-            combined[item.id] = item;
-          }
-        }
-
-        setState(() {
-          _listings = combined.values.toList();
-          _isLoadingListings = false;
-        });
-      }
+      final listings = await ListingService.fetchListings(filters: _filters);
+      if (!mounted || request != _fetchRequest) return;
+      setState(() {
+        _listings = listings;
+        _isLoadingListings = false;
+      });
     } catch (e) {
-      if (!mounted) return;
-      // If server failed or network issue, but we have local matches, keep them
-      if (_listings.isNotEmpty) {
-        setState(() => _isLoadingListings = false);
-      } else {
-        setState(() {
-          _listingsError = e.toString();
-          _isLoadingListings = false;
-        });
-      }
+      if (!mounted || request != _fetchRequest) return;
+      setState(() {
+        _listingsError = e.toString().replaceFirst('Exception: ', '');
+        _isLoadingListings = false;
+      });
     }
+  }
+
+  Future<void> _openSearch() async {
+    final result = await SearchDiscoveryPage.open(context, _filters);
+    if (result != null && mounted) _fetchListings(result);
+  }
+
+  Future<void> _openFilters() async {
+    final result = await FiltersPage.open(context, _filters);
+    if (result != null && mounted) _fetchListings(result);
+  }
+
+  /// "Anytime · Add guests", or what the filters ask for.
+  String get _searchSubtitle {
+    final parts = <String>['Anytime'];
+    parts.add(_filters.guests > 0 ? '${_filters.guests}+ guests' : 'Add guests');
+    final types = _filters.propertyTypes;
+    if (types.length == 1) parts.add(types.first);
+    if (types.length > 1) parts.add('${types.length} types');
+    return parts.join(' · ');
   }
 
   void _showCompleteProfileDialog() {
@@ -245,12 +195,17 @@ class _LandingPageState extends State<LandingPage> {
             const Icon(Icons.search_off, size: 48, color: Color(0xFF8A7B6E)),
             const SizedBox(height: 12),
             Text(
-              _searchQuery.isNotEmpty
-                  ? 'No listings found for "$_searchQuery".'
+              _filters.hasPlace || _filters.refinementCount > 0
+                  ? 'No stays match your search.'
                   : 'No listings found.',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Color(0xFF8A7B6E)),
             ),
+            if (_filters.hasPlace || _filters.refinementCount > 0)
+              TextButton(
+                onPressed: () => _fetchListings(ExploreFilters.empty),
+                child: const Text('Clear search and filters', style: TextStyle(color: Color(0xFF006972), fontWeight: FontWeight.w700)),
+              ),
           ],
         ),
       );
@@ -278,17 +233,17 @@ class _LandingPageState extends State<LandingPage> {
       children: [
         const SizedBox(height: 12),
         ExploreSearchBar(
-          onFilterTap: () {
-            // TODO: push full filter sheet
-          },
-          onSearch: (query) => _fetchListings(search: query),
-          onSearchCleared: () => _fetchListings(clearSearch: true),
+          place: _filters.placeText,
+          subtitle: _searchSubtitle,
+          activeFilters: _filters.refinementCount,
+          onTap: _openSearch,
+          onFilterTap: _openFilters,
+          onClear: () => _fetchListings(_filters.clearPlace()),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         ExploreFilterBar(
-          onCategorySelected: (category) {
-            _fetchListings(category: category, clearSearch: true);
-          },
+          selected: _filters.propertyTypes.length == 1 ? _filters.propertyTypes.first : null,
+          onTypeSelected: (type) => _fetchListings(_filters.withPropertyTypes(type == null ? {} : {type})),
         ),
         const SizedBox(height: 8),
         Expanded(child: _buildListingsBody()),

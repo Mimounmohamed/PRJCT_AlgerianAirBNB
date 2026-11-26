@@ -1,92 +1,80 @@
 import 'package:flutter/material.dart';
-import 'listing_category_picker.dart';
+import 'property_types.dart';
 
-class ExploreFilterItem {
-  final String label;
-  final IconData icon;
-
-  const ExploreFilterItem({required this.label, required this.icon});
-}
-
-/// Category filter bar shown below the search bar on Explore.
+/// Stay-type shortcuts under the search bar on Explore: "All" plus every
+/// property type a host can list (Apartment, House, Villa, …). Scrolls
+/// sideways. [onTypeSelected] fires with the type label, or null for All.
 ///
-/// Spans the full width of the page with items evenly spaced. Manages which
-/// chip is selected locally (visual state only) — the actual category
-/// filtering / API call is not wired up yet. [onCategorySelected] fires with
-/// the selected label so that logic can be added later without changing
-/// this widget.
-class ExploreFilterBar extends StatefulWidget {
-  final ValueChanged<String>? onCategorySelected;
+/// [selected] is owned by the page, so picking a type in Filters or on the
+/// search screen highlights the matching shortcut here too.
+class ExploreFilterBar extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String?>? onTypeSelected;
 
-  const ExploreFilterBar({super.key, this.onCategorySelected});
+  const ExploreFilterBar({super.key, this.selected, this.onTypeSelected});
 
-  @override
-  State<ExploreFilterBar> createState() => _ExploreFilterBarState();
-}
-
-class _ExploreFilterBarState extends State<ExploreFilterBar> {
   static const Color _selectedColor = Color(0xFF006972);
   static const Color _unselectedColor = Color(0xFF4F4540);
 
-  // Same list hosts tag their listings with (creation + Edit listing).
-  static final List<ExploreFilterItem> _items = [
-    const ExploreFilterItem(label: 'All', icon: Icons.explore_outlined),
-    for (final c in kListingCategories) ExploreFilterItem(label: c.label, icon: c.icon),
-  ];
-
-  int _selectedIndex = 0;
+  Widget _item({required String label, required IconData icon, required bool isSelected, required VoidCallback onTap}) {
+    final color = isSelected ? _selectedColor : _unselectedColor;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 26, color: color),
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontFamily: 'HankenGrotesk',
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
+                  color: color,
+                ),
+              ),
+              const SizedBox(height: 6),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                height: 2,
+                width: isSelected ? 20 : 0,
+                decoration: BoxDecoration(color: _selectedColor, borderRadius: BorderRadius.circular(1)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: List.generate(_items.length, (index) {
-          final item = _items[index];
-          final isSelected = index == _selectedIndex;
-          final color = isSelected ? _selectedColor : _unselectedColor;
-
-          return Material(
-            color: Colors.transparent,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () {
-                setState(() => _selectedIndex = index);
-                widget.onCategorySelected?.call(item.label);
-              },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(item.icon, size: 28, color: color),
-                    const SizedBox(height: 6),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontFamily: 'HankenGrotesk',
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
-                        color: color,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      height: 2,
-                      width: isSelected ? 20 : 0,
-                      decoration: BoxDecoration(
-                        color: _selectedColor,
-                        borderRadius: BorderRadius.circular(1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+    return SizedBox(
+      height: 76,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        children: [
+          _item(
+            label: 'All',
+            icon: Icons.explore_outlined,
+            isSelected: selected == null,
+            onTap: () => onTypeSelected?.call(null),
+          ),
+          for (final t in kPropertyTypes)
+            _item(
+              label: t.label,
+              icon: t.icon,
+              isSelected: selected == t.label,
+              onTap: () => onTypeSelected?.call(t.label),
             ),
-          );
-        }),
+        ],
       ),
     );
   }

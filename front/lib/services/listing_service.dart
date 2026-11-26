@@ -3,34 +3,52 @@ import 'package:http/http.dart' as http;
 import 'base_client.dart'; // ApiConfig — same folder (lib/services/)
 import '../models/listing_model.dart'; // adjust path to match your project structure
 import '../models/listing_detail_model.dart'; // adjust path to match your project structure
+import '../models/explore_filters.dart';
 
 /// Standalone fetch for GET /api/listings — no shared HTTP client yet,
 /// swap in base_client.dart later if you want auth headers / interceptors
 /// applied consistently across services.
 class ListingService {
-  static Future<List<ListingModel>> fetchListings({
-    String? category,
-    String? search,
-  }) async {
-    final queryParams = <String, String>{};
-    if (category != null && category != 'All') queryParams['category'] = category;
-    if (search != null && search.trim().isNotEmpty) queryParams['search'] = search.trim();
-
+  static Future<Map<String, dynamic>> _search(Map<String, String> query) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/listings')
-        .replace(queryParameters: queryParams.isEmpty ? null : queryParams);
-
+        .replace(queryParameters: query.isEmpty ? null : query);
     final response = await http.get(uri);
-
     if (response.statusCode != 200) {
       throw Exception('Failed to load listings (${response.statusCode}).');
     }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
+  /// GET /api/listings with the Discover filters (place + Filters page).
+  static Future<List<ListingModel>> fetchListings({
+    ExploreFilters filters = ExploreFilters.empty,
+    int limit = 50,
+  }) async {
+    final body = await _search({...filters.toQuery(), 'limit': '$limit'});
     final listingsJson = body['listings'] as List<dynamic>? ?? [];
-
     return listingsJson
         .map((item) => ListingModel.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  /// How many listings match — "Show 12 stays" on the Filters page and
+  /// the region cards. Reads the list endpoint's `total`.
+  static Future<int> countListings(ExploreFilters filters) async {
+    final body = await _search({...filters.toQuery(), 'limit': '1'});
+    return (body['total'] as num?)?.toInt() ?? 0;
+  }
+
+  /// GET /api/listings/type-counts — live listings per property type.
+  /// Empty map if the server can't say.
+  static Future<Map<String, int>> fetchTypeCounts() async {
+    try {
+      final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/listings/type-counts'));
+      if (response.statusCode != 200) return {};
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body.map((k, v) => MapEntry(k, (v as num).toInt()));
+    } catch (_) {
+      return {};
+    }
   }
 
   /// GET /api/listings/:id — used by the Listing Detail page.
